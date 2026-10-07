@@ -13,8 +13,8 @@
   --c-tint: #FFF8E8;
   --c-line: rgba(20, 20, 43, 0.12);
 
-  --f-display: "DM Serif Display", Georgia, serif;
-  --f-body: "DM Sans", system-ui, sans-serif;
+  --f-display: "Fraunces", Georgia, serif;
+  --f-body: "Manrope", system-ui, sans-serif;
 
   --header-h: 5.5rem;
   --radius: 1.25rem;
@@ -41,7 +41,7 @@ ul { padding: 0; list-style: none; }
 a { color: inherit; }
 img { max-width: 100%; display: block; }
 
-h1, h2 { font-family: var(--f-display); font-weight: 400; line-height: 1.1; }
+h1, h2 { font-family: var(--f-display); font-weight: 600; line-height: 1.15; text-wrap: balance; }
 h2 { font-size: clamp(2rem, 4vw, 3rem); }
 h3 { font-size: 1.25rem; font-weight: 600; }
 
@@ -59,11 +59,6 @@ h3 { font-size: 1.25rem; font-weight: 600; }
   padding: .75rem 1rem; background: var(--c-ink); color: #fff; border-radius: .5rem;
 }
 .skip-link:focus { top: 1rem; }
-
-/* Prérequis Lenis (défilement fluide) */
-html.lenis, html.lenis body { height: auto; }
-.lenis.lenis-smooth { scroll-behavior: auto !important; }
-.lenis.lenis-stopped { overflow: hidden; }
 
 /* 3. Composants ------------------------------------------------------------ */
 /* CTA principal : pilule jaune + lueur qui suit le curseur (--mx, --my, --spot posés par main.js) */
@@ -90,20 +85,12 @@ html.lenis, html.lenis body { height: auto; }
 .underline path { fill: var(--c-accent); }
 
 /* 4. Header ---------------------------------------------------------------- */
-/* Transparent sur le hero (fond intégré à la page), verre dépoli une fois scrollé */
-.header {
-  position: fixed; inset: 0 0 auto; z-index: 100; height: var(--header-h);
-  border-bottom: 1px solid transparent;
-  transition: background .4s var(--ease), border-color .4s var(--ease);
-}
-.header.is-scrolled {
-  background: rgba(255, 255, 255, .8); border-color: var(--c-line);
-  -webkit-backdrop-filter: saturate(180%) blur(20px); backdrop-filter: saturate(180%) blur(20px);
-}
+/* Barre pleine largeur collée en haut, sans fond : elle se fond dans la page (comme la maquette) */
+.header { position: fixed; inset: 0 0 auto; z-index: 100; height: var(--header-h); }
 .header__inner { height: 100%; display: grid; grid-template-columns: auto 1fr; align-items: center; }
 
 .logo { display: flex; flex-direction: column; justify-self: start; line-height: 1; text-decoration: none; color: var(--c-accent); }
-.logo__name { font: 2rem/1 var(--f-display); }
+.logo__name { font: 600 1.9rem/1 var(--f-display); }
 .logo__tag { font-size: .6rem; letter-spacing: .35em; text-transform: uppercase; text-align: center; }
 
 .nav { display: flex; align-items: center; justify-self: end; } /* collé au bord droit du conteneur */
@@ -133,7 +120,7 @@ html.lenis, html.lenis body { height: auto; }
   display: grid; grid-template-columns: 1fr; align-items: center;
 }
 .hero__content { position: relative; z-index: 1; display: grid; justify-items: start; gap: 1.5rem; padding-block: 3rem; }
-.hero__title { font-size: clamp(2.25rem, 4vw, 3.5rem); }
+.hero__title { font-size: clamp(2.1rem, 3.6vw, 3.2rem); }
 .line { display: block; }
 .line.accent { position: relative; display: inline-block; padding-bottom: .32em; } /* dégage le filet sous la jambe du « g » */
 .hero__lead { max-width: 28ch; color: var(--c-ink-soft); font-size: 1.15rem; }
@@ -146,10 +133,45 @@ html.lenis, html.lenis body { height: auto; }
 .hero__frame { height: 100%; overflow: hidden; }
 .hero__img { width: 100%; height: 100%; object-fit: cover; object-position: 60% 40%; }
 
+/* À propos : titre + chapeau à gauche, trois idées numérotées sur un fond crème à droite */
+.about { display: flex; align-items: center; padding-block: calc(var(--header-h) + .5rem) 2rem; }
+.about__inner { display: grid; grid-template-columns: 5fr 6fr; gap: 2rem clamp(2.5rem, 6vw, 6rem); align-items: center; }
+
+.about__title { font-size: clamp(2.4rem, 4.4vw, 3.6rem); }
+.about__title::after { content: ""; display: block; width: 3.5rem; height: 4px; margin-top: 1.1rem; border-radius: 2px; background: var(--c-accent); }
+.about__lead { margin-top: 1.75rem; font: 500 clamp(1.15rem, 1.6vw, 1.45rem)/1.5 var(--f-display); }
+.about__lead mark { background: linear-gradient(transparent 62%, rgb(247 183 49 / .55) 62%) no-repeat 0 0 / 100% 100%; color: inherit; }
+.about__closing { margin-top: 2rem; padding-left: 1.1rem; border-left: 3px solid var(--c-accent); color: var(--c-ink-soft); font-weight: 500; max-width: 38ch; }
+
+.about__points { display: grid; gap: .75rem; }
+.about__points li { border-radius: var(--radius); background: var(--c-tint); }
+.about__points details { padding: clamp(1rem, 2.4vh, 1.5rem) clamp(1.25rem, 2.5vw, 2rem); }
+.about__points summary {
+  display: grid; grid-template-columns: 3rem 1fr 1.5rem; gap: 1rem; align-items: center;
+  list-style: none; cursor: pointer;
+}
+.about__points summary::-webkit-details-marker { display: none; }
+.about__points summary::after { /* + qui devient − à l'ouverture */
+  content: "+"; display: grid; place-items: center; width: 1.5rem; height: 1.5rem; border-radius: 50%;
+  background: var(--c-accent); font-weight: 700; line-height: 1;
+}
+.about__points details[open] summary::after { content: "−"; }
+.about__num { font: 600 1.6rem/1 var(--f-display); color: var(--c-accent-dark); }
+.about__head { display: grid; gap: .2rem; }
+.about__head strong { font: 600 clamp(1.15rem, 1.7vw, 1.45rem)/1.2 var(--f-display); color: var(--c-ink); }
+.about__head span { font-size: .95rem; color: var(--c-ink-soft); }
+.about__points details p { margin: .9rem 0 0 4rem; font-size: .95rem; line-height: 1.6; color: var(--c-ink-soft); }
+
+/* Mode « slider » : panneaux plein écran, changés par molette / swipe / clavier (main.js) */
+.is-slider body { overflow: hidden; }
+.is-slider .slides { position: fixed; inset: 0; overflow: hidden; }
+.is-slider .panel { position: absolute; inset: 0; overflow: hidden; visibility: hidden; background: var(--c-bg); }
+.is-slider .panel.is-current { visibility: visible; }
+
+
 /* 6. Responsive & mouvement ------------------------------------------------ */
 @media (max-width: 72rem) {
   .header__inner { display: flex; justify-content: space-between; }
-  .header.is-open { background: rgba(255, 255, 255, .96); }
   .nav-toggle {
     display: grid; place-items: center; width: 44px; height: 44px;
     border: 0; background: none; cursor: pointer;
@@ -162,7 +184,7 @@ html.lenis, html.lenis body { height: auto; }
 
   .nav {
     position: absolute; inset: var(--header-h) 0 auto; flex-direction: column; align-items: flex-start;
-    padding: 1rem 1.5rem 1.5rem; background: rgba(255, 255, 255, .96); border-bottom: 1px solid var(--c-line);
+    padding: 1rem 1.5rem 1.5rem; background: var(--c-bg); border-bottom: 1px solid var(--c-line);
     display: none;
   }
   .nav.is-open { display: flex; }
@@ -170,7 +192,10 @@ html.lenis, html.lenis body { height: auto; }
   .nav__link { padding: .6rem 0; font-size: 1.05rem; }
   .nav__link::after { display: none; }
   .nav__link.is-active { font-weight: 600; }
+}
 
+@media (max-width: 62rem) {
+  .about__inner { grid-template-columns: 1fr; }
   .hero__inner { grid-template-columns: 1fr; }
   .hero__media { position: relative; inset: auto; width: 100%; height: 22rem; margin-top: 1rem; clip-path: none; border-radius: 1.5rem 0 0 1.5rem; overflow: hidden; }
 }
@@ -178,4 +203,14 @@ html.lenis, html.lenis body { height: auto; }
 /* Soulignement masqué au départ seulement si JS actif et mouvement autorisé (GSAP le trace) */
 @media (prefers-reduced-motion: no-preference) {
   .js .underline { clip-path: inset(0 100% 0 0); }
+}
+
+/* États de départ des animations d'entrée (GSAP les joue ; sans JS ou en reduced-motion, tout reste visible) */
+@media (prefers-reduced-motion: no-preference) {
+  .js .logo, .js .nav__link, .js .hero .line, .js .hero__lead, .js .hero .btn { opacity: 0; }
+  /* Section À propos : surlignage et trait jaune se tracent quand la section devient courante */
+  .is-slider .about mark { background-size: 0% 100%; transition: background-size .9s var(--ease) .9s; }
+  .is-slider .about.is-current mark { background-size: 100% 100%; }
+  .is-slider .about__title::after { transform: scaleX(0); transform-origin: left; transition: transform .8s var(--ease) .5s; }
+  .is-slider .about.is-current .about__title::after { transform: scaleX(1); }
 }

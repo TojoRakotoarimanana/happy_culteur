@@ -4,12 +4,12 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Stack et commandes
 
-Site vitrine **single page** de Happy Culteur (en français) en **HTML/CSS/JS purs**, sans build, sans dépendance npm. Animations **GSAP** (CDN cdnjs) réintroduites section par section, en repartant de zéro : pour l'instant seul le tracé du soulignement du hero (`.underline`) est animé. Défilement fluide : **Lenis** (CDN jsdelivr) branché sur le ticker GSAP, ancres internes animées par `lenis.scrollTo`. Ajouter ScrollTrigger seulement quand une animation au scroll sera nécessaire.
+Site vitrine **single page** de Happy Culteur (en français) en **HTML/CSS/JS purs**, sans build, sans dépendance npm. Animations **GSAP** (CDN cdnjs) réintroduites section par section, en repartant de zéro : pour l'instant seul le tracé du soulignement du hero (`.underline`) est animé. **Navigation par panneaux** (GSAP Observer, `js/main.js`) : chaque `<section class="panel">` est un écran plein ; molette, swipe tactile, clavier et liens `#id` changent de panneau avec une transition. Actif seulement si `(min-width: 62rem) and (min-height: 46rem)` (classe `is-slider` sur `<html>`, posée dans le `<head>` puis gérée par `gsap.matchMedia`) ; sinon page à défilement natif. Pour ajouter une section : `<section class="panel" id="…" data-label="…">` dans `<main>`, éléments à animer à l'arrivée avec `data-slide-in` (ne pas le mettre sur un élément déjà animé par GSAP, ex. le bouton du hero). Lien actif et hash se gèrent seuls. Le contenu d'un panneau doit tenir dans 100svh en mode slider. Ajouter ScrollTrigger seulement quand une animation au scroll sera nécessaire.
 
 - Lancer en local : `python3 -m http.server 8000` puis http://localhost:8000 (ou ouvrir `index.html`).
 - Pas de lint ni de tests configurés.
 
-Fichiers : `index.html` (une seule page ; **seul le hero (`#accueil`) est construit pour l'instant**, les liens de nav vers `#qui-sommes-nous`, `#services`, `#equipe`, `#histoire`, `#contact` sont encore sans cible), `css/style.css` (tokens `:root` en tête, sommaire numéroté), `js/main.js`, `assets/img/equipe.jpg` (photo du hero, recadrée depuis la capture de maquette, 438×436 : basse résolution, à remplacer par l'originale).
+Fichiers : `index.html` (une seule page ; **hero (`#accueil`) et « Qui sommes-nous ? » (`#qui-sommes-nous`) construits**, les liens de nav vers `#services`, `#equipe`, `#histoire`, `#contact` sont encore sans cible), `css/style.css` (tokens `:root` en tête, sommaire numéroté), `js/main.js`, `assets/img/equipe.jpg` (photo du hero, recadrée depuis la capture de maquette, 438×436 : basse résolution, à remplacer par l'originale).
 
 Conventions à respecter :
 - SEO/accessibilité : un seul `<h1>`, chaque `<section>` porte `aria-labelledby` vers son titre, métadonnées + JSON-LD dans `<head>`, lien d'évitement, `aria-expanded` sur le menu mobile.
@@ -60,7 +60,7 @@ Principes : fond blanc très aéré, jaune uniquement en accent (CTA, mot mis en
 
 | Rôle | Style observé | Équivalent Google Fonts proposé |
 |---|---|---|
-| Titres (hero) | Serif à fort contraste, élégant, graisse regular/medium, interlignage serré | **DM Serif Display** (alternatives : Playfair Display, Fraunces) |
+| Titres (hero) | Serif à fort contraste, élégant, graisse regular/medium, interlignage serré | **Fraunces** 600 (texte en **Manrope**) |
 | Navigation, sous-titre, boutons, texte courant | Sans-serif géométrique/humaniste, graisse regular ; boutons en medium | **DM Sans** (alternatives : Inter, Poppins) |
 | Logo | Serif manuscrit/fin jaune + sous-titre en petites capitales espacées | À remplacer par le fichier du logo fourni |
 
