@@ -72,7 +72,8 @@
     </clipPath>
   </svg>
 
-  <main class="slides" id="contenu">
+  <main id="contenu">
+    <div class="slides">
     <section class="panel hero is-current" id="accueil" data-label="Accueil" aria-labelledby="hero-titre">
       <div class="container hero__inner">
         <div class="hero__content" data-slide-in>
@@ -133,10 +134,57 @@
         </ol>
       </div>
     </section>
+    </div>
+
+    <section class="collab" id="collaborer" data-label="Pourquoi collaborer avec nous ?" aria-labelledby="collab-titre">
+      <div class="container collab__inner">
+        <figure class="collab__media" data-reveal>
+          <img src="assets/img/collaboration.jpg" width="1400" height="788" loading="lazy" alt="Une équipe de collègues qui échangent devant un ordinateur dans un bureau lumineux avec des plantes">
+        </figure>
+
+        <div class="collab__body">
+          <div data-reveal style="--i:1">
+            <h2 class="about__title" id="collab-titre">Pourquoi collaborer avec nous&nbsp;?</h2>
+            <p class="about__lead">Parce qu’un bon prestataire, ce n’est pas seulement quelqu’un qui exécute une mission. C’est <mark>une équipe sur laquelle vous pouvez compter.</mark></p>
+          </div>
+
+          <ul class="collab__list">
+            <li class="reason" data-reveal style="--i:2">
+              <svg class="reason__check" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="12"/><path d="m7 12.5 3.2 3.2L17 9"/></svg>
+              <div>
+                <h3>Curieux et adaptables</h3>
+                <p class="reason__short">Nous comprenons vite vos besoins.</p>
+                <p>Nous sommes curieux, nous aimons apprendre et nous n’avons jamais peur de découvrir un nouveau domaine. Au fil des années, nous avons travaillé sur des projets très différents, ce qui nous permet aujourd’hui de comprendre rapidement vos besoins et de nous adapter à votre manière de travailler.</p>
+              </div>
+            </li>
+            <li class="reason" data-reveal style="--i:3">
+              <svg class="reason__check" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="12"/><path d="m7 12.5 3.2 3.2L17 9"/></svg>
+              <div>
+                <h3>De bonnes conditions de travail</h3>
+                <p class="reason__short">Connexion et secours en cas de coupure.</p>
+                <p>Nous avons aussi fait le choix d’investir dans de bonnes conditions de travail. Notre connexion et notre solution de secours en cas de coupure d’électricité nous permettent de continuer à travailler même lorsque le réseau électrique nous joue des tours.</p>
+              </div>
+            </li>
+            <li class="reason" data-reveal style="--i:4">
+              <svg class="reason__check" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="12"/><path d="m7 12.5 3.2 3.2L17 9"/></svg>
+              <div>
+                <h3>Deux semaines de test gratuit</h3>
+                <p class="reason__short">Vous jugez avant de vous engager.</p>
+                <p>Et parce que nous préférons que vous puissiez vous faire votre propre avis, nous vous proposons deux semaines de test gratuit. Vous découvrez notre manière de travailler, notre équipe et notre réactivité, avant de décider d’aller plus loin.</p>
+              </div>
+            </li>
+          </ul>
+
+          <p class="about__closing" data-reveal style="--i:5">Simplement, vous nous confiez une mission. Nous faisons le maximum pour être à la hauteur de votre confiance.</p>
+        </div>
+      </div>
+    </section>
   </main>
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js" defer></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/Observer.min.js" defer></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/lenis@1.1.13/dist/lenis.min.js" defer></script>
   <script src="js/main.js" defer></script>
 </body>
 </html>

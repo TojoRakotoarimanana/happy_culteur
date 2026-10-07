@@ -18,6 +18,7 @@
 
   --header-h: 5.5rem;
   --radius: 1.25rem;
+  --leaf: 7rem; /* grand rayon des « feuilles » : motif d'identité des photos */
   --container: 75rem;
   --ease: cubic-bezier(0.22, 1, 0.36, 1);
 }
@@ -162,9 +163,33 @@ h3 { font-size: 1.25rem; font-weight: 600; }
 .about__head span { font-size: .95rem; color: var(--c-ink-soft); }
 .about__points details p { margin: .9rem 0 0 4rem; font-size: .95rem; line-height: 1.6; color: var(--c-ink-soft); }
 
+/* Pourquoi collaborer : section libre (hors slider) sur fond blanc, photo en « feuille » à gauche, trois arguments à droite.
+   Identité : la feuille (angles opposés très arrondis) revient sur les photos, le jaune est l'accent, le bleu nuit donne le contraste. */
+.collab { min-height: 100svh; display: flex; align-items: center; padding-block: calc(var(--header-h) + 2rem) 5rem; }
+.collab__inner { display: grid; grid-template-columns: 5fr 6fr; gap: clamp(2.5rem, 6vw, 6rem); align-items: center; }
+.collab__media { position: sticky; top: calc(var(--header-h) + 1.5rem); align-self: start; }
+.collab__media::before { /* feuille jaune décalée derrière la photo */
+  content: ""; position: absolute; inset: 0; z-index: -1; transform: translate(var(--s, 1.25rem), var(--s, 1.25rem));
+  border-radius: 0 var(--leaf) 0 var(--leaf); background: var(--c-accent);
+}
+.collab__media img { width: 100%; height: auto; aspect-ratio: 4 / 5; object-fit: cover; object-position: 33% 50%; border-radius: 0 var(--leaf) 0 var(--leaf); }
+.collab .about__closing { margin-top: 2rem; color: var(--c-ink-soft); }
+.collab__list { display: grid; gap: 0; margin-top: 2rem; }
+.reason { display: grid; grid-template-columns: 2rem 1fr; gap: 1rem; padding-block: 1.4rem; border-top: 1px solid var(--c-line); }
+.reason:last-child { border-bottom: 1px solid var(--c-line); }
+.reason__check { width: 2rem; height: 2rem; margin-top: .1rem; }
+.reason__check circle { fill: var(--c-accent); }
+.reason__check path { fill: none; stroke: var(--c-ink); stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
+.reason h3 { font: 600 clamp(1.2rem, 1.7vw, 1.4rem)/1.25 var(--f-display); }
+.reason p { margin-top: .5rem; font-size: .95rem; line-height: 1.65; color: var(--c-ink-soft); }
+.reason .reason__short { margin-top: .15rem; font-weight: 600; color: var(--c-ink); }
+
 /* Mode « slider » : panneaux plein écran, changés par molette / swipe / clavier (main.js) */
-.is-slider body { overflow: hidden; }
-.is-slider .slides { position: fixed; inset: 0; overflow: hidden; }
+.is-locked, .is-locked body { overflow: hidden; } /* slider actif : la page ne défile pas tant qu'on est sur les panneaux */
+.is-slider .slides { position: relative; height: 100svh; overflow: hidden; }
+.is-free .header { background: var(--c-bg); box-shadow: 0 1px 0 var(--c-line); } /* la navbar reste lisible au-dessus du contenu qui défile */
+/* Lenis (défilement avec inertie) */
+.lenis.lenis-smooth { scroll-behavior: auto !important; }
 .is-slider .panel { position: absolute; inset: 0; overflow: hidden; visibility: hidden; background: var(--c-bg); }
 .is-slider .panel.is-current { visibility: visible; }
 
@@ -196,6 +221,10 @@ h3 { font-size: 1.25rem; font-weight: 600; }
 
 @media (max-width: 62rem) {
   .about__inner { grid-template-columns: 1fr; }
+  .collab__inner { grid-template-columns: 1fr; }
+  .collab__media { position: relative; top: 0; margin: 0 1.25rem 1.25rem 0; }
+  :root { --leaf: 4rem; }
+  .collab__media img { aspect-ratio: 16 / 10; }
   .hero__inner { grid-template-columns: 1fr; }
   .hero__media { position: relative; inset: auto; width: 100%; height: 22rem; margin-top: 1rem; clip-path: none; border-radius: 1.5rem 0 0 1.5rem; overflow: hidden; }
 }
@@ -213,4 +242,10 @@ h3 { font-size: 1.25rem; font-weight: 600; }
   .is-slider .about.is-current mark { background-size: 100% 100%; }
   .is-slider .about__title::after { transform: scaleX(0); transform-origin: left; transition: transform .8s var(--ease) .5s; }
   .is-slider .about.is-current .about__title::after { transform: scaleX(1); }
+}
+
+/* Section libre : états de départ, GSAP (ScrollTrigger, main.js) les anime ; .is-in = repli sans ScrollTrigger */
+@media (prefers-reduced-motion: no-preference) {
+  .js .collab:not(.is-in) [data-reveal] { opacity: 0; }
+  .js .collab:not(.is-in) mark { background-size: 0% 100%; }
 }

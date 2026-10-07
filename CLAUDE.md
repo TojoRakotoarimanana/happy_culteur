@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Stack et commandes
 
-Site vitrine **single page** de Happy Culteur (en français) en **HTML/CSS/JS purs**, sans build, sans dépendance npm. Animations **GSAP** (CDN cdnjs) réintroduites section par section, en repartant de zéro : pour l'instant seul le tracé du soulignement du hero (`.underline`) est animé. **Navigation par panneaux** (GSAP Observer, `js/main.js`) : chaque `<section class="panel">` est un écran plein ; molette, swipe tactile, clavier et liens `#id` changent de panneau avec une transition. Actif seulement si `(min-width: 62rem) and (min-height: 46rem)` (classe `is-slider` sur `<html>`, posée dans le `<head>` puis gérée par `gsap.matchMedia`) ; sinon page à défilement natif. Pour ajouter une section : `<section class="panel" id="…" data-label="…">` dans `<main>`, éléments à animer à l'arrivée avec `data-slide-in` (ne pas le mettre sur un élément déjà animé par GSAP, ex. le bouton du hero). Lien actif et hash se gèrent seuls. Le contenu d'un panneau doit tenir dans 100svh en mode slider. Ajouter ScrollTrigger seulement quand une animation au scroll sera nécessaire.
+Site vitrine **single page** de Happy Culteur (en français) en **HTML/CSS/JS purs**, sans build, sans dépendance npm. Animations **GSAP** (CDN cdnjs) réintroduites section par section, en repartant de zéro : pour l'instant seul le tracé du soulignement du hero (`.underline`) est animé. **Navigation par panneaux** pour Accueil et Qui sommes-nous (`.slides`, GSAP Observer, `js/main.js`) ; à partir de « Pourquoi collaborer » (`#collaborer`, hors `.slides`) la page défile librement avec **Lenis** (inertie), le slider se verrouille/déverrouille (`is-locked`/`is-free`) ; : chaque `<section class="panel">` est un écran plein ; molette, swipe tactile, clavier et liens `#id` changent de panneau avec une transition. Actif seulement si `(min-width: 62rem) and (min-height: 46rem)` (classe `is-slider` sur `<html>`, posée dans le `<head>` puis gérée par `gsap.matchMedia`) ; sinon page à défilement natif. Pour ajouter une section : `<section class="panel" id="…" data-label="…">` dans `<main>`, éléments à animer à l'arrivée avec `data-slide-in` (ne pas le mettre sur un élément déjà animé par GSAP, ex. le bouton du hero). Lien actif et hash se gèrent seuls. Le contenu d'un panneau doit tenir dans 100svh en mode slider. Ajouter ScrollTrigger seulement quand une animation au scroll sera nécessaire.
 
 - Lancer en local : `python3 -m http.server 8000` puis http://localhost:8000 (ou ouvrir `index.html`).
 - Pas de lint ni de tests configurés.
@@ -71,3 +71,8 @@ Les familles exactes sont des **suppositions** ; confirmer avec le client avant 
 - Lien de nav actif : soulignement jaune court sous le libellé.
 - Titre hero : 3 lignes, la 2e (« faire grandir ») en jaune, taille très grande (≈ 3–4rem+).
 - Image hero : coins très arrondis, bord gauche en courbe prononcée.
+
+### Identité visuelle (motif récurrent)
+- **La feuille** : photos aux angles opposés très arrondis (`border-radius: 0 var(--leaf) 0 var(--leaf)`), doublée d'une feuille jaune décalée derrière. À réutiliser pour toute nouvelle photo.
+- **Fonds** : toujours blancs, jamais de fond bleu (refusé par le client) ; le jaune reste l'accent, jamais un grand aplat.
+- **Photo de « Pourquoi collaborer »** : `assets/img/collaboration.jpg`, photo gratuite Unsplash (licence Unsplash, attribution non requise) par Vitaly Gariev, choisie faute d'IA de génération d'image ; à remplacer par une vraie photo de l'équipe.

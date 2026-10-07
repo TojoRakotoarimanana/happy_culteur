@@ -7,6 +7,7 @@
   const toggle = document.querySelector('.nav-toggle');
   const menu = document.getElementById('menu');
   const panels = [...document.querySelectorAll('.panel')];
+  const free = document.getElementById('collaborer'); // section hors slider : défilement libre
 
   const setActiveLink = (id) => document.querySelectorAll('.nav__link')
     .forEach((link) => link.classList.toggle('is-active', link.hash === `#${id}`));
@@ -26,7 +27,7 @@
     const observer = new IntersectionObserver((entries) => {
       entries.forEach(({ target, isIntersecting }) => isIntersecting && setActiveLink(target.id));
     }, { rootMargin: '-50% 0px -50% 0px' });
-    panels.forEach((panel) => observer.observe(panel));
+    [...panels, free].forEach((el) => el && observer.observe(el));
 
     return () => {
       observer.disconnect();
@@ -41,19 +42,79 @@
 
   gsap.registerPlugin(Observer);
 
+  const smooth = matchMedia('(prefers-reduced-motion: no-preference)').matches;
+
+  /* ---------- Défilement fluide (inertie) : ne sert que dans la partie libre de la page ---------- */
+  const lenis = smooth && window.Lenis ? new Lenis({ lerp: 0.09 }) : null;
+  if (lenis) {
+    gsap.ticker.add((t) => lenis.raf(t * 1000));
+    gsap.ticker.lagSmoothing(0);
+  }
+
+  /* ---------- Section libre : animation à l'arrivée dans l'écran (ScrollTrigger, calé sur Lenis) ---------- */
+  const st = window.ScrollTrigger;
+  if (st) {
+    gsap.registerPlugin(st);
+    if (lenis) lenis.on('scroll', st.update);
+  }
+
+  gsap.matchMedia().add('(prefers-reduced-motion: no-preference)', () => {
+    if (!st) { free.classList.add('is-in'); return; } // sans ScrollTrigger : tout reste visible
+
+    gsap.timeline({ scrollTrigger: { trigger: free, start: 'top 65%', once: true }, defaults: { ease: 'power3.out' } })
+      // photo « feuille » : se dévoile de haut en bas, dézoome, puis la feuille jaune se décale derrière
+      .fromTo('.collab__media', { opacity: 0 }, { opacity: 1, duration: 0.4 }, 0)
+      .fromTo('.collab__media img', { clipPath: 'inset(0 0 100% 0)' }, { clipPath: 'inset(0 0 0% 0)', duration: 1.1, ease: 'power3.inOut' }, 0)
+      .fromTo('.collab__media img', { scale: 1.25 }, { scale: 1, duration: 1.6, ease: 'power2.out' }, 0)
+      .fromTo('.collab__media', { '--s': '0rem' }, { '--s': '1.25rem', duration: 0.9, ease: 'back.out(2)' }, 0.7)
+      // titre + accroche, puis surlignage peint
+      .fromTo('.collab__body > div[data-reveal]', { opacity: 0, y: 30 }, { opacity: 1, y: 0, duration: 0.9 }, 0.2)
+      .fromTo('.collab mark', { backgroundSize: '0% 100%' }, { backgroundSize: '100% 100%', duration: 0.9, ease: 'power2.inOut' }, 0.9)
+      // les trois arguments arrivent l'un après l'autre, chaque coche « pousse » avec un petit rebond
+      .fromTo('.reason', { opacity: 0, y: 30 }, { opacity: 1, y: 0, duration: 0.8, stagger: 0.15 }, 0.5)
+      .fromTo('.reason__check', { scale: 0, rotate: -90, transformOrigin: '50% 50%' },
+        { scale: 1, rotate: 0, duration: 0.6, stagger: 0.15, ease: 'back.out(2.5)' }, 0.7)
+      .fromTo('.collab .about__closing', { opacity: 0, y: 20 }, { opacity: 1, y: 0, duration: 0.8 }, 1.3);
+  });
+
   /* ---------- Slider de sections : molette, swipe tactile, clavier, liens ---------- */
   gsap.matchMedia().add({
     slider: '(min-width: 62rem) and (min-height: 46rem)',
     calm: '(prefers-reduced-motion: reduce)',
   }, ({ conditions: { slider, calm } }) => {
     if (!slider) {
-      root.classList.remove('is-slider');
+      root.classList.remove('is-slider', 'is-locked', 'is-free');
       return startNativeNav();
     }
-    root.classList.add('is-slider');
+    root.classList.add('is-slider', 'is-locked');
+    if (lenis) lenis.stop();
 
     let current = Math.max(0, panels.findIndex((p) => `#${p.id}` === location.hash));
     let busy = false;
+
+    // Verrouillé : la molette pilote les panneaux. Après le dernier panneau on déverrouille et la page défile (Lenis).
+    let locked = true;
+    let unlocking = false;
+    const last = panels.length - 1;
+
+    const unlock = () => {
+      if (!locked || unlocking) return;
+      locked = false;
+      unlocking = true;
+      observer.disable();
+      root.classList.replace('is-locked', 'is-free');
+      if (lenis) { lenis.start(); lenis.scrollTo(free, { duration: calm ? 0 : 1.2 }); }
+      else free.scrollIntoView({ behavior: calm ? 'auto' : 'smooth' });
+      gsap.delayedCall(1.4, () => { unlocking = false; });
+    };
+    const relock = () => {
+      if (locked || unlocking || window.scrollY > 0) return;
+      locked = true;
+      root.classList.replace('is-free', 'is-locked');
+      if (lenis) lenis.stop();
+      observer.enable();
+    };
+    window.addEventListener('scroll', relock, { passive: true });
 
     const sync = () => {
       panels.forEach((p, i) => p.classList.toggle('is-current', i === current));
@@ -98,26 +159,28 @@
       wheelSpeed: -1,
       tolerance: 12,
       preventDefault: true,
-      onUp: () => goTo(current + 1),
+      onUp: () => (current < last ? goTo(current + 1) : unlock()),
       onDown: () => goTo(current - 1),
     });
 
     const onKey = (e) => {
       const next = { ArrowDown: current + 1, PageDown: current + 1, ArrowUp: current - 1, PageUp: current - 1,
         Home: 0, End: panels.length - 1 }[e.key];
-      if (next === undefined) return;
+      if (next === undefined || !locked) return;
       e.preventDefault();
-      goTo(next);
+      if (e.key === 'End' || next > last) unlock(); else goTo(next);
     };
 
     // Liens internes (navbar, logo, bouton) : vers le panneau qui contient la cible
     const onClick = (e) => {
       const link = e.target.closest('a[href^="#"]');
       const target = link && link.hash.length > 1 && document.querySelector(link.hash);
-      const index = target ? panels.indexOf(target.closest('.panel')) : -1;
-      if (index < 0) return;
+      if (!target) return;
+      const index = panels.indexOf(target.closest('.panel'));
+      if (index < 0 && !free.contains(target)) return;
       e.preventDefault();
-      goTo(index);
+      if (!locked) { lenis ? lenis.scrollTo(target) : target.scrollIntoView({ behavior: 'smooth' }); return; }
+      if (index < 0) unlock(); else goTo(index);
     };
 
     document.addEventListener('keydown', onKey);
@@ -125,10 +188,12 @@
 
     return () => {
       observer.kill();
+      window.removeEventListener('scroll', relock);
+      if (lenis) lenis.start();
       document.removeEventListener('keydown', onKey);
       document.removeEventListener('click', onClick);
       gsap.set(panels, { clearProps: 'all' });
-      root.classList.remove('is-slider');
+      root.classList.remove('is-slider', 'is-locked', 'is-free');
     };
   });
 
@@ -146,8 +211,7 @@
 
   /* ---------- À propos : accordéon, un seul paragraphe ouvert à la fois (<details>) ---------- */
   gsap.matchMedia().add({ any: 'all', calm: '(prefers-reduced-motion: reduce)' }, ({ conditions: { calm } }) => { // « any » : sans condition vraie, GSAP n'appelle pas la fonction
-    const all = [...document.querySelectorAll('.about__points details')];
-
+    
     const open = (details) => {
       const p = details.querySelector('p');
       const margin = getComputedStyle(p).marginTop;
@@ -169,7 +233,7 @@
       e.preventDefault(); // on pilote l'attribut open nous-mêmes pour pouvoir animer la fermeture
       const details = summary.parentElement;
       if (details.open) return close(details);
-      all.filter((d) => d !== details && d.open).forEach(close);
+      [...details.closest('.about__points').querySelectorAll('details')].filter((d) => d !== details && d.open).forEach(close);
       open(details);
     };
     document.addEventListener('click', onClick);
