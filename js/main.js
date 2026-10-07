@@ -11,6 +11,34 @@
     gsap.matchMedia().add('(prefers-reduced-motion: no-preference)', () => {
       gsap.fromTo('.underline', { clipPath: 'inset(0 100% 0 0)' },
         { clipPath: 'inset(0 0% 0 0)', duration: 1, delay: 0.5, ease: 'power2.inOut' });
+
+      // Défilement fluide (Lenis) piloté par le ticker GSAP ; ancres internes animées, y compris vers les sections à venir
+      if (!window.Lenis) return; // Lenis indisponible : défilement natif
+      const lenis = new Lenis({ lerp: 0.09 });
+      const raf = (time) => lenis.raf(time * 1000);
+      gsap.ticker.add(raf);
+      gsap.ticker.lagSmoothing(0);
+
+      const onClick = (e) => {
+        const link = e.target.closest('a[href^="#"]');
+        const target = link && link.hash.length > 1 && document.querySelector(link.hash);
+        if (!target) return;
+
+        e.preventDefault();
+        lenis.scrollTo(target, {
+          offset: -header.offsetHeight,
+          duration: 1.4,
+          easing: (t) => 1 - Math.pow(1 - t, 4), // easeOutQuart
+          onComplete: () => history.pushState(null, '', link.hash),
+        });
+      };
+      document.addEventListener('click', onClick);
+
+      return () => {
+        document.removeEventListener('click', onClick);
+        gsap.ticker.remove(raf);
+        lenis.destroy();
+      };
     });
   } else {
     document.documentElement.classList.remove('js'); // GSAP indisponible : le soulignement reste visible
@@ -18,15 +46,27 @@
 
   /* ---------- Bouton : attraction douce + lueur qui suit le curseur (souris précise, hors reduced-motion) ---------- */
   window.gsap && gsap.matchMedia().add('(hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference)', () => {
-    const btn = document.querySelector('.hero .btn');
-    const PULL = 0.12;    // part du déplacement de la souris reportée sur le bouton
-    const RADIUS = 450;   // distance (px) autour du bouton où le curseur agit
+    const hero = document.querySelector('.hero');
+    const btn = hero.querySelector('.btn');
+    const PULL = 0.16;    // part du déplacement de la souris reportée sur le bouton
+    const MAX = 14;       // déplacement maximal du bouton (px) : il ne « part » jamais loin
 
     const opts = { duration: 1.2, ease: 'power2.out' };
     const moveX = gsap.quickTo(btn, 'x', opts);
     const moveY = gsap.quickTo(btn, 'y', opts);
+    const clamp = gsap.utils.clamp(-MAX, MAX);
     const glow = { x: 0, y: 0, spot: 0 };
 
+    const setGlow = (to) => gsap.to(glow, {
+      ...to, duration: 0.8, ease: 'power2.out', overwrite: true,
+      onUpdate: () => {
+        btn.style.setProperty('--mx', `${glow.x}px`);
+        btn.style.setProperty('--my', `${glow.y}px`);
+        btn.style.setProperty('--spot', glow.spot);
+      },
+    });
+
+    // Toute la zone du hero agit ; l'effet décroît en douceur avec la distance au bouton
     const onMove = (e) => {
       const r = btn.getBoundingClientRect();
       // centre au repos = centre actuel moins le décalage GSAP en cours
@@ -34,26 +74,24 @@
       const cy = r.top + r.height / 2 - gsap.getProperty(btn, 'y');
       const dx = e.clientX - cx;
       const dy = e.clientY - cy;
-      const near = Math.abs(dx) < r.width / 2 + RADIUS && Math.abs(dy) < r.height / 2 + RADIUS;
 
-      moveX(near ? dx * PULL : 0);
-      moveY(near ? dy * PULL : 0);
-
-      // Lueur : position du curseur dans le bouton, intensité qui croît à l'approche
       const dist = Math.hypot(Math.max(Math.abs(dx) - r.width / 2, 0), Math.max(Math.abs(dy) - r.height / 2, 0));
-      gsap.to(glow, {
-        x: dx + r.width / 2, y: dy + r.height / 2, spot: near ? 1 - Math.min(dist / RADIUS, 1) : 0,
-        duration: 0.8, ease: 'power2.out', overwrite: true,
-        onUpdate: () => {
-          btn.style.setProperty('--mx', `${glow.x}px`);
-          btn.style.setProperty('--my', `${glow.y}px`);
-          btn.style.setProperty('--spot', glow.spot);
-        },
-      });
+      const closeness = 1 - Math.min(dist / hero.clientWidth, 1);
+      const strength = closeness ** 1.5;
+
+      moveX(clamp(dx * PULL * strength));
+      moveY(clamp(dy * PULL * strength));
+      setGlow({ x: dx + r.width / 2, y: dy + r.height / 2, spot: closeness });
     };
 
-    window.addEventListener('pointermove', onMove, { passive: true });
-    return () => window.removeEventListener('pointermove', onMove);
+    const onLeave = () => { moveX(0); moveY(0); setGlow({ spot: 0 }); };
+
+    hero.addEventListener('pointermove', onMove, { passive: true });
+    hero.addEventListener('pointerleave', onLeave);
+    return () => {
+      hero.removeEventListener('pointermove', onMove);
+      hero.removeEventListener('pointerleave', onLeave);
+    };
   });
 
   /* ---------- Header : verre dépoli après le scroll ---------- */

@@ -60,6 +60,11 @@ h3 { font-size: 1.25rem; font-weight: 600; }
 }
 .skip-link:focus { top: 1rem; }
 
+/* Prérequis Lenis (défilement fluide) */
+html.lenis, html.lenis body { height: auto; }
+.lenis.lenis-smooth { scroll-behavior: auto !important; }
+.lenis.lenis-stopped { overflow: hidden; }
+
 /* 3. Composants ------------------------------------------------------------ */
 /* CTA principal : pilule jaune + lueur qui suit le curseur (--mx, --my, --spot posés par main.js) */
 .btn {

@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Stack et commandes
 
-Site vitrine **single page** de Happy Culteur (en français) en **HTML/CSS/JS purs**, sans build, sans dépendance npm. Animations **GSAP** (CDN cdnjs) réintroduites section par section, en repartant de zéro : pour l'instant seul le tracé du soulignement du hero (`.underline`) est animé. Ajouter ScrollTrigger seulement quand une animation au scroll sera nécessaire.
+Site vitrine **single page** de Happy Culteur (en français) en **HTML/CSS/JS purs**, sans build, sans dépendance npm. Animations **GSAP** (CDN cdnjs) réintroduites section par section, en repartant de zéro : pour l'instant seul le tracé du soulignement du hero (`.underline`) est animé. Défilement fluide : **Lenis** (CDN jsdelivr) branché sur le ticker GSAP, ancres internes animées par `lenis.scrollTo`. Ajouter ScrollTrigger seulement quand une animation au scroll sera nécessaire.
 
 - Lancer en local : `python3 -m http.server 8000` puis http://localhost:8000 (ou ouvrir `index.html`).
 - Pas de lint ni de tests configurés.
