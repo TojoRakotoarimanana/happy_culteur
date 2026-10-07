@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <script>document.documentElement.classList.add('js');</script>
+
+  <title>Happy Culteur | Cultiver des talents, faire grandir des projets</title>
+  <meta name="description" content="Happy Culteur est une équipe de jeunes talents impliquée, qui s'intègre pleinement à votre activité pour faire les choses correctement. Parlons de votre projet.">
+  <meta name="theme-color" content="#F7B731">
+  <!-- TODO: remplacer par l'URL de production -->
+  <link rel="canonical" href="https://www.example.com/">
+
+  <meta property="og:type" content="website">
+  <meta property="og:locale" content="fr_FR">
+  <meta property="og:site_name" content="Happy Culteur">
+  <meta property="og:title" content="Happy Culteur | Cultiver des talents, faire grandir des projets">
+  <meta property="og:description" content="Une équipe impliquée qui aime faire les choses correctement.">
+  <!-- TODO: ajouter og:image et og:url une fois l'image et le domaine connus -->
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=DM+Serif+Display&display=swap">
+  <link rel="stylesheet" href="css/style.css">
+
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "Organization",
+    "name": "Happy Culteur",
+    "description": "Équipe de jeunes talents qui s'intègre pleinement à l'activité de ses clients.",
+    "url": "https://www.example.com/"
+  }
+  </script>
+</head>
+<body>
+  <a class="skip-link" href="#contenu">Aller au contenu</a>
+
+  <header class="header" id="haut">
+    <div class="container header__inner">
+      <a class="logo" href="#accueil" aria-label="Happy Culteur, retour à l'accueil">
+        <span class="logo__name">happy</span>
+        <span class="logo__tag">culteur</span>
+      </a>
+
+      <nav class="nav" id="menu" aria-label="Navigation principale">
+        <ul class="nav__list">
+          <li><a class="nav__link" href="#accueil">Accueil</a></li>
+          <li><a class="nav__link" href="#qui-sommes-nous">Qui sommes-nous ?</a></li>
+          <li><a class="nav__link" href="#services">Nos services</a></li>
+          <li><a class="nav__link" href="#equipe">Notre équipe</a></li>
+          <li><a class="nav__link" href="#histoire">Notre histoire</a></li>
+          <li><a class="nav__link" href="#contact">Nous contacter</a></li>
+        </ul>
+      </nav>
+
+      <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="menu">
+        <span class="visually-hidden">Menu</span>
+        <span class="nav-toggle__bars" aria-hidden="true"></span>
+      </button>
+    </div>
+  </header>
+
+  <!-- Forme organique de la photo du hero (coordonnées relatives à l'élément clippé) -->
+  <svg width="0" height="0" aria-hidden="true" focusable="false" style="position:absolute">
+    <clipPath id="hero-shape" clipPathUnits="objectBoundingBox">
+      <path d="M0.21,0 L1,0 L1,1 L0.32,1 C0.14,0.9 0,0.78 0,0.58 C0,0.3 0.12,0.12 0.21,0 Z"/>
+    </clipPath>
+  </svg>
+
+  <main id="contenu">
+    <section class="hero" id="accueil" aria-labelledby="hero-titre">
+      <div class="container hero__inner">
+        <div class="hero__content">
+          <h1 class="hero__title" id="hero-titre">
+            <span class="line">Cultiver des talents,</span>
+            <span class="line accent">faire grandir<svg class="underline" viewBox="0 0 300 16" preserveAspectRatio="none" aria-hidden="true" focusable="false"><path d="M4 12 C60 5 190 1 295 5 L296 7 C200 6 110 8 12 14 C6 14.5 2 13 4 12 Z"/></svg></span>
+            <span class="line">des projets.</span>
+          </h1>
+          <p class="hero__lead">Une équipe impliquée qui aime faire les choses correctement.</p>
+          <a class="btn" href="#contact">Parlons de votre projet <span aria-hidden="true">→</span></a>
+        </div>
+
+        <figure class="hero__media">
+          <div class="hero__frame">
+            <img class="hero__img" src="assets/img/equipe.jpg" width="483" height="444"
+                 alt="Quatre membres de l'équipe Happy Culteur souriants, penchés ensemble sur un ordinateur portable">
+          </div>
+        </figure>
+      </div>
+    </section>
+  </main>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js" defer></script>
+  <script src="js/main.js" defer></script>
+</body>
+</html>
