@@ -136,7 +136,7 @@ h3 { font-size: 1.25rem; font-weight: 600; }
 
 /* À propos : titre + chapeau à gauche, trois idées numérotées sur un fond crème à droite */
 .about { display: flex; align-items: center; padding-block: calc(var(--header-h) + .5rem) 2rem; }
-.about__inner { display: grid; grid-template-columns: 5fr 6fr; gap: 2rem clamp(2.5rem, 6vw, 6rem); align-items: center; }
+.about__inner { display: grid; grid-template-columns: 6fr 5fr; gap: 2rem clamp(2.5rem, 6vw, 6rem); align-items: center; }
 
 .about__title { font-size: clamp(2.4rem, 4.4vw, 3.6rem); }
 .about__title::after { content: ""; display: block; width: 3.5rem; height: 4px; margin-top: 1.1rem; border-radius: 2px; background: var(--c-accent); }
@@ -144,7 +144,7 @@ h3 { font-size: 1.25rem; font-weight: 600; }
 .about__lead mark { padding-inline: .1em; background: linear-gradient(transparent 80%, rgb(247 183 49 / .45) 80%) no-repeat 0 0 / 100% 100%; color: inherit; -webkit-box-decoration-break: clone; box-decoration-break: clone; } /* trait fin sous le texte, pas un aplat */
 .about__closing { margin-top: 2rem; padding-left: 1.1rem; border-left: 3px solid var(--c-accent); color: var(--c-ink-soft); font-weight: 500; max-width: 38ch; }
 
-.about__side { display: grid; gap: 1.75rem; }
+.about__intro { order: 2; } /* zigzag : texte à gauche sur l'accueil, à droite ici, puis à nouveau à gauche */
 .about__side { display: grid; gap: 1.75rem; }
 .about__photo { position: relative; margin: 0 1rem 1rem 0; }
 .about__photo::before { content: ""; position: absolute; inset: 1rem -1rem -1rem 1rem; border-radius: 0 var(--leaf) 0 var(--leaf); background: var(--c-accent); } /* feuille jaune décalée */
@@ -169,32 +169,27 @@ h3 { font-size: 1.25rem; font-weight: 600; }
 .about__points details p { margin: .9rem 0 0 4rem; font-size: .95rem; line-height: 1.6; color: var(--c-ink-soft); }
 
 /* Pourquoi collaborer : section libre (hors slider) sur fond blanc, titre, accroche et trois arguments, sans visuel. */
-.collab { min-height: 100svh; display: flex; align-items: center; padding-block: calc(var(--header-h) + 2rem) 5rem; }
+/* fond doux : dégradé crème qui s'estompe vers le blanc en haut et en bas, avec une lueur jaune très légère */
+.collab { background: radial-gradient(60rem 28rem at 88% 22%, rgba(247, 183, 49, .10), transparent 70%), linear-gradient(180deg, #fff 0%, var(--c-tint) 22%, var(--c-tint) 78%, #fff 100%); min-height: 100svh; display: flex; align-items: center; padding-block: calc(var(--header-h) + 2rem) 5rem; }
 
-.collab__body { display: grid; grid-template-columns: 5fr 6fr; grid-template-areas: "head list" "art list" "art closing"; grid-template-rows: auto auto 1fr; column-gap: clamp(2.5rem, 6vw, 6rem); align-items: start; }
-.collab__head { grid-area: head; }
-.collab__list { grid-area: list; }
-.collab .about__closing { grid-area: closing; margin-top: 2rem; max-width: none; }
-/* Une seule illustration, dans le style de « Nos prestations » (traits bleu nuit, aplats crème et jaune) */
-.collab__ill { grid-area: art; width: 100%; max-width: 21rem; margin-top: 2.25rem; aspect-ratio: 400 / 250; border-radius: 0 var(--leaf) 0 var(--leaf); fill: none; stroke: var(--c-ink); stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; }
-.collab__ill .ill-bg { fill: var(--c-tint); stroke: none; }
-.collab__ill .w { fill: #fff; }
-.collab__ill .y { fill: var(--c-accent); }
-.collab__ill .dot { fill: var(--c-ink); stroke: none; }
-.reason { display: grid; grid-template-columns: 1.6rem 1fr; gap: 1.1rem; padding-block: 1.5rem; border-top: 1px solid var(--c-line); }
-.reason:first-child { border-top: 0; padding-top: 0; }
-.reason__leaf { width: 1.6rem; height: 1.6rem; margin-top: .15rem; border-radius: 0 100% 0 100%; background: var(--c-accent); }
-.reason h3 { font: 600 clamp(1.25rem, 1.8vw, 1.5rem)/1.2 var(--f-display); }
-.reason p { margin-top: .5rem; font-size: .95rem; line-height: 1.65; color: var(--c-ink-soft); }
-.reason .reason__short { margin-top: .2rem; font-weight: 600; color: var(--c-ink); }
+/* Titre à gauche, tige à droite : chaque argument est une feuille accrochée à la tige, qui se dessine au scroll */
+.collab__body { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 6fr); gap: clamp(2rem, 6vw, 6rem); align-items: center; max-width: 72rem; margin-inline: auto; }
+.collab .about__title { font-size: clamp(2rem, 3.4vw, 2.8rem); }
+.collab .about__title::after { margin-top: .8rem; }
+.collab .about__lead { margin-top: 1.1rem; font-size: clamp(1.05rem, 1.4vw, 1.25rem); }
+.collab__list { position: relative; display: grid; gap: clamp(1.75rem, 5svh, 2.75rem); padding-left: 3.25rem; }
+.collab__list::before { content: ""; position: absolute; left: .8rem; top: .6rem; bottom: .6rem; width: 2px; background: var(--c-ink); transform: scaleY(var(--stem, 1)); transform-origin: top; }
+.reason { position: relative; }
+.reason__leaf { position: absolute; left: -3.25rem; top: .1rem; width: 1.6rem; height: 1.6rem; border-radius: 0 100% 0 100%; background: var(--c-accent); }
+.reason h3 { font: 600 clamp(1.35rem, 1.9vw, 1.65rem)/1.15 var(--f-display); }
+.reason .reason__text { margin-top: .6rem; max-width: 42ch; font-size: 1.02rem; line-height: 1.7; color: var(--c-ink-soft); }
 
 /* Nos prestations : les 4 services sur un seul écran. Chaque colonne = illustration SVG animée (GSAP, main.js) + titre + tags + texte.
    Traits d'encre, touches de jaune, fond « feuille » crème. Sur grand écran la section tient dans 100svh. */
 .services { padding-block: calc(var(--header-h) + 1.5rem) 4rem; }
 .svc__top { display: flex; flex-wrap: wrap; align-items: end; justify-content: space-between; gap: 1rem 2rem; margin-bottom: clamp(1.25rem, 3svh, 2.25rem); }
 .svc__grid { display: grid; gap: 2.5rem 0; }
-.svc__item { --bar: 1; --bw: 4rem; position: relative; display: grid; align-content: start; gap: .85rem; padding: 1.5rem 1.5rem 0 0; border-top: 1px solid var(--c-ink); }
-.svc__item::before { content: ""; position: absolute; top: -3px; left: 0; width: var(--bw); height: 5px; background: var(--c-accent); transform: scaleX(var(--bar)); transform-origin: left; }
+.svc__item { --bar: 1; --bw: 4rem; position: relative; display: grid; align-content: start; gap: .85rem; padding: 0 1.5rem 0 0; }
 .svc__ill { width: 100%; height: clamp(8.5rem, 23svh, 12.5rem); margin-bottom: .4rem; fill: none; stroke: var(--c-ink); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; overflow: visible; }
 .svc__ill .ill-bg { fill: var(--c-tint); stroke: none; }
 .svc__ill .w { fill: #fff; }
@@ -237,7 +232,6 @@ h3 { font-size: 1.25rem; font-weight: 600; }
   .svc__grid { grid-template-columns: repeat(4, 1fr); gap: 0; }
   .svc__item { padding-inline: 1.25rem; }
   .svc__item:first-child { padding-left: 0; }
-  .svc__item + .svc__item { border-left: 1px solid var(--c-line); }
 }
 
 /* Titres découpés en lettres par main.js : chaque mot est un masque, les lettres montent à l'intérieur */
@@ -281,10 +275,10 @@ h3 { font-size: 1.25rem; font-weight: 600; }
 
 @media (max-width: 62rem) {
   .about__inner { grid-template-columns: 1fr; }
+  .about__intro { order: 0; }
   :root { --leaf: 4rem; }
-  .collab__body { grid-template-columns: 1fr; grid-template-areas: "head" "art" "list" "closing"; }
-  .collab__list { margin-top: 2rem; }
   .hero__inner { grid-template-columns: 1fr; }
+  .collab__body { grid-template-columns: 1fr; }
   .hero__media { position: relative; inset: auto; width: 100%; height: 22rem; margin-top: 1rem; clip-path: none; border-radius: 1.5rem 0 0 1.5rem; overflow: hidden; }
 }
 
@@ -305,4 +299,7 @@ h3 { font-size: 1.25rem; font-weight: 600; }
 @media (prefers-reduced-motion: no-preference) {
   .js .collab:not(.is-in) [data-reveal] { opacity: 0; }
   .js .collab:not(.is-in) mark { background-size: 0% 100%; }
+  .js .collab:not(.is-in) .collab__list { --stem: 0; }
+  .js .collab:not(.is-in) .reason > * { opacity: 0; }
 }
+

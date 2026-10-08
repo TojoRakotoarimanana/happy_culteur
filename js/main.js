@@ -83,14 +83,17 @@
     gsap.timeline({ scrollTrigger: { trigger: free, start: 'top 65%', once: true }, defaults: { ease: 'power3.out' } })
       // titre + accroche, puis surlignage peint
       .fromTo('.collab__body > div[data-reveal]', { opacity: 0, y: 30 }, { opacity: 1, y: 0, duration: 0.9 }, 0.2)
-      .fromTo('.collab__ill', { opacity: 0, y: 30 }, { opacity: 1, y: 0, duration: 0.9 }, 0.4)
-      .fromTo('.collab mark', { backgroundSize: '0% 100%' }, { backgroundSize: '100% 100%', duration: 0.9, ease: 'power2.inOut' }, 0.9)
-      // les trois arguments arrivent l'un après l'autre, chaque coche « pousse » avec un petit rebond
-      .fromTo('.reason', { opacity: 0, y: 30 }, { opacity: 1, y: 0, duration: 0.8, stagger: 0.15 }, 0.5)
-      .fromTo('.reason__leaf', { scale: 0, rotate: -90, transformOrigin: '50% 50%' },
-        { scale: 1, rotate: 0, duration: 0.6, stagger: 0.15, ease: 'back.out(2.5)' }, 0.7)
-      .fromTo('.collab .about__closing', { opacity: 0, y: 20 }, { opacity: 1, y: 0, duration: 0.8 }, 1.3);
+      .fromTo('.collab mark', { backgroundSize: '0% 100%' }, { backgroundSize: '100% 100%', duration: 0.9, ease: 'power2.inOut' }, 0.9);
+
+    // la tige se dessine avec le scroll ; chaque feuille pousse puis son texte apparaît quand la tige l'atteint
+    gsap.to('.collab__list', { '--stem': 1, ease: 'none', scrollTrigger: { trigger: '.collab__list', start: 'top 75%', end: 'bottom 60%', scrub: true } });
+    gsap.utils.toArray('.reason').forEach((row) => {
+      gsap.timeline({ scrollTrigger: { trigger: row, start: 'top 75%', once: true }, defaults: { ease: 'power3.out' } })
+        .fromTo(row.querySelector('.reason__leaf'), { opacity: 0, scale: 0, rotate: -90 }, { opacity: 1, scale: 1, rotate: 0, duration: 0.6, ease: 'back.out(2.5)' }, 0)
+        .fromTo(row.querySelectorAll('.reason__head, .reason__text'), { opacity: 0, x: -16 }, { opacity: 1, x: 0, duration: 0.7, stagger: 0.12 }, 0.15);
+    });
   });
+
 
   // Titres découpés en mots/lettres (sans plugin) ; aria-label garde le titre lisible pour les lecteurs d'écran
   const splitChars = (heading) => {
