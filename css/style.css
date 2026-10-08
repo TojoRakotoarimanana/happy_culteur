@@ -132,7 +132,7 @@ h3 { font-size: 1.25rem; font-weight: 600; }
   clip-path: url(#hero-shape);
 }
 .hero__frame { height: 100%; overflow: hidden; }
-.hero__img { width: 100%; height: 100%; object-fit: cover; object-position: 60% 40%; }
+.hero__img { width: 100%; height: 100%; object-fit: cover; object-position: 28% 35%; }
 
 /* À propos : titre + chapeau à gauche, trois idées numérotées sur un fond crème à droite */
 .about { display: flex; align-items: center; padding-block: calc(var(--header-h) + .5rem) 2rem; }
@@ -141,8 +141,14 @@ h3 { font-size: 1.25rem; font-weight: 600; }
 .about__title { font-size: clamp(2.4rem, 4.4vw, 3.6rem); }
 .about__title::after { content: ""; display: block; width: 3.5rem; height: 4px; margin-top: 1.1rem; border-radius: 2px; background: var(--c-accent); }
 .about__lead { margin-top: 1.75rem; font: 500 clamp(1.15rem, 1.6vw, 1.45rem)/1.5 var(--f-display); }
+.about__lead mark { padding-inline: .1em; background: linear-gradient(transparent 80%, rgb(247 183 49 / .45) 80%) no-repeat 0 0 / 100% 100%; color: inherit; -webkit-box-decoration-break: clone; box-decoration-break: clone; } /* trait fin sous le texte, pas un aplat */
 .about__closing { margin-top: 2rem; padding-left: 1.1rem; border-left: 3px solid var(--c-accent); color: var(--c-ink-soft); font-weight: 500; max-width: 38ch; }
 
+.about__side { display: grid; gap: 1.75rem; }
+.about__side { display: grid; gap: 1.75rem; }
+.about__photo { position: relative; margin: 0 1rem 1rem 0; }
+.about__photo::before { content: ""; position: absolute; inset: 1rem -1rem -1rem 1rem; border-radius: 0 var(--leaf) 0 var(--leaf); background: var(--c-accent); } /* feuille jaune décalée */
+.about__photo img { position: relative; display: block; width: 100%; height: clamp(9rem, 24svh, 14rem); object-fit: cover; object-position: 40% 35%; border-radius: 0 var(--leaf) 0 var(--leaf); }
 .about__points { display: grid; gap: .75rem; }
 .about__points li { border-radius: var(--radius); background: var(--c-tint); }
 .about__points details { padding: clamp(1rem, 2.4vh, 1.5rem) clamp(1.25rem, 2.5vw, 2rem); }
@@ -162,26 +168,25 @@ h3 { font-size: 1.25rem; font-weight: 600; }
 .about__head span { font-size: .95rem; color: var(--c-ink-soft); }
 .about__points details p { margin: .9rem 0 0 4rem; font-size: .95rem; line-height: 1.6; color: var(--c-ink-soft); }
 
-/* Pourquoi collaborer : section libre (hors slider) sur fond blanc, photo en « feuille » à gauche, trois arguments à droite.
-   Identité : la feuille (angles opposés très arrondis) revient sur les photos, le jaune est l'accent, le bleu nuit donne le contraste. */
+/* Pourquoi collaborer : section libre (hors slider) sur fond blanc, titre, accroche et trois arguments, sans visuel. */
 .collab { min-height: 100svh; display: flex; align-items: center; padding-block: calc(var(--header-h) + 2rem) 5rem; }
-.collab__inner { display: grid; grid-template-columns: 5fr 6fr; gap: clamp(2.5rem, 6vw, 6rem); align-items: center; }
-.collab__media { position: sticky; top: calc(var(--header-h) + 1.5rem); align-self: start; }
-.collab__media::before { /* feuille jaune décalée derrière la photo */
-  content: ""; position: absolute; inset: 0; z-index: -1; transform: translate(var(--s, 1.25rem), var(--s, 1.25rem));
-  border-radius: 0 var(--leaf) 0 var(--leaf); background: var(--c-accent);
-}
-.collab__media img { width: 100%; height: auto; aspect-ratio: 4 / 5; object-fit: cover; object-position: 33% 50%; border-radius: 0 var(--leaf) 0 var(--leaf); }
-.collab .about__closing { margin-top: 2rem; color: var(--c-ink-soft); }
-.collab__list { display: grid; gap: 0; margin-top: 2rem; }
-.reason { display: grid; grid-template-columns: 2rem 1fr; gap: 1rem; padding-block: 1.4rem; border-top: 1px solid var(--c-line); }
-.reason:last-child { border-bottom: 1px solid var(--c-line); }
-.reason__check { width: 2rem; height: 2rem; margin-top: .1rem; }
-.reason__check circle { fill: var(--c-accent); }
-.reason__check path { fill: none; stroke: var(--c-ink); stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
-.reason h3 { font: 600 clamp(1.2rem, 1.7vw, 1.4rem)/1.25 var(--f-display); }
+
+.collab__body { display: grid; grid-template-columns: 5fr 6fr; grid-template-areas: "head list" "art list" "art closing"; grid-template-rows: auto auto 1fr; column-gap: clamp(2.5rem, 6vw, 6rem); align-items: start; }
+.collab__head { grid-area: head; }
+.collab__list { grid-area: list; }
+.collab .about__closing { grid-area: closing; margin-top: 2rem; max-width: none; }
+/* Une seule illustration, dans le style de « Nos prestations » (traits bleu nuit, aplats crème et jaune) */
+.collab__ill { grid-area: art; width: 100%; max-width: 21rem; margin-top: 2.25rem; aspect-ratio: 400 / 250; border-radius: 0 var(--leaf) 0 var(--leaf); fill: none; stroke: var(--c-ink); stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; }
+.collab__ill .ill-bg { fill: var(--c-tint); stroke: none; }
+.collab__ill .w { fill: #fff; }
+.collab__ill .y { fill: var(--c-accent); }
+.collab__ill .dot { fill: var(--c-ink); stroke: none; }
+.reason { display: grid; grid-template-columns: 1.6rem 1fr; gap: 1.1rem; padding-block: 1.5rem; border-top: 1px solid var(--c-line); }
+.reason:first-child { border-top: 0; padding-top: 0; }
+.reason__leaf { width: 1.6rem; height: 1.6rem; margin-top: .15rem; border-radius: 0 100% 0 100%; background: var(--c-accent); }
+.reason h3 { font: 600 clamp(1.25rem, 1.8vw, 1.5rem)/1.2 var(--f-display); }
 .reason p { margin-top: .5rem; font-size: .95rem; line-height: 1.65; color: var(--c-ink-soft); }
-.reason .reason__short { margin-top: .15rem; font-weight: 600; color: var(--c-ink); }
+.reason .reason__short { margin-top: .2rem; font-weight: 600; color: var(--c-ink); }
 
 /* Nos prestations : les 4 services sur un seul écran. Chaque colonne = illustration SVG animée (GSAP, main.js) + titre + tags + texte.
    Traits d'encre, touches de jaune, fond « feuille » crème. Sur grand écran la section tient dans 100svh. */
@@ -276,10 +281,9 @@ h3 { font-size: 1.25rem; font-weight: 600; }
 
 @media (max-width: 62rem) {
   .about__inner { grid-template-columns: 1fr; }
-  .collab__inner { grid-template-columns: 1fr; }
-  .collab__media { position: relative; top: 0; margin: 0 1.25rem 1.25rem 0; }
   :root { --leaf: 4rem; }
-  .collab__media img { aspect-ratio: 16 / 10; }
+  .collab__body { grid-template-columns: 1fr; grid-template-areas: "head" "art" "list" "closing"; }
+  .collab__list { margin-top: 2rem; }
   .hero__inner { grid-template-columns: 1fr; }
   .hero__media { position: relative; inset: auto; width: 100%; height: 22rem; margin-top: 1rem; clip-path: none; border-radius: 1.5rem 0 0 1.5rem; overflow: hidden; }
 }
@@ -302,4 +306,3 @@ h3 { font-size: 1.25rem; font-weight: 600; }
   .js .collab:not(.is-in) [data-reveal] { opacity: 0; }
   .js .collab:not(.is-in) mark { background-size: 0% 100%; }
 }
-

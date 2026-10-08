@@ -59,7 +59,7 @@
   header.addEventListener('focusin', () => moveHeader(0)); // navigation clavier : le header ne reste jamais caché sur un lien focalisé
 
   /* ---------- Défilement fluide (inertie) : ne sert que dans la partie libre de la page ---------- */
-  const lenis = smooth && window.Lenis ? new Lenis({ lerp: 0.09 }) : null;
+  const lenis = smooth && window.Lenis ? new Lenis({ duration: 1.3, easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)), wheelMultiplier: 0.9 }) : null;
   if (lenis) {
     gsap.ticker.add((t) => lenis.raf(t * 1000));
     gsap.ticker.lagSmoothing(0);
@@ -81,17 +81,13 @@
     if (!st) { free.classList.add('is-in'); return; } // sans ScrollTrigger : tout reste visible
 
     gsap.timeline({ scrollTrigger: { trigger: free, start: 'top 65%', once: true }, defaults: { ease: 'power3.out' } })
-      // photo « feuille » : se dévoile de haut en bas, dézoome, puis la feuille jaune se décale derrière
-      .fromTo('.collab__media', { opacity: 0 }, { opacity: 1, duration: 0.4 }, 0)
-      .fromTo('.collab__media img', { clipPath: 'inset(0 0 100% 0)' }, { clipPath: 'inset(0 0 0% 0)', duration: 1.1, ease: 'power3.inOut' }, 0)
-      .fromTo('.collab__media img', { scale: 1.25 }, { scale: 1, duration: 1.6, ease: 'power2.out' }, 0)
-      .fromTo('.collab__media', { '--s': '0rem' }, { '--s': '1.25rem', duration: 0.9, ease: 'back.out(2)' }, 0.7)
       // titre + accroche, puis surlignage peint
       .fromTo('.collab__body > div[data-reveal]', { opacity: 0, y: 30 }, { opacity: 1, y: 0, duration: 0.9 }, 0.2)
+      .fromTo('.collab__ill', { opacity: 0, y: 30 }, { opacity: 1, y: 0, duration: 0.9 }, 0.4)
       .fromTo('.collab mark', { backgroundSize: '0% 100%' }, { backgroundSize: '100% 100%', duration: 0.9, ease: 'power2.inOut' }, 0.9)
       // les trois arguments arrivent l'un après l'autre, chaque coche « pousse » avec un petit rebond
       .fromTo('.reason', { opacity: 0, y: 30 }, { opacity: 1, y: 0, duration: 0.8, stagger: 0.15 }, 0.5)
-      .fromTo('.reason__check', { scale: 0, rotate: -90, transformOrigin: '50% 50%' },
+      .fromTo('.reason__leaf', { scale: 0, rotate: -90, transformOrigin: '50% 50%' },
         { scale: 1, rotate: 0, duration: 0.6, stagger: 0.15, ease: 'back.out(2.5)' }, 0.7)
       .fromTo('.collab .about__closing', { opacity: 0, y: 20 }, { opacity: 1, y: 0, duration: 0.8 }, 1.3);
   });
@@ -304,7 +300,12 @@
       root.classList.replace('is-locked', 'is-free');
       if (lenis) { lenis.start(); lenis.scrollTo(target, { duration: calm ? 0 : 1.2 }); }
       else target.scrollIntoView({ behavior: calm ? 'auto' : 'smooth' });
-      gsap.delayedCall(1.4, () => { unlocking = false; });
+      gsap.delayedCall(1.4, () => {
+        unlocking = false;
+        // Les sections libres suivent le dernier panneau : en remontant on repasse par lui, jamais directement à l'accueil
+        current = last;
+        panels.forEach((p, i) => p.classList.toggle('is-current', i === last));
+      });
     };
     const relock = () => {
       if (locked || unlocking || window.scrollY > 0) return;
@@ -366,15 +367,13 @@
           { autoAlpha: 1, yPercent: 0, duration: calm ? 0 : 1, ease: 'power2', stagger: { each: calm ? 0 : 0.02, from: 'random' } }, calm ? 0 : 0.2);
     };
 
-    // Molette et swipe : avec wheelSpeed -1, « onUp » = aller à la section suivante
-    const observer = Observer.create({
-      type: 'wheel,touch',
-      wheelSpeed: -1,
-      tolerance: 12,
-      preventDefault: true,
-      onUp: () => (current < last ? goTo(current + 1) : unlock()),
-      onDown: () => goTo(current - 1),
-    });
+    // Molette et swipe : avec wheelSpeed -1, « onUp » = aller à la section suivante.
+    // Deux observers : le mode touch d'Observer avale les clics, on l'écarte donc des liens et boutons.
+    const nav = { wheelSpeed: -1, tolerance: 12,
+      onUp: () => (current < last ? goTo(current + 1) : unlock()), onDown: () => goTo(current - 1) };
+    const observers = [Observer.create({ ...nav, type: 'wheel' }),
+      Observer.create({ ...nav, type: 'touch', ignore: 'a, button, summary' })];
+    const observer = ['enable', 'disable', 'kill'].reduce((o, m) => ({ ...o, [m]: () => observers.forEach((x) => x[m]()) }), {});
 
     const onKey = (e) => {
       const next = { ArrowDown: current + 1, PageDown: current + 1, ArrowUp: current - 1, PageUp: current - 1,
