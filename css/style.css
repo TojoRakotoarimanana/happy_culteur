@@ -141,7 +141,6 @@ h3 { font-size: 1.25rem; font-weight: 600; }
 .about__title { font-size: clamp(2.4rem, 4.4vw, 3.6rem); }
 .about__title::after { content: ""; display: block; width: 3.5rem; height: 4px; margin-top: 1.1rem; border-radius: 2px; background: var(--c-accent); }
 .about__lead { margin-top: 1.75rem; font: 500 clamp(1.15rem, 1.6vw, 1.45rem)/1.5 var(--f-display); }
-.about__lead mark { background: linear-gradient(transparent 62%, rgb(247 183 49 / .55) 62%) no-repeat 0 0 / 100% 100%; color: inherit; }
 .about__closing { margin-top: 2rem; padding-left: 1.1rem; border-left: 3px solid var(--c-accent); color: var(--c-ink-soft); font-weight: 500; max-width: 38ch; }
 
 .about__points { display: grid; gap: .75rem; }
@@ -184,10 +183,66 @@ h3 { font-size: 1.25rem; font-weight: 600; }
 .reason p { margin-top: .5rem; font-size: .95rem; line-height: 1.65; color: var(--c-ink-soft); }
 .reason .reason__short { margin-top: .15rem; font-weight: 600; color: var(--c-ink); }
 
+/* Nos prestations : les 4 services sur un seul écran. Chaque colonne = illustration SVG animée (GSAP, main.js) + titre + tags + texte.
+   Traits d'encre, touches de jaune, fond « feuille » crème. Sur grand écran la section tient dans 100svh. */
+.services { padding-block: calc(var(--header-h) + 1.5rem) 4rem; }
+.svc__top { display: flex; flex-wrap: wrap; align-items: end; justify-content: space-between; gap: 1rem 2rem; margin-bottom: clamp(1.25rem, 3svh, 2.25rem); }
+.svc__grid { display: grid; gap: 2.5rem 0; }
+.svc__item { --bar: 1; --bw: 4rem; position: relative; display: grid; align-content: start; gap: .85rem; padding: 1.5rem 1.5rem 0 0; border-top: 1px solid var(--c-ink); }
+.svc__item::before { content: ""; position: absolute; top: -3px; left: 0; width: var(--bw); height: 5px; background: var(--c-accent); transform: scaleX(var(--bar)); transform-origin: left; }
+.svc__ill { width: 100%; height: clamp(8.5rem, 23svh, 12.5rem); margin-bottom: .4rem; fill: none; stroke: var(--c-ink); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; overflow: visible; }
+.svc__ill .ill-bg { fill: var(--c-tint); stroke: none; }
+.svc__ill .w { fill: #fff; }
+.svc__ill .y { fill: var(--c-accent); }
+.svc__ill .wave { stroke: var(--c-accent-dark); stroke-width: 3; }
+.svc__ill .dot { fill: var(--c-ink); stroke: none; }
+.svc__ill .heart path { stroke: var(--c-ink); stroke-width: 1.6; }
+.svc__ill .hand { stroke-width: 2.5; }
+.svc__head { display: grid; gap: .45rem; }
+.svc__head h3 { font: 600 clamp(1.25rem, 1.7vw, 1.55rem)/1.15 var(--f-display); letter-spacing: -.01em; }
+.svc__tags { font-size: .85rem; line-height: 1.45; color: var(--c-ink-soft); }
+.svc__tags li { display: inline; }
+.svc__tags li:not(:last-child)::after { content: ", "; }
+.svc__text { display: grid; gap: .6rem; align-content: start; }
+.svc__text p { font-size: .93rem; line-height: 1.6; color: var(--c-ink-soft); }
+.svc__text > p:first-child { color: var(--c-ink); }
+.svc__more summary { display: inline-flex; align-items: center; gap: .5rem; cursor: pointer; list-style: none; font-size: .9rem; font-weight: 700; }
+.svc__more summary::-webkit-details-marker { display: none; }
+.svc__more summary::before { content: "+"; display: grid; place-items: center; width: 1.3rem; height: 1.3rem; border: 1px solid var(--c-ink); font-weight: 600; line-height: 1; }
+.svc__more[open] summary::before { content: "−"; }
+.svc__more p { margin-top: .6rem; }
+
+/* « Lire la suite » : feuille de détail (créée par main.js) qui recouvre la colonne par une vague circulaire née du bouton « + ».
+   Même rayon « feuille » que les illustrations ; le bouton d'action reste calé en bas, quelle que soit la longueur du texte. */
+.svc__sheet, .svc__sheet-in { position: absolute; inset: 0 0 -1rem; border-radius: 0 3rem 0 3rem; }
+.svc__sheet { z-index: 2; visibility: hidden; background: var(--c-accent); }
+.svc__sheet-in { display: flex; flex-direction: column; gap: .85rem; padding: 1.5rem 1.5rem 2.25rem; overflow: auto; background: var(--c-tint); }
+.svc__sheet-title { padding-right: 3rem; font: 600 clamp(1.25rem, 1.7vw, 1.55rem)/1.15 var(--f-display); }
+.svc__sheet-in p:not(.svc__sheet-title) { font-size: .95rem; line-height: 1.65; color: var(--c-ink); }
+.svc__sheet-cta { align-self: flex-start; margin-top: auto; padding: .7rem 1.3rem; font-size: .92rem; }
+.svc__item.is-open .svc__more { visibility: hidden !important; } /* le bouton « + » sous la feuille ne doit jamais percer dans la courbe du coin (!important : GSAP laisse visibility en ligne) */
+.svc__close { position: absolute; z-index: 1; top: 1rem; right: 1rem; display: grid; place-items: center; width: 2.4rem; height: 2.4rem; border: 0; border-radius: 50%; background: var(--c-accent); color: var(--c-ink); cursor: pointer; transition: transform .4s var(--ease); }
+.svc__close:hover { transform: rotate(90deg); }
+.svc__close svg { width: 1.1rem; height: 1.1rem; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; }
+
+@media (min-width: 40rem) { .svc__grid { grid-template-columns: 1fr 1fr; gap: 2.5rem 1.5rem; } }
+@media (min-width: 62rem) {
+  .services { min-height: 100svh; display: flex; align-items: center; padding-bottom: 2rem; }
+  .services > .container { width: min(100% - 3rem, var(--container)); }
+  .svc__grid { grid-template-columns: repeat(4, 1fr); gap: 0; }
+  .svc__item { padding-inline: 1.25rem; }
+  .svc__item:first-child { padding-left: 0; }
+  .svc__item + .svc__item { border-left: 1px solid var(--c-line); }
+}
+
+/* Titres découpés en lettres par main.js : chaque mot est un masque, les lettres montent à l'intérieur */
+.word { display: inline-block; overflow: hidden; vertical-align: top; padding-block: .12em; margin-block: -.12em; }
+.char { display: inline-block; }
+
 /* Mode « slider » : panneaux plein écran, changés par molette / swipe / clavier (main.js) */
 .is-locked, .is-locked body { overflow: hidden; } /* slider actif : la page ne défile pas tant qu'on est sur les panneaux */
 .is-slider .slides { position: relative; height: 100svh; overflow: hidden; }
-.is-free .header { background: var(--c-bg); box-shadow: 0 1px 0 var(--c-line); } /* la navbar reste lisible au-dessus du contenu qui défile */
+.header.is-scrolled { background: var(--c-bg); box-shadow: 0 1px 0 var(--c-line); } /* la navbar reste lisible au-dessus du contenu qui défile */
 /* Lenis (défilement avec inertie) */
 .lenis.lenis-smooth { scroll-behavior: auto !important; }
 .is-slider .panel { position: absolute; inset: 0; overflow: hidden; visibility: hidden; background: var(--c-bg); }
@@ -238,8 +293,6 @@ h3 { font-size: 1.25rem; font-weight: 600; }
 @media (prefers-reduced-motion: no-preference) {
   .js .logo, .js .nav__link, .js .hero .line, .js .hero__lead, .js .hero .btn { opacity: 0; }
   /* Section À propos : surlignage et trait jaune se tracent quand la section devient courante */
-  .is-slider .about mark { background-size: 0% 100%; transition: background-size .9s var(--ease) .9s; }
-  .is-slider .about.is-current mark { background-size: 100% 100%; }
   .is-slider .about__title::after { transform: scaleX(0); transform-origin: left; transition: transform .8s var(--ease) .5s; }
   .is-slider .about.is-current .about__title::after { transform: scaleX(1); }
 }
@@ -249,3 +302,4 @@ h3 { font-size: 1.25rem; font-weight: 600; }
   .js .collab:not(.is-in) [data-reveal] { opacity: 0; }
   .js .collab:not(.is-in) mark { background-size: 0% 100%; }
 }
+

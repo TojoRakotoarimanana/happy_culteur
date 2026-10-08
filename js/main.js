@@ -7,7 +7,8 @@
   const toggle = document.querySelector('.nav-toggle');
   const menu = document.getElementById('menu');
   const panels = [...document.querySelectorAll('.panel')];
-  const free = document.getElementById('collaborer'); // section hors slider : défilement libre
+  const free = document.getElementById('collaborer'); // 1re section hors slider : défilement libre
+  const freeZone = document.querySelector('.free-zone'); // toutes les sections hors slider
 
   const setActiveLink = (id) => document.querySelectorAll('.nav__link')
     .forEach((link) => link.classList.toggle('is-active', link.hash === `#${id}`));
@@ -27,7 +28,7 @@
     const observer = new IntersectionObserver((entries) => {
       entries.forEach(({ target, isIntersecting }) => isIntersecting && setActiveLink(target.id));
     }, { rootMargin: '-50% 0px -50% 0px' });
-    [...panels, free].forEach((el) => el && observer.observe(el));
+    [...panels, ...freeZone.querySelectorAll('section')].forEach((el) => observer.observe(el));
 
     return () => {
       observer.disconnect();
@@ -44,6 +45,19 @@
 
   const smooth = matchMedia('(prefers-reduced-motion: no-preference)').matches;
 
+  /* ---------- Header « directionnel » : se cache quand on descend, revient dès qu'on remonte ---------- */
+  const moveHeader = gsap.quickTo(header, 'yPercent', { duration: smooth ? 0.4 : 0, ease: 'power3.out' });
+  let lastY = window.scrollY;
+  window.addEventListener('scroll', () => {
+    const y = window.scrollY;
+    header.classList.toggle('is-scrolled', y > 10); // fond blanc dès qu'on a quitté le haut de page
+    if (Math.abs(y - lastY) < 4) return; // ignore les micro-mouvements du trackpad
+    if (y <= 10 || y < lastY || header.classList.contains('is-open')) moveHeader(0);
+    else if (y > header.offsetHeight) moveHeader(-100);
+    lastY = y;
+  }, { passive: true });
+  header.addEventListener('focusin', () => moveHeader(0)); // navigation clavier : le header ne reste jamais caché sur un lien focalisé
+
   /* ---------- Défilement fluide (inertie) : ne sert que dans la partie libre de la page ---------- */
   const lenis = smooth && window.Lenis ? new Lenis({ lerp: 0.09 }) : null;
   if (lenis) {
@@ -56,6 +70,11 @@
   if (st) {
     gsap.registerPlugin(st);
     if (lenis) lenis.on('scroll', st.update);
+  }
+
+  if (st) {
+    window.addEventListener('load', () => st.refresh());
+    document.fonts?.ready.then(() => st.refresh()); // les polices web changent la hauteur du texte, donc les positions
   }
 
   gsap.matchMedia().add('(prefers-reduced-motion: no-preference)', () => {
@@ -77,6 +96,183 @@
       .fromTo('.collab .about__closing', { opacity: 0, y: 20 }, { opacity: 1, y: 0, duration: 0.8 }, 1.3);
   });
 
+  // Titres découpés en mots/lettres (sans plugin) ; aria-label garde le titre lisible pour les lecteurs d'écran
+  const splitChars = (heading) => {
+    const original = heading.innerHTML;
+    heading.setAttribute('aria-label', heading.textContent.replace(/\s+/g, ' ').trim());
+    const walker = document.createTreeWalker(heading, NodeFilter.SHOW_TEXT);
+    const nodes = [];
+    while (walker.nextNode()) nodes.push(walker.currentNode);
+    nodes.forEach((node) => {
+      const frag = document.createDocumentFragment();
+      node.textContent.split(/(\s+)/).forEach((part) => {
+        if (!part.trim()) { if (part) frag.append(part); return; }
+        const word = document.createElement('span');
+        word.className = 'word';
+        word.setAttribute('aria-hidden', 'true');
+        [...part].forEach((ch) => { const s = document.createElement('span'); s.className = 'char'; s.textContent = ch; word.append(s); });
+        frag.append(word);
+      });
+      node.replaceWith(frag);
+    });
+    return { chars: heading.querySelectorAll('.char'), restore: () => { heading.innerHTML = original; heading.removeAttribute('aria-label'); } };
+  };
+
+  /* ---------- Nos prestations : arrivée orchestrée (tracé des illustrations), petites boucles de vie, survol, dépliage ---------- */
+  gsap.matchMedia().add('(prefers-reduced-motion: no-preference)', () => {
+    if (!st) return;
+    // Titre : lettres qui montent dans leur masque, puis revert (le HTML d'origine est remis une fois l'animation finie)
+    const title = splitChars(document.querySelector('.svc__title'));
+    gsap.from(title.chars, {
+      yPercent: 110, autoAlpha: 0, duration: 0.7, stagger: 0.035, ease: 'power4.out', onComplete: title.restore,
+      scrollTrigger: { trigger: '.svc__title', start: 'top 88%', once: true },
+    });
+
+    const items = gsap.utils.toArray('.svc__item');
+    const grid = document.querySelector('.svc__grid');
+    const strokes = gsap.utils.toArray('.svc__ill .d');
+    strokes.forEach((p) => p.setAttribute('pathLength', 1)); // longueur normalisée : tracé 1 → 0 pour tous les traits
+    gsap.set(strokes, { strokeDasharray: 1 });
+
+    // 1. Arrivée : par colonne, filet jaune → feuille → traits → pastilles jaunes → texte
+    const intro = gsap.timeline({ scrollTrigger: { trigger: grid, start: 'top 90%', once: true } });
+    items.forEach((it, i) => {
+      const q = gsap.utils.selector(it);
+      const t = i * 0.1;
+      intro
+        .from(it, { '--bar': 0, duration: 0.5, ease: 'power3.out' }, t)
+        .from(q('.ill-bg'), { scale: 0.6, autoAlpha: 0, transformOrigin: '50% 50%', duration: 0.5, ease: 'back.out(1.6)' }, t)
+        .from(q('.d'), { strokeDashoffset: 1, duration: 0.6, stagger: 0.02, ease: 'power2.out' }, t + 0.1)
+        .from(q('.pop, .heart, .dot'), { scale: 0, transformOrigin: '50% 50%', duration: 0.35, stagger: 0.05, ease: 'back.out(3)' }, t + 0.4)
+        .from(q('.svc__head > *, .svc__text > *'), { autoAlpha: 0, y: 16, duration: 0.45, stagger: 0.05, ease: 'power3.out' }, t + 0.2);
+    });
+
+    // 2. Boucles de vie, une par illustration, jouées seulement quand la colonne est à l'écran et l'arrivée terminée
+    const pulse = { scale: 1.12, transformOrigin: '50% 100%', duration: 0.35, yoyo: true, repeat: 1, ease: 'power2.out' };
+    const redraw = { strokeDashoffset: 0, duration: 0.7, ease: 'power2.inOut' };
+    const loops = [
+      (q) => gsap.timeline({ repeat: -1, repeatDelay: 1 }) // service client : les bulles se répondent
+        .to(q('.b1'), pulse).to(q('.b2'), pulse, '+=.2').fromTo(q('.chk'), { strokeDashoffset: 1 }, redraw, '<'),
+      (q) => gsap.timeline({ repeat: -1, repeatDelay: 0.8 }) // prospection : l'appel part, le rendez-vous se confirme
+        .fromTo(q('.wave'), { autoAlpha: 0 }, { autoAlpha: 1, duration: 0.4, stagger: 0.25 })
+        .to(q('.wave'), { autoAlpha: 0, duration: 0.4 }, '+=.2')
+        .fromTo(q('.chk'), { strokeDashoffset: 1 }, redraw, '-=.3')
+        .to(q('.rdv'), { scale: 1.25, transformOrigin: '50% 50%', duration: 0.3, yoyo: true, repeat: 1 }, '<'),
+      (q) => gsap.timeline({ repeat: -1 }) // community : les cœurs montent, le like bat, les points « écrivent »
+        .fromTo(q('.heart'), { y: 0, autoAlpha: 1 }, { y: -36, autoAlpha: 0, duration: 2, stagger: 1, ease: 'power1.out' }, 0)
+        .to(q('.like'), { scale: 1.5, transformOrigin: '50% 50%', duration: 0.22, yoyo: true, repeat: 3 }, 0.2)
+        .to(q('.dot'), { y: -4, duration: 0.25, yoyo: true, repeat: 5, stagger: 0.12 }, 0),
+      (q) => gsap.timeline({ repeat: -1 }) // assistance : les tâches se cochent, l'horloge tourne
+        .to(q('.hand'), { rotation: 360, svgOrigin: '40 74', duration: 5, ease: 'none' }, 0)
+        .fromTo(q('.chk'), { strokeDashoffset: 1 }, { ...redraw, duration: 0.5, stagger: 0.8 }, 0.3)
+        .to(q('.chk'), { strokeDashoffset: 1, duration: 0.3 }, 4.4),
+    ];
+    let ready = false;
+    intro.eventCallback('onComplete', () => { ready = true; sync(); });
+    const state = items.map((it, i) => {
+      const tl = loops[i](gsap.utils.selector(it)).pause();
+      const s = { tl, active: false };
+      st.create({ trigger: it, start: 'top 90%', end: 'bottom 10%', onToggle: (self) => { s.active = self.isActive; sync(); } });
+      return s;
+    });
+    function sync() { state.forEach((s, i) => s.tl.paused(!(ready && s.active && !items[i].classList.contains('is-open')))); }
+
+    // 3. Survol : le filet jaune s'étend, l'illustration se soulève
+    const hover = (it, on) => {
+      gsap.to(it, { '--bw': on ? '100%' : '4rem', duration: 0.6, ease: 'power3.out', overwrite: 'auto' });
+      gsap.to(it.querySelector('.svc__ill'), { y: on ? -6 : 0, duration: 0.5, ease: 'power3.out', overwrite: 'auto' });
+    };
+    const enter = (e) => hover(e.currentTarget, true);
+    const leave = (e) => hover(e.currentTarget, false);
+    items.forEach((it) => { it.addEventListener('pointerenter', enter); it.addEventListener('pointerleave', leave); });
+
+    // 4. « Lire la suite » : une vague d'encre (jaune puis crème) naît du bouton « + » et recouvre la colonne. Rien ne bouge dans la page.
+    //    Une seule feuille ouverte à la fois ; Échap, croix ou clic à côté la referme ; la vague se rétracte vers le bouton.
+    const WAVE = { duration: 0.8, ease: 'power3.inOut', stagger: 0.1 };
+    const sheets = items.map((it) => {
+      const more = it.querySelector('.svc__more');
+      if (!more) return null;
+      const title = it.querySelector('h3');
+      const sheet = document.createElement('div');
+      sheet.className = 'svc__sheet';
+      sheet.setAttribute('role', 'region');
+      sheet.setAttribute('aria-label', `Détail : ${title.textContent}`);
+      const inner = document.createElement('div');
+      inner.className = 'svc__sheet-in';
+      inner.innerHTML = `<button type="button" class="svc__close" aria-label="Fermer le détail"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button><p class="svc__sheet-title">${title.innerHTML}</p>`;
+      more.querySelectorAll('p').forEach((p) => inner.append(p.cloneNode(true)));
+      inner.insertAdjacentHTML('beforeend', '<a class="btn svc__sheet-cta" href="#contact">Parlons de votre projet <span aria-hidden="true">→</span></a>');
+      sheet.append(inner);
+      it.append(sheet);
+      return { it, sheet, inner, sum: more.querySelector('summary'), content: [...inner.children].filter((c) => !c.matches('.svc__close')), isOpen: false };
+    }).filter(Boolean);
+
+    // cercle centré sur le « + » du bouton, assez grand pour couvrir toute la colonne
+    const circle = (s) => {
+      const ir = s.it.getBoundingClientRect(), br = s.sum.getBoundingClientRect();
+      const x = br.left - ir.left + 12, y = br.top - ir.top + br.height / 2;
+      const R = Math.hypot(Math.max(x, ir.width - x), Math.max(y + 16, ir.height - y)) + 8;
+      return (r) => `circle(${r}px at ${x}px ${y}px)`;
+    };
+    const rest = (s) => [...s.it.children].filter((c) => c !== s.sheet);
+    const stop = (s) => gsap.killTweensOf([s.sheet, s.inner, ...s.content, ...rest(s)]);
+
+    const openSheet = (s) => {
+      sheets.filter((o) => o.isOpen && o !== s).forEach(closeSheet);
+      const { it, sheet, inner, sum, content } = s;
+      const at = circle(s), R = Math.hypot(it.offsetWidth, it.offsetHeight) + 40;
+      s.isOpen = true; s.at = at; s.R = R;
+      it.classList.add('is-open'); sync();
+      rest(s).forEach((c) => { c.inert = true; });
+      sum.setAttribute('aria-expanded', 'true');
+      stop(s);
+      gsap.timeline()
+        .set(sheet, { visibility: 'visible' })
+        .to(rest(s), { opacity: 0.25, duration: 0.5, ease: 'power2.out' }, 0)
+        .fromTo([sheet, inner], { clipPath: at(0) }, { clipPath: at(R), ...WAVE, clearProps: 'clipPath' }, 0)
+        .fromTo(content, { autoAlpha: 0, y: 18 }, { autoAlpha: 1, y: 0, duration: 0.5, stagger: 0.07, ease: 'power3.out' }, 0.45)
+        .add(() => inner.querySelector('.svc__close').focus({ preventScroll: true }), 0.55);
+    };
+    function closeSheet(s, focus = true) {
+      if (!s.isOpen) return;
+      const { it, sheet, inner, sum, content } = s;
+      const at = circle(s), R = Math.hypot(it.offsetWidth, it.offsetHeight) + 40;
+      s.isOpen = false;
+      it.classList.remove('is-open'); sync(); // avant le focus : le bouton « + » redevient visible et focalisable
+      rest(s).forEach((c) => { c.inert = false; }); // idem : un élément inert ne reçoit pas le focus
+      sum.setAttribute('aria-expanded', 'false');
+      if (focus) sum.focus({ preventScroll: true });
+      stop(s);
+      gsap.timeline({ onComplete: () => {
+        gsap.set(sheet, { visibility: 'hidden', clearProps: 'clipPath' }); gsap.set([inner, ...content], { clearProps: 'all' });
+      } })
+        .to(content, { autoAlpha: 0, y: -8, duration: 0.2, stagger: 0.02 }, 0)
+        .fromTo([inner, sheet], { clipPath: at(R) }, { clipPath: at(0), ...WAVE, duration: 0.65 }, 0.05)
+        .to(rest(s), { opacity: 1, duration: 0.5, ease: 'power2.out', clearProps: 'opacity' }, 0.2);
+    }
+    const onMore = (e) => {
+      const sum = e.target.closest('.svc__more summary');
+      const own = sheets.find((x) => x.inner.contains(e.target));
+      if (sum) { e.preventDefault(); openSheet(sheets.find((x) => x.sum === sum)); } // le <details> natif reste fermé
+      else if (own && e.target.closest('.svc__close')) closeSheet(own);
+      else if (own && e.target.closest('.svc__sheet-cta')) closeSheet(own, false);
+    };
+    const onOutside = (e) => { if (!e.target.closest('.svc__sheet, .svc__more')) sheets.forEach((s) => closeSheet(s, false)); };
+    const onKey = (e) => { if (e.key === 'Escape') sheets.forEach((s) => closeSheet(s)); };
+    grid.addEventListener('click', onMore);
+    document.addEventListener('pointerdown', onOutside);
+    document.addEventListener('keydown', onKey);
+
+    return () => {
+      title.restore();
+      items.forEach((it) => { it.removeEventListener('pointerenter', enter); it.removeEventListener('pointerleave', leave); });
+      grid.removeEventListener('click', onMore);
+      document.removeEventListener('keydown', onKey);
+      document.removeEventListener('pointerdown', onOutside);
+      sheets.forEach((s) => { s.sheet.remove(); [...s.it.children].forEach((c) => { c.inert = false; }); });
+    };
+  });
+
   /* ---------- Slider de sections : molette, swipe tactile, clavier, liens ---------- */
   gsap.matchMedia().add({
     slider: '(min-width: 62rem) and (min-height: 46rem)',
@@ -88,6 +284,9 @@
     }
     root.classList.add('is-slider', 'is-locked');
     if (lenis) lenis.stop();
+    window.scrollTo(0, 0); // le navigateur peut avoir restauré un scroll : le slider repart toujours du haut
+
+    const splits = new Map(panels.map((p) => [p, splitChars(p.querySelector('h1, h2'))]));
 
     let current = Math.max(0, panels.findIndex((p) => `#${p.id}` === location.hash));
     let busy = false;
@@ -97,14 +296,14 @@
     let unlocking = false;
     const last = panels.length - 1;
 
-    const unlock = () => {
+    const unlock = (target = free) => {
       if (!locked || unlocking) return;
       locked = false;
       unlocking = true;
       observer.disable();
       root.classList.replace('is-locked', 'is-free');
-      if (lenis) { lenis.start(); lenis.scrollTo(free, { duration: calm ? 0 : 1.2 }); }
-      else free.scrollIntoView({ behavior: calm ? 'auto' : 'smooth' });
+      if (lenis) { lenis.start(); lenis.scrollTo(target, { duration: calm ? 0 : 1.2 }); }
+      else target.scrollIntoView({ behavior: calm ? 'auto' : 'smooth' });
       gsap.delayedCall(1.4, () => { unlocking = false; });
     };
     const relock = () => {
@@ -113,14 +312,22 @@
       root.classList.replace('is-free', 'is-locked');
       if (lenis) lenis.stop();
       observer.enable();
+      setActiveLink(panels[current].id);
     };
     window.addEventListener('scroll', relock, { passive: true });
+    const freeNav = new IntersectionObserver((entries) => entries.forEach(({ target, isIntersecting }) => {
+      if (isIntersecting && !locked) setActiveLink(target.id);
+    }), { rootMargin: '-50% 0px -50% 0px' });
+    freeZone.querySelectorAll('section').forEach((s) => freeNav.observe(s));
 
     const sync = () => {
       panels.forEach((p, i) => p.classList.toggle('is-current', i === current));
       setActiveLink(panels[current].id);
     };
     sync();
+
+    // Éléments décalés en parallaxe (pas le conteneur : un transform y casserait le positionnement absolu de la photo du hero)
+    const parallax = (panel) => panel.querySelectorAll('.hero__content, .hero__media, .about__inner > *');
 
     const goTo = (index) => {
       if (busy || index < 0 || index >= panels.length || index === current) return;
@@ -132,25 +339,31 @@
 
       to.classList.add('is-current');
       setActiveLink(to.id);
-      gsap.set(to, { yPercent: dir * 100, zIndex: 2 });
+      // Effet « rideau » : la nouvelle section se dévoile depuis le bord, son contenu reste en place (parallaxe douce),
+      // l'ancienne recule un peu, et les lettres du titre montent en ordre aléatoire (démo GSAP « Animated Sections »)
+      const reveal = dir > 0 ? 'inset(100% 0% 0% 0%)' : 'inset(0% 0% 100% 0%)';
+      gsap.set(to, { zIndex: 2, clipPath: reveal });
       gsap.set(from, { zIndex: 1 });
 
       const tl = gsap.timeline({
-        defaults: { duration: calm ? 0 : 1.1, ease: 'power3.inOut' },
+        defaults: { duration: calm ? 0 : 1.25, ease: 'power1.inOut' },
         onComplete: () => {
-          gsap.set([from, to], { clearProps: 'transform,zIndex' });
+          gsap.set([from, to, ...parallax(from), ...parallax(to)], { clearProps: 'transform,zIndex,clipPath' });
           current = index;
           sync();
           history.replaceState(null, '', `#${to.id}`);
           gsap.delayedCall(0.25, () => { busy = false; }); // laisse retomber l'inertie du trackpad
         },
       });
-      tl.to(to, { yPercent: 0 }, 0)
-        .to(from, { yPercent: -dir * 20 }, 0)
+      tl.to(to, { clipPath: 'inset(0% 0% 0% 0%)' }, 0)
+        .to(from, { yPercent: -15 * dir }, 0)
+        .fromTo(parallax(to), { yPercent: 15 * dir }, { yPercent: 0 }, 0)
         .fromTo(to.querySelectorAll('[data-slide-in]'),
           { opacity: 0, y: 40 * dir },
           { opacity: 1, y: 0, duration: calm ? 0 : 0.9, stagger: calm ? 0 : 0.09, ease: 'power3.out', clearProps: 'opacity,transform' },
-          calm ? 0 : 0.45);
+          calm ? 0 : 0.45)
+        .fromTo(splits.get(to).chars, { autoAlpha: 0, yPercent: 150 * dir },
+          { autoAlpha: 1, yPercent: 0, duration: calm ? 0 : 1, ease: 'power2', stagger: { each: calm ? 0 : 0.02, from: 'random' } }, calm ? 0 : 0.2);
     };
 
     // Molette et swipe : avec wheelSpeed -1, « onUp » = aller à la section suivante
@@ -177,18 +390,34 @@
       const target = link && link.hash.length > 1 && document.querySelector(link.hash);
       if (!target) return;
       const index = panels.indexOf(target.closest('.panel'));
-      if (index < 0 && !free.contains(target)) return;
+      if (index < 0 && !freeZone.contains(target)) return;
       e.preventDefault();
       if (!locked) { lenis ? lenis.scrollTo(target) : target.scrollIntoView({ behavior: 'smooth' }); return; }
-      if (index < 0) unlock(); else goTo(index);
+      if (index < 0) unlock(target.closest('section')); else goTo(index);
     };
 
     document.addEventListener('keydown', onKey);
     document.addEventListener('click', onClick);
 
+    // Hash modifié à la main (sans clic sur un lien) : même traitement que les liens
+    const onHash = () => {
+      const t = location.hash.length > 1 && document.querySelector(location.hash);
+      if (!t || !locked) return;
+      const i = panels.indexOf(t.closest('.panel'));
+      if (i >= 0) goTo(i); else if (freeZone.contains(t)) unlock(t.closest('section'));
+    };
+    window.addEventListener('hashchange', onHash);
+
+    // Rechargement ou lien direct vers une section libre (#services…) : on déverrouille et on y va
+    const entry = location.hash.length > 1 && document.querySelector(location.hash);
+    if (entry && freeZone.contains(entry)) gsap.delayedCall(0.2, () => unlock(entry.closest('section')));
+
     return () => {
       observer.kill();
+      window.removeEventListener('hashchange', onHash);
       window.removeEventListener('scroll', relock);
+      freeNav.disconnect();
+      splits.forEach((s) => s.restore());
       if (lenis) lenis.start();
       document.removeEventListener('keydown', onKey);
       document.removeEventListener('click', onClick);

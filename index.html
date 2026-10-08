@@ -6,7 +6,10 @@
   <script>
     // `js` : JS actif. `is-slider` : affichage plein écran par panneaux (retiré par main.js si GSAP est indisponible)
     document.documentElement.classList.add('js');
-    if (matchMedia('(min-width: 62rem) and (min-height: 46rem)').matches) document.documentElement.classList.add('is-slider');
+    if (matchMedia('(min-width: 62rem) and (min-height: 46rem)').matches) {
+      document.documentElement.classList.add('is-slider');
+      if ('scrollRestoration' in history) history.scrollRestoration = 'manual'; // le slider repart toujours du haut au rechargement
+    }
   </script>
 
   <title>Happy Culteur | Cultiver des talents, faire grandir des projets</title>
@@ -22,6 +25,8 @@
   <meta property="og:description" content="Une équipe impliquée qui aime faire les choses correctement.">
   <!-- TODO: ajouter og:image et og:url une fois l'image et le domaine connus -->
 
+  <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
+  <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500..700&family=Manrope:wght@400;500;600;700&display=swap">
@@ -88,7 +93,7 @@
 
         <figure class="hero__media">
           <div class="hero__frame">
-            <img class="hero__img" src="assets/img/equipe.jpg" width="483" height="444"
+            <img class="hero__img" src="assets/img/equipe.jpg" width="483" height="444" fetchpriority="high" decoding="async"
                  alt="Quatre membres de l'équipe Happy Culteur souriants, penchés ensemble sur un ordinateur portable">
           </div>
         </figure>
@@ -99,7 +104,7 @@
       <div class="container about__inner">
         <div class="about__intro" data-slide-in>
           <h2 class="about__title" id="qui-titre">Qui sommes-nous&nbsp;?</h2>
-          <p class="about__lead">Happy Culteur, c’est une équipe de jeunes talents, réunis par une même ambition&nbsp;: <mark>avancer ensemble</mark> et se tirer vers le haut, aussi bien professionnellement qu’humainement.</p>
+          <p class="about__lead">Happy Culteur, c’est une équipe de jeunes talents, réunis par une même ambition&nbsp;: avancer ensemble et se tirer vers le haut, aussi bien professionnellement qu’humainement.</p>
           <p class="about__closing">C’est cette façon de travailler que nous voulons partager avec chaque entreprise qui nous fait confiance.</p>
         </div>
 
@@ -136,6 +141,7 @@
     </section>
     </div>
 
+    <div class="free-zone">
     <section class="collab" id="collaborer" data-label="Pourquoi collaborer avec nous ?" aria-labelledby="collab-titre">
       <div class="container collab__inner">
         <figure class="collab__media" data-reveal>
@@ -179,6 +185,60 @@
         </div>
       </div>
     </section>
+
+    <section class="services" id="services" data-label="Nos prestations" aria-labelledby="svc-titre">
+      <div class="container">
+        <div class="svc__top">
+          <h2 class="about__title svc__title" id="svc-titre">Nos prestations</h2>
+          <a class="btn" href="#contact">Parlons de votre projet <span aria-hidden="true">→</span></a>
+        </div>
+        <div class="svc__grid">
+          <article class="svc__item">
+            <svg class="svc__ill" viewBox="0 0 240 180" preserveAspectRatio="xMinYMid meet" aria-hidden="true" focusable="false"><path class="ill-bg" d="M0 0H200Q240 0 240 40V180H40Q0 180 0 140Z"/>
+              <path class="d" d="M82 98a38 38 0 0 1 76 0"/><rect class="d w" x="74" y="92" width="14" height="30" rx="6"/><rect class="d w" x="152" y="92" width="14" height="30" rx="6"/><path class="d" d="M159 122q0 18-26 20"/><circle class="pop y" cx="130" cy="142" r="5"/>
+              <g class="b1"><path class="d w" d="M20 22h60a10 10 0 0 1 10 10v22a10 10 0 0 1-10 10H46l-14 12v-12h-12a10 10 0 0 1-10-10V32a10 10 0 0 1 10-10z"/><path class="d" d="M24 38h44M24 50h28"/></g>
+              <g class="b2"><path class="d y" d="M182 18h34a10 10 0 0 1 10 10v16a10 10 0 0 1-10 10h-20l-12 10v-10h-2a10 10 0 0 1-10-10V28a10 10 0 0 1 10-10z"/><path class="d chk" d="M188 37l7 7 13-13"/></g></svg>
+            <div class="svc__head"><h3>Service client &amp; SAV</h3><ul class="svc__tags"><li>Demandes</li><li>Réclamations</li><li>Retours</li><li>Livraisons</li></ul></div>
+            <div class="svc__text"><p>Aussi bien au téléphone que par email, nous prenons en charge votre service client de A à Z, de la gestion des demandes et réclamations au suivi des commandes, retours et livraisons.</p><details class="svc__more"><summary>Lire la suite</summary><p>Notre expérience nous permet également d’aller plus loin : comprendre vos clients, repérer les problèmes récurrents, identifier les réclamations qui méritent une attention particulière et vous faire remonter les informations importantes.</p><p>Nous pouvons également vous accompagner dans la mise en place et l’amélioration de vos process afin de rendre votre service client plus simple et plus efficace.</p></details></div>
+          </article>
+          <article class="svc__item">
+            <svg class="svc__ill" viewBox="0 0 240 180" preserveAspectRatio="xMinYMid meet" aria-hidden="true" focusable="false"><path class="ill-bg" d="M0 0H200Q240 0 240 40V180H40Q0 180 0 140Z"/>
+              <g transform="translate(12 64) scale(3)"><path class="d" stroke-width=".7" d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2z"/></g>
+              <path class="wave" d="M92 90a12 12 0 0 1 0 22"/><path class="wave" d="M100 82a22 22 0 0 1 0 38"/>
+              <rect class="d w" x="122" y="34" width="96" height="100" rx="8"/><path class="d" d="M122 58h96M146 26v16M194 26v16"/>
+              <rect class="d w" x="134" y="70" width="18" height="14" rx="3"/><rect class="d w" x="160" y="70" width="18" height="14" rx="3"/><rect class="d w" x="186" y="70" width="18" height="14" rx="3"/>
+              <rect class="d w" x="134" y="92" width="18" height="14" rx="3"/><rect class="rdv pop y" x="160" y="92" width="18" height="14" rx="3" stroke="currentColor"/><rect class="d w" x="186" y="92" width="18" height="14" rx="3"/>
+              <rect class="d w" x="134" y="114" width="18" height="14" rx="3"/><rect class="d w" x="160" y="114" width="18" height="14" rx="3"/>
+              <path class="d chk" d="M163 99l4 4 8-8"/></svg>
+            <div class="svc__head"><h3>Téléprospection &amp; prise de rendez-vous</h3><ul class="svc__tags"><li>Qualification</li><li>Rendez-vous</li><li>Suivi de prospects</li><li>Vente</li></ul></div>
+            <div class="svc__text"><p>De la qualification de vos fichiers à la prise de rendez-vous, nous prenons en charge vos appels et le suivi de vos prospects.</p><details class="svc__more"><summary>Lire la suite</summary><p>Selon votre besoin, nous pouvons également intervenir sur la vente de vos produits ou services.</p><p>Nous travaillons à partir de vos consignes et de votre discours pour assurer des échanges cohérents avec votre façon de faire.</p></details></div>
+          </article>
+          <article class="svc__item">
+            <svg class="svc__ill" viewBox="0 0 240 180" preserveAspectRatio="xMinYMid meet" aria-hidden="true" focusable="false"><path class="ill-bg" d="M0 0H200Q240 0 240 40V180H40Q0 180 0 140Z"/>
+              <rect class="d w" x="86" y="20" width="68" height="140" rx="12"/><path class="d" d="M108 28h24"/>
+              <circle class="d" cx="102" cy="48" r="7"/><path class="d" d="M114 45h26M114 53h16"/>
+              <rect class="d w" x="96" y="66" width="48" height="38" rx="4"/><circle class="pop y" cx="130" cy="78" r="4"/><path class="d" d="M96 100l14-14 10 10 8-8 16 16"/>
+              <path class="like pop y" transform="translate(104 120) scale(.7)" d="M0 7C-16 -4 -9 -15 0 -8C9 -15 16 -4 0 7Z"/><path class="d" d="M116 116h26M116 124h18M98 144h44"/>
+              <g class="heart"><path class="y" transform="translate(56 120) scale(1.1)" d="M0 7C-16 -4 -9 -15 0 -8C9 -15 16 -4 0 7Z"/></g><g class="heart"><path class="y" transform="translate(190 110)" d="M0 7C-16 -4 -9 -15 0 -8C9 -15 16 -4 0 7Z"/></g>
+              <path class="d w" d="M178 30h34a8 8 0 0 1 8 8v12a8 8 0 0 1-8 8h-18l-10 8v-8h-6a8 8 0 0 1-8-8V38a8 8 0 0 1 8-8z"/><circle class="dot" cx="184" cy="44" r="2.5"/><circle class="dot" cx="195" cy="44" r="2.5"/><circle class="dot" cx="206" cy="44" r="2.5"/></svg>
+            <div class="svc__head"><h3>Community management</h3><ul class="svc__tags"><li>Posts</li><li>Gestion de page</li><li>Commentaires</li><li>Messages privés</li></ul></div>
+            <div class="svc__text"><p>Nous vous accompagnons dans la gestion de vos réseaux sociaux au quotidien.</p><details class="svc__more"><summary>Lire la suite</summary><p>Création et publication de posts, gestion de votre page, modération des commentaires et des messages privés : nous prenons en charge les différentes tâches nécessaires pour garder vos réseaux actifs et vos échanges avec votre communauté suivis.</p></details></div>
+          </article>
+          <article class="svc__item">
+            <svg class="svc__ill" viewBox="0 0 240 180" preserveAspectRatio="xMinYMid meet" aria-hidden="true" focusable="false"><path class="ill-bg" d="M0 0H200Q240 0 240 40V180H40Q0 180 0 140Z"/>
+              <rect class="d w" x="78" y="30" width="84" height="122" rx="8"/><rect class="pop y" x="104" y="22" width="32" height="16" rx="5" stroke="currentColor"/>
+              <rect class="d" x="90" y="56" width="14" height="14" rx="3"/><path class="d chk" d="M93 63l4 4 7-8"/><path class="d" d="M114 63h38"/>
+              <rect class="d" x="90" y="86" width="14" height="14" rx="3"/><path class="d chk" d="M93 93l4 4 7-8"/><path class="d" d="M114 93h38"/>
+              <rect class="d" x="90" y="116" width="14" height="14" rx="3"/><path class="d chk" d="M93 123l4 4 7-8"/><path class="d" d="M114 123h38"/>
+              <circle class="d w" cx="40" cy="74" r="20"/><path class="d" d="M40 74l8 4"/><path class="hand" d="M40 74v-11"/>
+              <rect class="d w" x="180" y="96" width="44" height="32" rx="4"/><path class="d" d="M180 100l22 16 22-16"/><circle class="pop y" cx="224" cy="96" r="6" stroke="currentColor"/></svg>
+            <div class="svc__head"><h3>Assistance virtuelle</h3><ul class="svc__tags"><li>Administratif</li><li>Fichiers</li><li>Dossiers</li><li>Relances et factures</li></ul></div>
+            <div class="svc__text"><p>Certaines tâches prennent du temps sans forcément nécessiter votre présence ? Confiez-les-nous.</p><details class="svc__more"><summary>Lire la suite</summary><p>Gestion administrative, mise à jour de fichiers, suivi de dossiers, relances, gestion de factures… Nous pouvons prendre en charge les tâches du quotidien qui vous permettent de vous concentrer sur votre activité.</p></details></div>
+          </article>
+        </div>
+      </div>
+    </section>
+    </div>
   </main>
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js" defer></script>
