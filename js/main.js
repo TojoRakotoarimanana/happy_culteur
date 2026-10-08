@@ -78,7 +78,7 @@
   }
 
   gsap.matchMedia().add('(prefers-reduced-motion: no-preference)', () => {
-    if (!st) { free.classList.add('is-in'); return; } // sans ScrollTrigger : tout reste visible
+    if (!st) { free.classList.add('is-in'); document.querySelector('.tools').classList.add('is-in'); document.querySelector('.sep').classList.add('is-in'); return; } // sans ScrollTrigger : tout reste visible
 
     gsap.timeline({ scrollTrigger: { trigger: free, start: 'top 65%', once: true }, defaults: { ease: 'power3.out' } })
       // titre + accroche, puis surlignage peint
@@ -91,6 +91,32 @@
       gsap.timeline({ scrollTrigger: { trigger: row, start: 'top 75%', once: true }, defaults: { ease: 'power3.out' } })
         .fromTo(row.querySelector('.reason__leaf'), { opacity: 0, scale: 0, rotate: -90 }, { opacity: 1, scale: 1, rotate: 0, duration: 0.6, ease: 'back.out(2.5)' }, 0)
         .fromTo(row.querySelectorAll('.reason__head, .reason__text'), { opacity: 0, x: -16 }, { opacity: 1, x: 0, duration: 0.7, stagger: 0.12 }, 0.15);
+    });
+
+    // séparateur : la vague se trace de gauche à droite quand on l'atteint
+    gsap.fromTo('.sep', { clipPath: 'inset(0 100% 0 0)' }, { clipPath: 'inset(0 0% 0 0)', duration: 1.4, ease: 'power2.inOut', scrollTrigger: { trigger: '.sep', start: 'top 90%', once: true } });
+
+    // outils : l'intro se pose, chaque bloc se dévoile en « feuille » (clip-path) puis ses outils éclosent un à un ;
+    // ensuite les icônes flottent doucement tant que la section est à l'écran, et réagissent au survol
+    gsap.fromTo('.tools__head', { opacity: 0, y: 24 }, { opacity: 1, y: 0, duration: 0.8, ease: 'power3.out', stagger: 0.15, scrollTrigger: { trigger: '.tools', start: 'top 60%', once: true } });
+    gsap.utils.toArray('.tools__block').forEach((block, i) => {
+      gsap.timeline({ scrollTrigger: { trigger: block, start: 'top 85%', once: true }, defaults: { ease: 'power3.out' } })
+        .fromTo(block, { opacity: 0, y: 40, clipPath: 'inset(0 0 100% 0 round 0 2.5rem 0 2.5rem)' }, { opacity: 1, y: 0, clipPath: 'inset(0 0 0% 0 round 0 2.5rem 0 2.5rem)', duration: 0.9, clearProps: 'clipPath' }, (i % 3) * 0.08)
+        .fromTo(block.querySelector('h3'), { opacity: 0, x: -16 }, { opacity: 1, x: 0, duration: 0.6 }, '-=0.5')
+        .fromTo(block.querySelectorAll('.tool, .tools__plus'), { opacity: 0, scale: 0.4, rotate: -14, y: 18 }, { opacity: 1, scale: 1, rotate: 0, y: 0, duration: 0.7, stagger: 0.09, ease: 'back.out(2.2)', clearProps: 'transform' }, '-=0.35');
+    });
+
+    const floats = gsap.utils.toArray('.tool__icon').map((icon) =>
+      gsap.to(icon, { y: -3, duration: gsap.utils.random(1.8, 3), delay: gsap.utils.random(0, 1.5), repeat: -1, yoyo: true, ease: 'sine.inOut', paused: true }));
+    st.create({ trigger: '.tools', start: 'top bottom', end: 'bottom top', onToggle: (self) => floats.forEach((f) => (self.isActive ? f.play() : f.pause())) });
+
+    gsap.matchMedia().add('(hover: hover)', () => {
+      gsap.utils.toArray('.tool').forEach((tool) => {
+        const icon = tool.querySelector('.tool__icon');
+        const on = () => gsap.to(icon, { scale: 1.15, rotate: gsap.utils.random(-9, 9), duration: 0.5, ease: 'elastic.out(1, 0.5)', overwrite: 'auto' });
+        const off = () => gsap.to(icon, { scale: 1, rotate: 0, duration: 0.4, ease: 'power2.out', overwrite: 'auto' });
+        tool.addEventListener('mouseenter', on); tool.addEventListener('mouseleave', off);
+      });
     });
   });
 
@@ -200,7 +226,7 @@
       inner.className = 'svc__sheet-in';
       inner.innerHTML = `<button type="button" class="svc__close" aria-label="Fermer le détail"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button><p class="svc__sheet-title">${title.innerHTML}</p>`;
       more.querySelectorAll('p').forEach((p) => inner.append(p.cloneNode(true)));
-      inner.insertAdjacentHTML('beforeend', '<a class="btn svc__sheet-cta" href="#contact">Parlons de votre projet <span aria-hidden="true">→</span></a>');
+      inner.insertAdjacentHTML('beforeend', '<a class="btn svc__sheet-cta" href="#contact">Discuter de ce service <span aria-hidden="true">→</span></a>');
       sheet.append(inner);
       it.append(sheet);
       return { it, sheet, inner, sum: more.querySelector('summary'), content: [...inner.children].filter((c) => !c.matches('.svc__close')), isOpen: false };

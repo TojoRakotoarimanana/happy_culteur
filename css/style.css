@@ -273,6 +273,58 @@ h3 { font-size: 1.25rem; font-weight: 600; }
   .nav__link.is-active { font-weight: 600; }
 }
 
+/* Séparateur entre deux sections libres : vague jaune fine */
+.sep { width: min(100% - 3rem, var(--container)); height: 12px; margin-inline: auto; background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='48' height='12' viewBox='0 0 48 12'%3E%3Cpath d='M0 6Q12 0 24 6T48 6' fill='none' stroke='%23F7B731' stroke-width='2.5' stroke-linecap='round'/%3E%3C/svg%3E") repeat-x center; }
+
+/* Les outils : fond blanc, comme le reste de la page.
+   Cinq catégories d'outils en mosaïque. */
+.tools { background: var(--c-bg); padding-block: calc(var(--header-h) + 1.5rem) 3.5rem; }
+.tools__inner { display: grid; gap: clamp(1.75rem, 4svh, 2.75rem); }
+.tools__top { display: block; }
+.tools__head { max-width: 50rem; }
+.collab__head .btn { margin-top: 1.75rem; }
+.tools .about__title { font-size: clamp(2rem, 3.4vw, 2.8rem); }
+.tools .about__lead { max-width: 44ch; text-wrap: balance; margin-top: 1.1rem; font-size: clamp(1.05rem, 1.4vw, 1.25rem); }
+
+/* Mosaïque : un bloc par catégorie, les outils en vignettes carrées */
+.tools__grid { margin: 0; padding: 0; list-style: none; display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 1.5rem; }
+.tools__block { grid-column: span 2; display: grid; align-content: start; gap: 1.5rem; padding: 1.75rem 1.75rem 2rem; border: 1px solid var(--c-line); border-radius: 0 2.5rem 0 2.5rem; background: #fff; transition: box-shadow .3s var(--ease), border-color .3s var(--ease); }
+.tools__block--3 { grid-column: span 3; }
+.tools__block--more:hover { border-color: var(--c-accent); box-shadow: .5rem .5rem 0 var(--c-accent); }
+.tools__block h3 { font: 600 clamp(1.3rem, 1.8vw, 1.6rem)/1.15 var(--f-display); }
+.tools__list { display: flex; flex-wrap: wrap; gap: 1.25rem 1rem; }
+
+@media (min-width: 62.01rem) { .tools__block--2 h3 { min-height: 2.3em; } } /* titres sur 1 ou 2 lignes : les vignettes restent alignées d'un bloc à l'autre */
+.tool { display: grid; justify-items: center; gap: .55rem; width: 5rem; cursor: default; font-weight: 700; font-size: .9rem; line-height: 1.15; text-align: center; transition: transform .25s var(--ease); }
+.tool:hover { transform: translateY(-3px); }
+.tool__icon { display: grid; place-items: center; width: 3.5rem; aspect-ratio: 1; border-radius: 24%; overflow: hidden; box-shadow: 0 .55rem .9rem -.6rem rgb(20 20 43 / .6); }
+.tool__icon img { width: 52%; height: 52%; }
+.tool__icon img.is-full { width: 100%; height: 100%; object-fit: cover; }
+.tool__mono { background: var(--c-accent); font: 600 1.4rem/1 var(--f-display); }
+
+/* Encadré « autre outil » : pointillé jaune, un seul bouton */
+.tools__block--more { grid-column: 1 / -1; grid-template-columns: auto 1fr auto; align-items: center; gap: 1.5rem; border: 2px dashed var(--c-accent-dark); }
+.tools__block--more p { margin-top: .4rem; color: var(--c-ink-soft); }
+.tools__plus { display: grid; place-items: center; width: 3.5rem; aspect-ratio: 1; border-radius: 24%; border: 2px dashed var(--c-accent-dark); font: 400 2rem/1 var(--f-display); color: var(--c-accent-dark); transition: transform .5s var(--ease); }
+.tools__block--more:hover .tools__plus { transform: rotate(90deg); }
+@media (min-width: 62.01rem) and (max-width: 75rem) {
+  .tools__block { padding-inline: 1.25rem; }
+  .tools__list { gap: 1.25rem .6rem; }
+  .tool { width: 4.5rem; }
+}
+@media (max-width: 62rem) {
+  .tools__grid { grid-template-columns: minmax(0, 1fr); }
+  .tools__block, .tools__block--3 { grid-column: auto; }
+  .tools__block--more { grid-template-columns: auto 1fr; }
+  .tools__block--more .btn { grid-column: 1 / -1; justify-self: start; }
+}
+@media (max-width: 30rem) {
+  .tools__block { padding-inline: 1.25rem; }
+  .tools__list { gap: 1.25rem .5rem; }
+  .tool { width: 4.25rem; }
+}
+@media (prefers-reduced-motion: reduce) { .tool, .tools__block, .tools__plus { transition: none; } .tool:hover { transform: none; } }
+
 @media (max-width: 62rem) {
   .about__inner { grid-template-columns: 1fr; }
   .about__intro { order: 0; }
@@ -301,5 +353,7 @@ h3 { font-size: 1.25rem; font-weight: 600; }
   .js .collab:not(.is-in) mark { background-size: 0% 100%; }
   .js .collab:not(.is-in) .collab__list { --stem: 0; }
   .js .collab:not(.is-in) .reason > * { opacity: 0; }
+  .js .sep:not(.is-in) { clip-path: inset(0 100% 0 0); }
+  .js .tools:not(.is-in) :is(.tools__head, .tools__block, .tool, .tools__plus) { opacity: 0; }
 }
 
