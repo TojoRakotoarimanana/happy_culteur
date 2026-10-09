@@ -27,6 +27,10 @@
 *, *::before, *::after { box-sizing: border-box; }
 
 html { scroll-behavior: smooth; scroll-padding-top: var(--header-h); }
+/* Grands écrans : tout est en rem, donc agrandir la base fait grandir le conteneur, les textes et les espacements ensemble */
+@media (min-width: 100rem) { html { font-size: 112.5%; } }
+@media (min-width: 120rem) { html { font-size: 125%; } }
+@media (min-width: 160rem) { html { font-size: 150%; } }
 
 body {
   margin: 0;
