@@ -304,6 +304,7 @@ h3 { font-size: 1.25rem; font-weight: 600; }
 .tool__icon { display: grid; place-items: center; width: 3.5rem; aspect-ratio: 1; border-radius: 24%; overflow: hidden; box-shadow: 0 .55rem .9rem -.6rem rgb(20 20 43 / .6); }
 .tool__icon img { width: 52%; height: 52%; }
 .tool__icon img.is-full { width: 100%; height: 100%; object-fit: cover; }
+.tool__icon img.is-lg { width: 74%; height: 74%; }
 .tool__mono { background: var(--c-accent); font: 600 1.4rem/1 var(--f-display); }
 
 /* Encadré « autre outil » : pointillé jaune, un seul bouton */
@@ -353,7 +354,7 @@ h3 { font-size: 1.25rem; font-weight: 600; }
 @media (prefers-reduced-motion: no-preference) {
   .js .logo, .js .nav__link, .js .hero .line, .js .hero__lead, .js .hero .btn { opacity: 0; }
   /* Section À propos : surlignage et trait jaune se tracent quand la section devient courante */
-  .is-slider .about__title::after { transform: scaleX(0); transform-origin: left; transition: transform .8s var(--ease) .5s; }
+  .is-slider .about__title::after { transform: scaleX(0); transform-origin: left; transition: transform .8s var(--ease) 1.2s; }
   .is-slider .about.is-current .about__title::after { transform: scaleX(1); }
 }
 
@@ -447,23 +448,29 @@ h3 { font-size: 1.25rem; font-weight: 600; }
   .tools__block--more { padding-block: 1rem; gap: .75rem; }
 }
 
-/* Nos prestations, mobile et tablette : un service par écran, comme les panneaux du haut de page.
-   Aucun cadre : fond blanc, grande illustration, titre serif, un repère de progression (points jaunes) sur le bord. */
+/* Nos prestations, mobile et tablette. Sans JS / mouvement réduit : services empilés, aérés.
+   Avec GSAP (main.js) : classe .is-pinned, la section reste épinglée et chaque défilement change de service (effet rideau). */
 @media (max-width: 62rem) {
-  html:has(.svc__grid) { scroll-snap-type: y proximity; }
-  .services { padding-bottom: 0; }
+  .services { padding-bottom: 2rem; }
   .svc__top { margin-bottom: 1rem; }
-  .svc__grid { grid-template-columns: minmax(0, 1fr); gap: 0; max-width: 34rem; margin-inline: auto; }
-  .svc__item { grid-template-columns: minmax(0, 1fr); align-content: center; justify-items: start; gap: 1.1rem; min-height: 100svh; padding: calc(var(--header-h) * .8) 0 2.5rem; scroll-snap-align: start; }
-  .svc__ill { height: clamp(11rem, 36svh, 17rem); margin: 0 0 .5rem; }
-  .svc__head { gap: .6rem; }
-  .svc__head h3 { font-size: clamp(1.7rem, 7vw, 2.1rem); line-height: 1.12; }
-  .svc__head h3::after { content: ""; display: block; width: 3rem; height: 3px; margin-top: .9rem; border-radius: 2px; background: var(--c-accent); transform: scaleX(var(--bar-x, 1)); transform-origin: left; }
-  .svc__tags { font-size: .95rem; }
-  .svc__text { gap: .9rem; max-width: 36ch; }
-  .svc__text p { font-size: 1.05rem; line-height: 1.65; }
+  .svc__grid { grid-template-columns: minmax(0, 1fr); gap: 2.75rem; max-width: 34rem; margin-inline: auto; }
+  .svc__ill { height: clamp(10rem, 30svh, 15rem); margin: 0 0 .5rem; }
+  .svc__head h3 { font-size: clamp(1.6rem, 6.5vw, 2rem); line-height: 1.12; }
+  .svc__head h3::after { content: ""; display: block; width: 3rem; height: 3px; margin-top: .8rem; border-radius: 2px; background: var(--c-accent); transform: scaleX(var(--bar-x, 1)); transform-origin: left; }
+  .svc__text p { font-size: 1.02rem; line-height: 1.65; }
   .svc__more summary { min-height: 44px; }
   .svc__sheet, .svc__sheet-in { inset: 0; }
+
+  .services.is-pinned { height: 100svh; min-height: 0; overflow: hidden; display: block; padding: calc(var(--header-h) + .25rem) 0 1.25rem; }
+  .is-pinned > .container { height: 100%; display: grid; grid-template-rows: auto minmax(0, 1fr) auto; }
+  .is-pinned .svc__top { display: contents; }
+  .is-pinned .svc__title { margin-bottom: .5rem; font-size: clamp(1.9rem, 8vw, 2.5rem); }
+  .is-pinned .svc__top .btn { grid-row: 3; justify-self: start; margin-top: .75rem; padding: .95rem 1.6rem; }
+  .is-pinned .svc__grid { grid-row: 2; position: relative; display: block; width: 100%; margin: 0; }
+  .is-pinned .svc__item { position: absolute; z-index: 1; inset: 0; align-content: center; justify-items: start; gap: .8rem; padding: .5rem 0; background: #fff; }
+  .is-pinned .svc__ill { height: clamp(7rem, 28svh, 14rem); }
+  .is-pinned .svc__head h3 { font-size: clamp(1.45rem, 6vw, 1.9rem); }
+  .is-pinned .svc__text p { font-size: .98rem; line-height: 1.55; }
 }
 
 /* Points de progression des prestations (créés par main.js), visibles seulement pendant la section */

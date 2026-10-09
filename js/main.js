@@ -23,19 +23,13 @@
   menu.addEventListener('click', (e) => { if (e.target.closest('a')) setMenu(false); });
   document.addEventListener('keydown', (e) => { if (e.key === 'Escape') setMenu(false); });
 
-  /* ---------- Nos prestations (mobile / tablette) : points de progression, un par service ---------- */
+  /* ---------- Nos prestations (mobile / tablette) : points de progression, pilotés par la section épinglée ---------- */
   const svcDots = document.createElement('div');
   svcDots.className = 'svc__dots';
   svcDots.setAttribute('aria-hidden', 'true');
   const svcItems = [...document.querySelectorAll('.svc__item')];
   svcItems.forEach(() => svcDots.append(document.createElement('span')));
   document.body.append(svcDots);
-  new IntersectionObserver(([e]) => svcDots.classList.toggle('is-on', e.isIntersecting && matchMedia('(max-width: 62rem)').matches),
-    { rootMargin: '-45% 0px -45% 0px' }).observe(document.querySelector('.services'));
-  const svcSee = new IntersectionObserver((entries) => entries.forEach(({ target, isIntersecting }) => {
-    if (isIntersecting) [...svcDots.children].forEach((dot, i) => dot.classList.toggle('is-active', svcItems[i] === target));
-  }), { rootMargin: '-45% 0px -45% 0px' });
-  svcItems.forEach((it) => svcSee.observe(it));
 
   /* ---------- Navigation native : défilement classique (petits écrans ou GSAP indisponible) ---------- */
   const startNativeNav = () => {
@@ -174,25 +168,20 @@
     gsap.set(strokes, { strokeDasharray: 1 });
 
     // 1. Arrivée : par colonne, filet jaune → feuille → traits → pastilles jaunes → texte
-    // Mobile / tablette : un service par écran, chaque service s'anime à SON arrivée ; sur desktop, les 4 colonnes arrivent ensemble
-    const mob = matchMedia('(max-width: 62rem)').matches;
-    const intro = gsap.timeline(mob ? {} : { scrollTrigger: { trigger: grid, start: 'top 90%', once: true } });
-    items.forEach((it, i) => {
+    // Mobile / tablette : section épinglée, un service par écran (voir plus bas) ; desktop : les 4 colonnes arrivent ensemble
+    const pin = matchMedia('(max-width: 62rem)').matches;
+    const section = document.querySelector('.services');
+    if (pin) section.classList.add('is-pinned');
+    const reveal = (tl, it, t, m) => {
       const q = gsap.utils.selector(it);
-      const t = mob ? 0 : i * 0.1;
-      const tl = mob ? gsap.timeline({ scrollTrigger: { trigger: it, start: 'top 60%', once: true } }) : intro;
-      tl
-        .from(it, { '--bar': 0, duration: 0.5, ease: 'power3.out' }, t)
-        .from(q('.ill-bg'), { scale: 0.6, autoAlpha: 0, transformOrigin: '50% 50%', duration: 0.5, ease: 'back.out(1.6)' }, t)
+      tl.from(q('.ill-bg'), { scale: 0.6, autoAlpha: 0, transformOrigin: '50% 50%', duration: 0.5, ease: 'back.out(1.6)' }, t)
         .from(q('.d'), { strokeDashoffset: 1, duration: 0.6, stagger: 0.02, ease: 'power2.out' }, t + 0.1)
         .from(q('.pop, .heart, .dot'), { scale: 0, transformOrigin: '50% 50%', duration: 0.35, stagger: 0.05, ease: 'back.out(3)' }, t + 0.4)
-        .from(q('.svc__head > *, .svc__text > *'), { autoAlpha: 0, y: mob ? 28 : 16, duration: mob ? 0.7 : 0.45, stagger: mob ? 0.1 : 0.05, ease: 'power3.out' }, t + 0.2);
-      if (!mob) return;
-      tl.from(q('.svc__head h3'), { '--bar-x': 0, duration: 0.8, ease: 'power3.inOut' }, t + 0.6); // le trait jaune sous le titre se trace
-      // en défilant, l'illustration glisse plus lentement que le texte (profondeur) puis le service s'estompe en sortant
-      gsap.fromTo(q('.svc__ill'), { yPercent: 10 }, { yPercent: -10, ease: 'none', scrollTrigger: { trigger: it, start: 'top bottom', end: 'bottom top', scrub: true } });
-      gsap.to(it, { opacity: 0.1, ease: 'none', scrollTrigger: { trigger: it, start: 'bottom 55%', end: 'bottom 5%', scrub: true } });
-    });
+        .from(q('.svc__head > *, .svc__text > *'), { autoAlpha: 0, y: m ? 28 : 16, duration: m ? 0.7 : 0.45, stagger: m ? 0.1 : 0.05, ease: 'power3.out' }, t + 0.2);
+      if (m) tl.from(q('.svc__head h3'), { '--bar-x': 0, duration: 0.8, ease: 'power3.inOut' }, t + 0.6); // le trait jaune sous le titre se trace
+    };
+    const intro = gsap.timeline(pin ? {} : { scrollTrigger: { trigger: grid, start: 'top 90%', once: true } });
+    if (!pin) items.forEach((it, i) => { intro.from(it, { '--bar': 0, duration: 0.5, ease: 'power3.out' }, i * 0.1); reveal(intro, it, i * 0.1, false); });
 
     // 2. Boucles de vie, une par illustration, jouées seulement quand la colonne est à l'écran et l'arrivée terminée
     const pulse = { scale: 1.12, transformOrigin: '50% 100%', duration: 0.35, yoyo: true, repeat: 1, ease: 'power2.out' };
@@ -219,10 +208,41 @@
     const state = items.map((it, i) => {
       const tl = loops[i](gsap.utils.selector(it)).pause();
       const s = { tl, active: false };
-      st.create({ trigger: it, start: 'top 90%', end: 'bottom 10%', onToggle: (self) => { s.active = self.isActive; sync(); } });
+      if (!pin) st.create({ trigger: it, start: 'top 90%', end: 'bottom 10%', onToggle: (self) => { s.active = self.isActive; sync(); } });
       return s;
     });
     function sync() { state.forEach((s, i) => s.tl.paused(!(ready && s.active && !items[i].classList.contains('is-open')))); }
+
+    // Mobile / tablette : la section reste épinglée, chaque défilement fait avancer d'un service avec l'effet « rideau » des panneaux du haut de page
+    if (pin) {
+      const n = items.length, STEP = 2.4;
+      const setCurrent = (idx) => {
+        [...svcDots.children].forEach((d, k) => d.classList.toggle('is-active', k === idx));
+        state.forEach((s, k) => { s.active = k === idx; });
+        sync();
+      };
+      reveal(gsap.timeline({ scrollTrigger: { trigger: section, start: 'top 60%', once: true } }), items[0], 0, true);
+      const tl = gsap.timeline({
+        defaults: { ease: 'none' },
+        scrollTrigger: {
+          trigger: section, start: 'top top', end: () => `+=${window.innerHeight * (n - 1) * 0.6}`, pin: true, scrub: 0.5, anticipatePin: 1,
+          snap: { snapTo: 'labels', duration: { min: 0.15, max: 0.45 }, ease: 'power1.inOut' },
+          onToggle: (self) => svcDots.classList.toggle('is-on', self.isActive),
+          onUpdate: () => setCurrent(items.reduce((c, _, i) => (i && tl.time() >= (i - 1) * STEP + 0.5 ? i : c), 0)),
+        },
+      });
+      tl.addLabel('s0', 0);
+      items.forEach((it, i) => {
+        if (!i) return;
+        const t = (i - 1) * STEP;
+        tl.fromTo(it, { clipPath: 'inset(100% 0% 0% 0%)' }, { clipPath: 'inset(0% 0% 0% 0%)', duration: 1, ease: 'power1.inOut' }, t)
+          .to(items[i - 1], { yPercent: -8, duration: 1 }, t);
+        reveal(tl, it, t + 0.25, true);
+        tl.addLabel(`s${i}`, t + 1.9);
+      });
+      tl.to({}, { duration: 0.3 });
+      setCurrent(0);
+    }
 
     // 3. Survol : le filet jaune s'étend, l'illustration se soulève
     const hover = (it, on) => {
@@ -316,6 +336,7 @@
       grid.removeEventListener('click', onMore);
       document.removeEventListener('keydown', onKey);
       document.removeEventListener('pointerdown', onOutside);
+      section.classList.remove('is-pinned'); svcDots.classList.remove('is-on');
       sheets.forEach((s) => { s.sheet.remove(); [...s.it.children].forEach((c) => { c.inert = false; }); });
     };
   });
@@ -413,9 +434,9 @@
         .fromTo(to.querySelectorAll('[data-slide-in]'),
           { opacity: 0, y: 40 * dir },
           { opacity: 1, y: 0, duration: calm ? 0 : 0.9, stagger: calm ? 0 : 0.09, ease: 'power3.out', clearProps: 'opacity,transform' },
-          calm ? 0 : 0.45)
+          calm ? 0 : 0.95)
         .fromTo(splits.get(to).chars, { autoAlpha: 0, yPercent: 150 * dir },
-          { autoAlpha: 1, yPercent: 0, duration: calm ? 0 : 1, ease: 'power2', stagger: { each: calm ? 0 : 0.02, from: 'random' } }, calm ? 0 : 0.2);
+          { autoAlpha: 1, yPercent: 0, duration: calm ? 0 : 1, ease: 'power2', stagger: { each: calm ? 0 : 0.02, from: 'random' } }, calm ? 0 : 0.75);
     };
 
     // Molette et swipe : avec wheelSpeed -1, « onUp » = aller à la section suivante.
