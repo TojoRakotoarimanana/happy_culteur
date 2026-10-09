@@ -6,7 +6,7 @@
   <script>
     // `js` : JS actif. `is-slider` : affichage plein écran par panneaux (retiré par main.js si GSAP est indisponible)
     document.documentElement.classList.add('js');
-    if (matchMedia('(min-width: 62rem) and (min-height: 46rem)').matches) {
+    if (matchMedia('(max-width: 62rem) and (min-height: 36rem), (min-width: 62rem) and (min-height: 46rem)').matches) {
       document.documentElement.classList.add('is-slider');
       if ('scrollRestoration' in history) history.scrollRestoration = 'manual'; // le slider repart toujours du haut au rechargement
     }
@@ -15,6 +15,8 @@
   <title>Happy Culteur | Cultiver des talents, faire grandir des projets</title>
   <meta name="description" content="Happy Culteur est une équipe de jeunes talents impliquée, qui s'intègre pleinement à votre activité pour faire les choses correctement. Parlons de votre projet.">
   <meta name="theme-color" content="#F7B731">
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="apple-touch-icon.png">
   <!-- TODO: remplacer par l'URL de production -->
   <link rel="canonical" href="https://www.example.com/">
 
@@ -154,7 +156,7 @@
           <div class="collab__head" data-reveal style="--i:1">
             <h2 class="about__title" id="collab-titre">Pourquoi collaborer avec nous&nbsp;?</h2>
             <p class="about__lead">Parce qu’un bon prestataire, ce n’est pas seulement quelqu’un qui exécute une mission. C’est <mark>une équipe sur laquelle vous pouvez compter.</mark></p>
-            <a class="btn" href="#contact">Essayer deux semaines gratuitement <span aria-hidden="true">→</span></a>
+            <a class="btn" href="#contact">Test gratuit de 2 semaines <span aria-hidden="true">→</span></a>
           </div>
 
           <ul class="collab__list">

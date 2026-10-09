@@ -300,7 +300,7 @@
 
   /* ---------- Slider de sections : molette, swipe tactile, clavier, liens ---------- */
   gsap.matchMedia().add({
-    slider: '(min-width: 62rem) and (min-height: 46rem)',
+    slider: '(max-width: 62rem) and (min-height: 36rem), (min-width: 62rem) and (min-height: 46rem)',
     calm: '(prefers-reduced-motion: reduce)',
   }, ({ conditions: { slider, calm } }) => {
     if (!slider) {
