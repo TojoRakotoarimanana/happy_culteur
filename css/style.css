@@ -94,9 +94,12 @@ h3 { font-size: 1.25rem; font-weight: 600; }
 .header { position: fixed; inset: 0 0 auto; z-index: 100; height: var(--header-h); }
 .header__inner { height: 100%; display: grid; grid-template-columns: auto 1fr; align-items: center; }
 
-.logo { display: flex; flex-direction: column; justify-self: start; line-height: 1; text-decoration: none; color: var(--c-accent); }
-.logo__name { font: 600 1.9rem/1 var(--f-display); }
-.logo__tag { font-size: .6rem; letter-spacing: .35em; text-transform: uppercase; text-align: center; }
+.logo { display: flex; align-items: center; gap: .6rem; justify-self: start; line-height: 1; text-decoration: none; color: var(--c-ink); }
+.logo__mark { width: 2.5rem; height: 2.5rem; flex: none; transition: transform .5s cubic-bezier(.34, 1.56, .64, 1); }
+.logo:hover .logo__mark { transform: rotate(-8deg) scale(1.06); }
+.logo__text { display: flex; flex-direction: column; gap: .2rem; }
+.logo__name { font: 600 1.6rem/1 var(--f-display); letter-spacing: -.01em; }
+.logo__tag { font-size: .58rem; letter-spacing: .38em; text-transform: uppercase; color: var(--c-ink-soft); }
 
 .nav { display: flex; align-items: center; justify-self: end; } /* collé au bord droit du conteneur */
 .nav__list { display: flex; }
@@ -418,8 +421,8 @@ h3 { font-size: 1.25rem; font-weight: 600; }
 }
 
 @media (max-width: 62rem) {
-  .logo { min-height: 44px; justify-content: center; }
-  .logo__tag { font-size: .7rem; }
+  .logo { min-height: 44px; }
+  .logo__tag { font-size: .62rem; }
   /* zones tactiles ≥ 44 px */
   .svc__more summary, .about__points summary { min-height: 44px; }
   .svc__close { width: 2.75rem; height: 2.75rem; }
@@ -474,41 +477,32 @@ h3 { font-size: 1.25rem; font-weight: 600; }
   .is-flow .svc__sheet-cta { align-self: stretch; justify-content: center; margin-top: .75rem; }
   .svc__title { text-align: center; }
 
-  /* un grand service par écran : section épinglée (main.js), services empilés, rideau jaune entre deux */
-  /* un grand service par écran : section épinglée (main.js) ; une feuille crème commune se retourne à chaque service */
-  .services.is-flow { --w: min(100%, 20rem, 40svh); height: 100svh; min-height: 0; overflow: hidden; padding: calc(var(--header-h) + .5rem) 0 1.25rem; }
-  .is-flow > .container { height: 100%; display: grid; grid-template-rows: auto auto minmax(0, 1fr) auto; }
-  .is-flow .svc__top { display: contents; }
-  .is-flow .svc__title { grid-row: 1; margin-bottom: .2rem; font-size: clamp(1.3rem, 5.6vw, 1.6rem); }
-  .is-flow .svc__steps { grid-row: 2; }
-  .is-flow .svc__grid { grid-row: 3; position: relative; display: block; width: 100%; margin: .75rem 0 0; max-width: none; }
-  .is-flow .svc__top .btn { grid-row: 4; justify-self: center; margin-top: .75rem; padding: .95rem 1.6rem; }
-  .is-flow .svc__item { position: absolute; z-index: 1; inset: 0; align-content: start; gap: .7rem; padding: 0; }
-  .is-flow .svc__ill { width: var(--w); height: auto; margin: 0 auto .6rem; }
-  .is-flow .svc__ill .ill-bg { display: none; } /* remplacée par la feuille commune */
-  .svc__leaf { position: absolute; z-index: 0; top: 0; left: 50%; width: var(--w); aspect-ratio: 4 / 3; translate: -50% 0; border-radius: 0% 17% 0% 17% / 0% 22% 0% 22%; background: var(--c-tint); box-shadow: .55rem .55rem 0 var(--c-accent); }
+  /* défilement natif : 4 blocs centrés qui se révèlent à leur arrivée (main.js) ; la feuille crème bascule d'un coin à l'autre */
+  .services.is-flow { --w: min(100%, 19rem, 36svh); }
+  .is-flow .svc__top { justify-content: center; text-align: center; margin-bottom: 1.25rem; }
+  .is-flow .svc__top .btn { display: none; } /* le bouton revient après les 4 services */
+  .is-flow .svc__grid { gap: 0; max-width: 32rem; margin-inline: auto; }
+  .is-flow .svc__item { min-height: min(62svh, 34rem); align-content: center; gap: .65rem; padding: 2rem 0; }
+  .is-flow .svc__ill { width: var(--w); height: auto; margin: 0 auto .75rem; }
+  .is-flow .svc__ill .ill-bg { display: none; } /* remplacée par la feuille de l'illustration */
+  .svc__leaf { position: absolute; z-index: 0; top: 2rem; left: 50%; width: var(--w); aspect-ratio: 4 / 3; translate: -50% 0; border-radius: 0% 17% 0% 17% / 0% 22% 0% 22%; background: var(--c-tint); box-shadow: .5rem .5rem 0 var(--c-accent); }
+  .svc__item:nth-child(even) .svc__leaf { border-radius: 17% 0% 17% 0% / 22% 0% 22% 0%; box-shadow: -.5rem .5rem 0 var(--c-accent); }
+  .is-flow .svc__ill { position: relative; z-index: 1; }
   .is-flow .svc__head h3 { font-size: clamp(1.75rem, 7.6vw, 2.3rem); line-height: 1.12; }
   .is-flow .svc__tags { font-size: .78rem; color: var(--c-ink-soft); }
   .is-flow .svc__text { max-width: 30rem; }
   .is-flow .svc__text > p:first-child { font-size: 1rem; line-height: 1.6; }
   .is-flow .svc__more summary { min-height: 40px; }
-  .svc__steps { display: flex; justify-content: center; width: min(100%, 12rem); margin: 0 auto; }
-  .svc__steps button { flex: 1; min-height: 32px; padding: 0 .2rem; border: 0; background: none; cursor: pointer; }
-  .svc__steps i { position: relative; display: block; height: 3px; overflow: hidden; border-radius: 2px; background: var(--c-line); }
-  .svc__steps i::after { content: ""; position: absolute; inset: 0; border-radius: 2px; background: var(--c-accent); transform: scaleX(var(--f, 0)); transform-origin: left; }
+  .svc__end { display: grid; justify-items: center; padding-top: 1.5rem; }
 }
-
-
-@media (min-width: 40rem) and (max-width: 62rem) and (min-height: 46rem) {
-  .services.is-flow { --w: min(100%, 28rem, 36svh); }
-  .is-flow .svc__head h3 { font-size: 2.6rem; }
-  .is-flow .svc__text > p:first-child { font-size: 1.1rem; }
+@media (min-width: 40rem) and (max-width: 62rem) {
+  .services.is-flow { --w: min(100%, 26rem, 34svh); }
+  .is-flow .svc__head h3 { font-size: 2.4rem; }
+  .is-flow .svc__text > p:first-child { font-size: 1.08rem; }
 }
 @media (max-width: 62rem) and (max-height: 46rem) {
-  .services.is-flow { --w: min(100%, 20rem, 30svh); }
-  .is-flow .svc__tags { display: none; }
-  .is-flow .svc__head h3 { font-size: clamp(1.5rem, 6.6vw, 1.9rem); }
-  .is-flow .svc__text > p:first-child { font-size: .95rem; line-height: 1.5; }
+  .services.is-flow { --w: min(100%, 17rem, 38svh); }
+  .is-flow .svc__item { min-height: 0; }
 }
 
 .svc-lock { overflow: hidden; } /* page figée derrière la feuille de détail (mobile) */
