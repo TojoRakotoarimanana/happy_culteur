@@ -2,6 +2,9 @@
 (() => {
   'use strict';
 
+  // Le slider écrit le panneau courant dans l'URL (#qui-sommes-nous…) : un rechargement (F5) repart de l'accueil, un lien partagé avec # reste respecté
+  if (performance.getEntriesByType('navigation')[0]?.type === 'reload' && location.hash) history.replaceState(null, '', location.pathname + location.search);
+
   const root = document.documentElement;
   const header = document.querySelector('.header');
   const toggle = document.querySelector('.nav-toggle');
@@ -44,6 +47,7 @@
   }
 
   gsap.registerPlugin(Observer);
+  if (window.SplitText) gsap.registerPlugin(SplitText);
 
   const smooth = matchMedia('(prefers-reduced-motion: no-preference)').matches;
 
@@ -54,6 +58,7 @@
     const y = window.scrollY;
     header.classList.toggle('is-scrolled', y > 10); // fond blanc dès qu'on a quitté le haut de page
     if (Math.abs(y - lastY) < 4) return; // ignore les micro-mouvements du trackpad
+    if (document.documentElement.classList.contains('svc-lock')) { lastY = y; return; } // feuille de détail ouverte : le verrou / la barre d'adresse décalent le scroll, ce n'est pas l'utilisateur qui remonte
     if (y <= 10 || y < lastY || header.classList.contains('is-open')) moveHeader(0);
     else if (y > header.offsetHeight) moveHeader(-100);
     lastY = y;
@@ -166,14 +171,18 @@
     const pin = matchMedia('(max-width: 62rem)').matches;
     const section = document.querySelector('.services');
     if (pin) section.classList.add('is-flow');
-    const reveal = (tl, it, t, m) => {
-      const q = gsap.utils.selector(it);
+    const revealIll = (tl, ill, t) => {
+      const q = gsap.utils.selector(ill);
       tl.from(q('.ill-bg'), { scale: 0.6, autoAlpha: 0, transformOrigin: '50% 50%', duration: 0.5, ease: 'back.out(1.6)' }, t)
         .from(q('.d'), { strokeDashoffset: 1, duration: 0.6, stagger: 0.02, ease: 'power2.out' }, t + 0.1)
-        .from(q('.pop, .heart, .dot'), { scale: 0, transformOrigin: '50% 50%', duration: 0.35, stagger: 0.05, ease: 'back.out(3)' }, t + 0.4)
-        .from(q('.svc__head > *, .svc__text > *'), { autoAlpha: 0, y: m ? 28 : 16, duration: m ? 0.7 : 0.45, stagger: m ? 0.1 : 0.05, ease: 'power3.out' }, t + 0.2);
-      if (m) tl.from(q('.svc__head h3'), { '--bar-x': 0, duration: 0.8, ease: 'power3.inOut' }, t + 0.6); // le trait jaune sous le titre se trace
+        .from(q('.pop, .heart, .dot'), { scale: 0, transformOrigin: '50% 50%', duration: 0.35, stagger: 0.05, ease: 'back.out(3)' }, t + 0.4);
     };
+    const revealText = (tl, it, t, m) => {
+      const q = gsap.utils.selector(it);
+      tl.from(q('.svc__head > *, .svc__text > *'), { autoAlpha: 0, y: m ? 28 : 16, duration: m ? 0.7 : 0.45, stagger: m ? 0.1 : 0.05, ease: 'power3.out' }, t + 0.2);
+      if (m) tl.fromTo(q('.svc__head h3'), { '--bar-x': 0 }, { '--bar-x': 1, duration: 0.8, ease: 'power3.inOut' }, t + 0.6); // le trait jaune sous le titre se trace
+    };
+    const reveal = (tl, it, t, m) => { revealIll(tl, it, t); revealText(tl, it, t, m); };
     const intro = gsap.timeline(pin ? {} : { scrollTrigger: { trigger: grid, start: 'top 90%', once: true } });
     if (!pin) items.forEach((it, i) => { intro.from(it, { '--bar': 0, duration: 0.5, ease: 'power3.out' }, i * 0.1); reveal(intro, it, i * 0.1, false); });
 
@@ -202,28 +211,78 @@
     const state = items.map((it, i) => {
       const tl = loops[i](gsap.utils.selector(it)).pause();
       const s = { tl, active: false };
-      st.create({ trigger: it, start: 'top 90%', end: 'bottom 10%', onToggle: (self) => { s.active = self.isActive; sync(); } });
+      if (!pin) st.create({ trigger: it, start: 'top 90%', end: 'bottom 10%', onToggle: (self) => { s.active = self.isActive; sync(); } });
       return s;
     });
     function sync() { state.forEach((s, i) => s.tl.paused(!(ready && s.active && !items[i].classList.contains('is-open')))); }
 
-    // Mobile / tablette : défilement naturel, rien d'épinglé. Chaque illustration se dévoile par un balayage latéral lié au scroll (alternance gauche / droite)
-    // en grandissant, puis son contenu pousse ; le bouton surgit à la fin.
+    const undo = []; // à défaire quand on quitte le mode mobile
+    // Mobile / tablette : un grand service par écran. La section s'épingle ; le défilement choisit seulement le service actif
+    // (accroché sur chacun), puis une entrée complète se joue : jamais d'état à moitié construit si on lâche entre deux.
+    // Signature : la feuille crème est commune aux 4 services et se retourne (ses coins arrondis basculent) à chaque changement.
     if (pin) {
-      items.forEach((it, i) => {
-        reveal(gsap.timeline({ scrollTrigger: { trigger: it, start: 'top 72%', once: true } }), it, 0.15, true);
-        // marges négatives : le clip ne rogne pas les éléments qui débordent de l'illustration (cœurs qui montent, etc.)
-        gsap.fromTo(it.querySelector('.svc__ill'),
-          { clipPath: i % 2 ? 'inset(-40% -10% -40% 110%)' : 'inset(-40% 110% -40% -10%)', scale: 0.9, rotation: i % 2 ? 2 : -2, transformOrigin: '50% 60%' },
-          { clipPath: 'inset(-40% -10% -40% -10%)', scale: 1, rotation: 0, ease: 'none', scrollTrigger: { trigger: it, start: 'top 95%', end: 'top 45%', scrub: 0.5 } });
+      const n = items.length;
+      const steps = document.createElement('div');
+      steps.className = 'svc__steps';
+      steps.innerHTML = items.map((it) => `<button type="button" aria-label="${it.querySelector('h3').textContent}"><i></i></button>`).join('');
+      document.querySelector('.svc__title').after(steps);
+      const fills = [...steps.querySelectorAll('i')];
+      const leaf = document.createElement('div');
+      leaf.className = 'svc__leaf';
+      leaf.setAttribute('aria-hidden', 'true');
+      grid.prepend(leaf);
+      const heads = items.map((it) => { const h = it.querySelector('h3'); it.dataset.t = h.innerHTML; return splitChars(h); }); // dataset : la feuille de détail reprend le titre intact
+      const paras = items.map((it) => { const p = it.querySelector('.svc__text > p'); return window.SplitText ? SplitText.create(p, { type: 'lines', mask: 'lines', autoSplit: true }) : { lines: [p], revert() {} }; });
+      undo.push(...heads.map((h) => h.restore), () => paras.forEach((p) => p.revert()));
+      const LEAF = ['0% 17% 0% 17% / 0% 22% 0% 22%', '17% 0% 17% 0% / 22% 0% 22% 0%']; // la feuille et son reflet (coins opposés)
+      gsap.set(items, { autoAlpha: 0 });
+      let cur = -1, tl;
+      const go = (i) => {
+        if (i === cur) return;
+        const dir = i > cur ? 1 : -1, prev = items[cur], it = items[i], q = gsap.utils.selector(it);
+        cur = i;
+        tl?.progress(1).kill(); // une entrée interrompue se termine net avant la suivante
+        tl = gsap.timeline({ defaults: { ease: 'power3.out' } });
+        if (prev) {
+          tl.to(prev.querySelectorAll('.d, .pop, .heart, .dot'), { autoAlpha: 0, duration: 0.25 }, 0)
+            .to(prev.querySelectorAll('.svc__head, .svc__text'), { autoAlpha: 0, y: -24 * dir, duration: 0.3, ease: 'power2.in' }, 0)
+            .set(prev, { autoAlpha: 0 }, 0.3)
+            .set(prev.querySelectorAll('.d, .pop, .heart, .dot, .svc__head, .svc__text'), { clearProps: 'opacity,visibility,transform' }, 0.3);
+        }
+        tl.to(leaf, { borderRadius: LEAF[i % 2], rotation: 0, scale: 1, duration: 0.9, ease: 'power3.inOut' }, 0) // la feuille se retourne
+          .fromTo(leaf, { rotation: -4 * dir, scale: 0.94 }, { rotation: 0, scale: 1, duration: 0.9, ease: 'back.out(1.4)', immediateRender: false }, 0)
+          .set(it, { autoAlpha: 1 }, prev ? 0.3 : 0)
+          .fromTo(q('.d'), { strokeDashoffset: 1 }, { strokeDashoffset: 0, duration: 0.7, stagger: 0.025, ease: 'power2.inOut' }, 0.35)
+          .fromTo(q('.pop, .heart, .dot'), { scale: 0 }, { scale: 1, transformOrigin: '50% 50%', duration: 0.4, stagger: 0.05, ease: 'back.out(3)' }, 0.75)
+          .fromTo(heads[i].chars, { yPercent: 110 }, { yPercent: 0, duration: 0.7, stagger: 0.018, ease: 'power4.out' }, 0.4)
+          .fromTo(q('.svc__head h3'), { '--bar-x': 0 }, { '--bar-x': 1, duration: 0.7, ease: 'power3.inOut' }, 0.7)
+          .fromTo(q('.svc__tags'), { autoAlpha: 0, y: 10 }, { autoAlpha: 1, y: 0, duration: 0.5 }, 0.75)
+          .fromTo(paras[i].lines, { yPercent: 105 }, { yPercent: 0, duration: 0.8, stagger: 0.07, ease: 'power4.out' }, 0.8)
+          .fromTo(q('.svc__more'), { autoAlpha: 0, y: 10 }, { autoAlpha: 1, y: 0, duration: 0.5 }, 1.1);
+        fills.forEach((f, k) => gsap.to(f, { '--f': k <= i ? 1 : 0, duration: 0.6, ease: 'power3.out', overwrite: 'auto' }));
+        state.forEach((s, k) => { s.active = k === i; });
+        sync();
+      };
+      const trig = st.create({
+        trigger: section, start: 'top top', end: () => `+=${window.innerHeight * (n - 1) * 0.6}`, pin: true, anticipatePin: 1,
+        snap: { snapTo: 1 / (n - 1), duration: { min: 0.2, max: 0.5 }, ease: 'power2.inOut', directional: true },
+        onUpdate: (self) => cur >= 0 && go(Math.round(self.progress * (n - 1))),
+        onEnter: () => cur < 0 && go(0),
       });
-      gsap.from('.svc__top .btn', { scale: 0.7, autoAlpha: 0, duration: 0.8, ease: 'back.out(2)', scrollTrigger: { trigger: '.svc__top .btn', start: 'top 94%', once: true } });
+      st.create({ trigger: section, start: 'top 70%', once: true, onEnter: () => cur < 0 && go(0) }); // le premier service arrive avec la section
+      steps.addEventListener('click', (e) => {
+        const k = [...steps.children].indexOf(e.target.closest('button'));
+        if (k < 0) return;
+        const y = trig.start + ((trig.end - trig.start) * k) / (n - 1);
+        lenis ? lenis.scrollTo(y) : window.scrollTo({ top: y, behavior: 'smooth' });
+      });
     }
 
     // 3. Survol : le filet jaune s'étend, l'illustration se soulève
     const hover = (it, on) => {
       gsap.to(it, { '--bw': on ? '100%' : '4rem', duration: 0.6, ease: 'power3.out', overwrite: 'auto' });
-      gsap.to(it.querySelector('.svc__ill'), { y: on ? -6 : 0, duration: 0.5, ease: 'power3.out', overwrite: 'auto' });
+      const ill = it.querySelector('.svc__ill');
+      if (ill) gsap.to(ill, { y: on ? -6 : 0, duration: 0.5, ease: 'power3.out', overwrite: 'auto' });
     };
     const enter = (e) => hover(e.currentTarget, true);
     const leave = (e) => hover(e.currentTarget, false);
@@ -242,7 +301,7 @@
       sheet.setAttribute('aria-label', `Détail : ${title.textContent}`);
       const inner = document.createElement('div');
       inner.className = 'svc__sheet-in';
-      inner.innerHTML = `<button type="button" class="svc__close" aria-label="Fermer le détail"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button><p class="svc__sheet-title">${title.innerHTML}</p>`;
+      inner.innerHTML = `<button type="button" class="svc__close" aria-label="Fermer le détail"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button><p class="svc__sheet-title">${it.dataset.t || title.innerHTML}</p>`;
       more.querySelectorAll('p').forEach((p) => inner.append(p.cloneNode(true)));
       inner.insertAdjacentHTML('beforeend', '<a class="btn svc__sheet-cta" href="#contact">Discuter de ce service <span aria-hidden="true">→</span></a>');
       sheet.append(inner);
@@ -257,6 +316,12 @@
       const R = Math.hypot(Math.max(x, ir.width - x), Math.max(y + 16, ir.height - y)) + 8;
       return (r) => `circle(${r}px at ${x}px ${y}px)`;
     };
+    if (pin) sheets.forEach((s) => {
+      let y0 = 0, dy = 0, drag = false;
+      s.inner.addEventListener('touchstart', (e) => { drag = s.inner.scrollTop <= 0; y0 = e.touches[0].clientY; dy = 0; }, { passive: true });
+      s.inner.addEventListener('touchmove', (e) => { if (!drag) return; dy = Math.max(0, e.touches[0].clientY - y0); gsap.set(s.inner, { y: dy }); }, { passive: true });
+      s.inner.addEventListener('touchend', () => { if (dy > 90) closeSheet(s); else gsap.to(s.inner, { y: 0, duration: 0.4, ease: 'power3.out' }); dy = 0; drag = false; }, { passive: true });
+    });
     const rest = (s) => [...s.it.children].filter((c) => c !== s.sheet);
     const stop = (s) => gsap.killTweensOf([s.sheet, s.inner, ...s.content, ...rest(s)]);
 
@@ -269,6 +334,16 @@
       rest(s).forEach((c) => { c.inert = true; });
       sum.setAttribute('aria-expanded', 'true');
       stop(s);
+      if (pin) { // mobile : feuille qui monte du bas, fond assombri, page verrouillée
+        lenis?.stop(); document.documentElement.classList.add('svc-lock');
+        gsap.timeline()
+          .set(sheet, { visibility: 'visible' })
+          .fromTo(sheet, { opacity: 0 }, { opacity: 1, duration: 0.35, ease: 'power2.out' }, 0)
+          .fromTo(inner, { yPercent: 100 }, { yPercent: 0, duration: 0.7, ease: 'power4.out' }, 0)
+          .fromTo(content, { autoAlpha: 0, y: 18 }, { autoAlpha: 1, y: 0, duration: 0.5, stagger: 0.07, ease: 'power3.out' }, 0.3)
+          .add(() => inner.querySelector('.svc__close').focus({ preventScroll: true }), 0.5);
+        return;
+      }
       gsap.timeline()
         .set(sheet, { visibility: 'visible' })
         .to(rest(s), { opacity: 0.25, duration: 0.5, ease: 'power2.out' }, 0)
@@ -286,6 +361,14 @@
       sum.setAttribute('aria-expanded', 'false');
       if (focus) sum.focus({ preventScroll: true });
       stop(s);
+      if (pin) {
+        gsap.timeline({ onComplete: () => { lenis?.start(); document.documentElement.classList.remove('svc-lock'); gsap.set(sheet, { visibility: 'hidden', clearProps: 'opacity' }); gsap.set([inner, ...content], { clearProps: 'all' }); } })
+          .to(content, { autoAlpha: 0, duration: 0.15 }, 0)
+          .to(inner, { yPercent: 100, duration: 0.5, ease: 'power3.in' }, 0)
+          .to(sheet, { opacity: 0, duration: 0.4, ease: 'power1.in' }, 0.1)
+          .to(rest(s), { opacity: 1, duration: 0.2, clearProps: 'opacity' }, 0);
+        return;
+      }
       gsap.timeline({ onComplete: () => {
         gsap.set(sheet, { visibility: 'hidden', clearProps: 'clipPath' }); gsap.set([inner, ...content], { clearProps: 'all' });
       } })
@@ -297,6 +380,7 @@
       const sum = e.target.closest('.svc__more summary');
       const own = sheets.find((x) => x.inner.contains(e.target));
       if (sum) { e.preventDefault(); openSheet(sheets.find((x) => x.sum === sum)); } // le <details> natif reste fermé
+      else if (e.target.classList.contains('svc__sheet')) closeSheet(sheets.find((x) => x.sheet === e.target)); // fond assombri (mobile)
       else if (own && e.target.closest('.svc__close')) closeSheet(own);
       else if (own && e.target.closest('.svc__sheet-cta')) closeSheet(own, false);
     };
@@ -308,11 +392,14 @@
 
     return () => {
       title.restore();
+      undo.forEach((f) => f());
       items.forEach((it) => { it.removeEventListener('pointerenter', enter); it.removeEventListener('pointerleave', leave); });
       grid.removeEventListener('click', onMore);
       document.removeEventListener('keydown', onKey);
       document.removeEventListener('pointerdown', onOutside);
       section.classList.remove('is-flow');
+      document.querySelector('.svc__steps')?.remove(); document.querySelector('.svc__leaf')?.remove();
+      gsap.set(items, { clearProps: 'visibility,opacity' }); document.documentElement.classList.remove('svc-lock');
       sheets.forEach((s) => { s.sheet.remove(); [...s.it.children].forEach((c) => { c.inert = false; }); });
     };
   });
