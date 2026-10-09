@@ -24,12 +24,6 @@
   document.addEventListener('keydown', (e) => { if (e.key === 'Escape') setMenu(false); });
 
   /* ---------- Nos prestations (mobile / tablette) : points de progression, pilotés par la section épinglée ---------- */
-  const svcDots = document.createElement('div');
-  svcDots.className = 'svc__dots';
-  svcDots.setAttribute('aria-hidden', 'true');
-  const svcItems = [...document.querySelectorAll('.svc__item')];
-  svcItems.forEach(() => svcDots.append(document.createElement('span')));
-  document.body.append(svcDots);
 
   /* ---------- Navigation native : défilement classique (petits écrans ou GSAP indisponible) ---------- */
   const startNativeNav = () => {
@@ -168,10 +162,10 @@
     gsap.set(strokes, { strokeDasharray: 1 });
 
     // 1. Arrivée : par colonne, filet jaune → feuille → traits → pastilles jaunes → texte
-    // Mobile / tablette : section épinglée, un service par écran (voir plus bas) ; desktop : les 4 colonnes arrivent ensemble
+    // Mobile / tablette : onglets, un service à la fois (voir plus bas) ; desktop : les 4 colonnes arrivent ensemble
     const pin = matchMedia('(max-width: 62rem)').matches;
     const section = document.querySelector('.services');
-    if (pin) section.classList.add('is-pinned');
+    if (pin) section.classList.add('is-stem');
     const reveal = (tl, it, t, m) => {
       const q = gsap.utils.selector(it);
       tl.from(q('.ill-bg'), { scale: 0.6, autoAlpha: 0, transformOrigin: '50% 50%', duration: 0.5, ease: 'back.out(1.6)' }, t)
@@ -208,40 +202,33 @@
     const state = items.map((it, i) => {
       const tl = loops[i](gsap.utils.selector(it)).pause();
       const s = { tl, active: false };
-      if (!pin) st.create({ trigger: it, start: 'top 90%', end: 'bottom 10%', onToggle: (self) => { s.active = self.isActive; sync(); } });
+      st.create({ trigger: it, start: 'top 90%', end: 'bottom 10%', onToggle: (self) => { s.active = self.isActive; sync(); } });
       return s;
     });
     function sync() { state.forEach((s, i) => s.tl.paused(!(ready && s.active && !items[i].classList.contains('is-open')))); }
 
-    // Mobile / tablette : la section reste épinglée, chaque défilement fait avancer d'un service avec l'effet « rideau » des panneaux du haut de page
+    // Mobile / tablette : une tige se dessine au défilement (scrub) avec un bourgeon à sa pointe ; à chaque service une feuille se déploie et se met à vibrer,
+    // l'illustration grandit en arrivant au centre, puis le contenu pousse. Défilement naturel, rien d'épinglé.
     if (pin) {
-      const n = items.length, STEP = 2.4;
-      const setCurrent = (idx) => {
-        [...svcDots.children].forEach((d, k) => d.classList.toggle('is-active', k === idx));
-        state.forEach((s, k) => { s.active = k === idx; });
-        sync();
-      };
-      reveal(gsap.timeline({ scrollTrigger: { trigger: section, start: 'top 60%', once: true } }), items[0], 0, true);
-      const tl = gsap.timeline({
-        defaults: { ease: 'none' },
-        scrollTrigger: {
-          trigger: section, start: 'top top', end: () => `+=${window.innerHeight * (n - 1) * 0.6}`, pin: true, scrub: 0.5, anticipatePin: 1,
-          snap: { snapTo: 'labels', duration: { min: 0.15, max: 0.45 }, ease: 'power1.inOut' },
-          onToggle: (self) => svcDots.classList.toggle('is-on', self.isActive),
-          onUpdate: () => setCurrent(items.reduce((c, _, i) => (i && tl.time() >= (i - 1) * STEP + 0.5 ? i : c), 0)),
-        },
-      });
-      tl.addLabel('s0', 0);
+      const bud = document.createElement('i');
+      bud.className = 'svc__bud';
+      bud.setAttribute('aria-hidden', 'true');
+      grid.append(bud);
+      const setBud = gsap.quickSetter(bud, 'y', 'px');
+      gsap.to(bud, { scale: 1.3, duration: 0.8, yoyo: true, repeat: -1, ease: 'sine.inOut' });
+      gsap.fromTo(grid, { '--stem': 0 }, { '--stem': 1, ease: 'none', scrollTrigger: {
+        trigger: grid, start: 'top 70%', end: 'bottom 70%', scrub: 0.6,
+        onUpdate: (self) => setBud(self.progress * (grid.offsetHeight - 19)), // le bourgeon suit la pointe de la tige
+      } });
       items.forEach((it, i) => {
-        if (!i) return;
-        const t = (i - 1) * STEP;
-        tl.fromTo(it, { clipPath: 'inset(100% 0% 0% 0%)' }, { clipPath: 'inset(0% 0% 0% 0%)', duration: 1, ease: 'power1.inOut' }, t)
-          .to(items[i - 1], { yPercent: -8, duration: 1 }, t);
-        reveal(tl, it, t + 0.25, true);
-        tl.addLabel(`s${i}`, t + 1.9);
+        const at = { trigger: it, start: 'top 72%', once: true };
+        gsap.fromTo(it, { '--leaf': 0, '--leaf-r': '-80deg' }, { '--leaf': 1, '--leaf-r': '0deg', duration: 1, ease: 'back.out(2.4)', scrollTrigger: at,
+          onComplete: () => gsap.to(it, { '--leaf-r': '7deg', duration: 2 + i * 0.35, yoyo: true, repeat: -1, ease: 'sine.inOut' }) });
+        reveal(gsap.timeline({ scrollTrigger: at }), it, 0.15, true);
+        gsap.fromTo(it.querySelector('.svc__ill'), { scale: 0.88, rotation: i % 2 ? 2 : -2, transformOrigin: '0% 60%' }, { scale: 1, rotation: 0, ease: 'none',
+          scrollTrigger: { trigger: it, start: 'top 95%', end: 'top 40%', scrub: 0.5 } });
       });
-      tl.to({}, { duration: 0.3 });
-      setCurrent(0);
+      gsap.from('.svc__top .btn', { scale: 0.7, autoAlpha: 0, duration: 0.8, ease: 'back.out(2)', scrollTrigger: { trigger: '.svc__top .btn', start: 'top 94%', once: true } });
     }
 
     // 3. Survol : le filet jaune s'étend, l'illustration se soulève
@@ -336,7 +323,7 @@
       grid.removeEventListener('click', onMore);
       document.removeEventListener('keydown', onKey);
       document.removeEventListener('pointerdown', onOutside);
-      section.classList.remove('is-pinned'); svcDots.classList.remove('is-on');
+      section.classList.remove('is-stem'); document.querySelector('.svc__bud')?.remove();
       sheets.forEach((s) => { s.sheet.remove(); [...s.it.children].forEach((c) => { c.inert = false; }); });
     };
   });
