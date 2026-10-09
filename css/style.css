@@ -449,7 +449,7 @@ h3 { font-size: 1.25rem; font-weight: 600; }
 }
 
 /* Nos prestations, mobile et tablette. Sans JS / mouvement réduit : services empilés, aérés.
-   Avec GSAP (main.js) : classe .is-pinned, la section reste épinglée et chaque défilement change de service (effet rideau). */
+   Avec GSAP (main.js) : classe .is-stem : une tige se dessine au défilement, une feuille jaune par service. */
 @media (max-width: 62rem) {
   .services { padding-bottom: 2rem; }
   .svc__top { margin-bottom: 1rem; }
@@ -461,21 +461,17 @@ h3 { font-size: 1.25rem; font-weight: 600; }
   .svc__more summary { min-height: 44px; }
   .svc__sheet, .svc__sheet-in { inset: 0; }
 
-  .services.is-pinned { height: 100svh; min-height: 0; overflow: hidden; display: block; padding: calc(var(--header-h) + .25rem) 0 1.25rem; }
-  .is-pinned > .container { height: 100%; display: grid; grid-template-rows: auto minmax(0, 1fr) auto; }
-  .is-pinned .svc__top { display: contents; }
-  .is-pinned .svc__title { margin-bottom: .5rem; font-size: clamp(1.9rem, 8vw, 2.5rem); }
-  .is-pinned .svc__top .btn { grid-row: 3; justify-self: start; margin-top: .75rem; padding: .95rem 1.6rem; }
-  .is-pinned .svc__grid { grid-row: 2; position: relative; display: block; width: 100%; margin: 0; }
-  .is-pinned .svc__item { position: absolute; z-index: 1; inset: 0; align-content: center; justify-items: start; gap: .8rem; padding: .5rem 0; background: #fff; }
-  .is-pinned .svc__ill { height: clamp(7rem, 28svh, 14rem); }
-  .is-pinned .svc__head h3 { font-size: clamp(1.45rem, 6vw, 1.9rem); }
-  .is-pinned .svc__text p { font-size: .98rem; line-height: 1.55; }
+  .is-stem > .container { display: flex; flex-direction: column; }
+  .is-stem .svc__top { display: contents; }
+  .is-stem .svc__title { order: 0; margin-bottom: 1.5rem; }
+  .is-stem .svc__grid { order: 1; }
+  .is-stem .svc__top .btn { order: 2; align-self: flex-start; margin-top: 2.5rem; }
+  .is-stem .svc__grid { --stem: 1; --leaf: 1; position: relative; gap: 3rem; padding-left: 2.3rem; }
+  .is-stem .svc__grid::before, .is-stem .svc__grid::after { content: ""; position: absolute; left: .55rem; top: .6rem; bottom: .6rem; width: 2px; border-radius: 2px; }
+  .is-stem .svc__grid::before { background: var(--c-line); }
+  .is-stem .svc__grid::after { background: var(--c-ink); transform: scaleY(var(--stem)); transform-origin: top; }
+  .is-stem .svc__item { padding-right: 0; }
+  .is-stem .svc__item::before { content: ""; position: absolute; left: -1.7rem; top: -.2rem; width: 1.5rem; height: 1.5rem; border-radius: 0 100% 0 100%; background: var(--c-accent); transform: scale(var(--leaf)) rotate(var(--leaf-r, 0deg)); transform-origin: 0 100%; }
+  .is-stem .svc__bud { position: absolute; z-index: 2; left: calc(.55rem + 1px - .5rem); top: .1rem; width: 1rem; height: 1rem; box-sizing: border-box; border: 2px solid var(--c-ink); border-radius: 50%; background: var(--c-accent); pointer-events: none; }
 }
-
-/* Points de progression des prestations (créés par main.js), visibles seulement pendant la section */
-.svc__dots { position: fixed; right: .6rem; top: 50%; z-index: 50; display: grid; gap: .6rem; translate: 0 -50%; opacity: 0; pointer-events: none; transition: opacity .4s var(--ease); }
-.svc__dots.is-on { opacity: 1; }
-.svc__dots span { width: .5rem; height: .5rem; border-radius: 1rem; background: var(--c-line); transition: height .4s var(--ease), background .4s var(--ease); }
-.svc__dots span.is-active { height: 1.6rem; background: var(--c-accent); }
 
