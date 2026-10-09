@@ -6,7 +6,7 @@
   <script>
     // `js` : JS actif. `is-slider` : affichage plein écran par panneaux (retiré par main.js si GSAP est indisponible)
     document.documentElement.classList.add('js');
-    if (matchMedia('(min-width: 62rem) and (min-height: 46rem)').matches) {
+    if (matchMedia('(max-width: 62rem) and (min-height: 36rem), (min-width: 62rem) and (min-height: 46rem)').matches) {
       document.documentElement.classList.add('is-slider');
       if ('scrollRestoration' in history) history.scrollRestoration = 'manual'; // le slider repart toujours du haut au rechargement
     }

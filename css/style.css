@@ -42,7 +42,7 @@ body {
 }
 
 h1, h2, h3, p, ul, figure { margin: 0; }
-ul { padding: 0; list-style: none; }
+ul, ol { padding: 0; list-style: none; }
 a { color: inherit; }
 img { max-width: 100%; display: block; }
 
@@ -317,11 +317,12 @@ h3 { font-size: 1.25rem; font-weight: 600; }
   .tool { width: 4.5rem; }
 }
 @media (max-width: 62rem) {
-  .tools__grid { grid-template-columns: minmax(0, 1fr); }
+  .tools__grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } /* tablette : 2 colonnes ; 1 seule sous 40rem */
   .tools__block, .tools__block--3 { grid-column: auto; }
   .tools__block--more { grid-template-columns: auto 1fr; }
   .tools__block--more .btn { grid-column: 1 / -1; justify-self: start; }
 }
+@media (max-width: 40rem) { .tools__grid { grid-template-columns: minmax(0, 1fr); } }
 @media (max-width: 30rem) { .about__title { font-size: 2.1rem; } }
 @media (max-width: 30rem) { .tools__block--more { grid-template-columns: 1fr; } .tools__plus { width: 2.75rem; } }
 @media (max-width: 22.5rem) { .btn { padding-inline: 1.25rem; font-size: .95rem; } }
@@ -333,8 +334,10 @@ h3 { font-size: 1.25rem; font-weight: 600; }
 @media (prefers-reduced-motion: reduce) { .tool, .tools__block, .tools__plus { transition: none; } .tool:hover { transform: none; } }
 
 @media (max-width: 62rem) {
-  .about__inner { grid-template-columns: 1fr; }
+  .about__inner { grid-template-columns: minmax(0, 1fr); } /* minmax(0,…) : sans lui, un long mot (« professionnellement ») élargit la colonne et fait déborder la page à 320 px */
   .about__intro { order: 0; }
+  .hero__title { font-size: clamp(2.1rem, 7vw, 3.4rem); }
+  .about__lead { hyphens: auto; }
   :root { --leaf: 4rem; }
   .hero__inner { grid-template-columns: 1fr; }
   .collab__body { grid-template-columns: 1fr; }
@@ -364,3 +367,42 @@ h3 { font-size: 1.25rem; font-weight: 600; }
   .js .tools:not(.is-in) :is(.tools__head, .tools__block, .tool, .tools__plus) { opacity: 0; }
 }
 
+/* Petits écrans en mode slider : même logique « une section = un écran » que sur desktop, le contenu est compacté pour tenir dans 100svh.
+   Sous 36rem de haut (téléphone en paysage), le slider est désactivé (index.html / main.js) et la page défile normalement. */
+@media (max-width: 62rem) {
+  .is-slider .hero__inner { min-height: 0; height: calc(100svh - var(--header-h)); grid-template-rows: auto minmax(0, 1fr); align-items: stretch; }
+  .is-slider .hero__content { gap: 1rem; padding-block: 1rem 0; }
+  .is-slider .hero__title { font-size: clamp(1.9rem, 8vw, 3.6rem); }
+  .is-slider .hero__lead { max-width: 26ch; }
+  /* la photo déborde jusqu'au bord droit et jusqu'en bas, grand arrondi « feuille » en haut à gauche comme sur desktop */
+  .is-slider .hero__media { width: auto; height: auto; min-height: 0; margin: 1.25rem calc((100% - 100vw) / 2) 0 0; border-radius: var(--leaf) 0 0 0; }
+
+  .is-slider .about { padding-block: calc(var(--header-h) + .25rem) 1rem; }
+  .is-slider .about__inner { gap: 1rem; }
+  .is-slider .about__title { font-size: clamp(1.9rem, 8vw, 2.6rem); }
+  .is-slider .about__title::after { margin-top: .6rem; }
+  .is-slider .about__lead { margin-top: 1rem; font-size: clamp(1rem, 4vw, 1.2rem); line-height: 1.45; }
+  .is-slider .about__closing { margin-top: 1rem; font-size: .92rem; line-height: 1.5; }
+  .is-slider .about__photo { display: none; } /* la photo cède la place : les trois idées doivent tenir dans l'écran */
+  .is-slider .about__side { gap: 0; }
+  .is-slider .about__points details { padding: .85rem 1.1rem; }
+  .is-slider .about__points summary { grid-template-columns: 2.25rem 1fr 1.5rem; gap: .75rem; }
+  .is-slider .about__points details p { margin-left: 0; }
+}
+
+
+/* Téléphones courts (≤ 45rem de haut) : sous-titres des idées masqués, textes resserrés */
+@media (max-width: 62rem) and (max-height: 45rem) {
+  .is-slider .hero__lead { font-size: 1rem; }
+  .is-slider .about__lead { font-size: .98rem; margin-top: .75rem; }
+  .is-slider .about__closing { margin-top: .75rem; font-size: .88rem; }
+  .is-slider .about__head span { display: none; }
+  .is-slider .about__points details { padding: .7rem 1rem; }
+  .is-slider .about__points details p { margin-top: .6rem; font-size: .88rem; line-height: 1.5; }
+}
+
+/* Une idée ouverte doit rester dans l'écran : on libère de la place pendant qu'elle est lue */
+.is-slider .about__inner:has(details[open]) .about__photo img { height: clamp(6rem, 13svh, 9rem); }
+@media (max-width: 62rem) { .is-slider .about__inner:has(details[open]) .about__closing { display: none; } }
+@media (max-width: 62rem) { .is-slider .about__inner:has(details[open]) .about__lead { font-size: .9rem; line-height: 1.4; margin-top: .5rem; } }
+@media (max-width: 62rem) { .is-slider .about__inner:has(details[open]) .about__head span { display: none; } }
