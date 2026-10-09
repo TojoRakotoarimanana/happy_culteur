@@ -165,7 +165,7 @@
     // Mobile / tablette : onglets, un service à la fois (voir plus bas) ; desktop : les 4 colonnes arrivent ensemble
     const pin = matchMedia('(max-width: 62rem)').matches;
     const section = document.querySelector('.services');
-    if (pin) section.classList.add('is-stem');
+    if (pin) section.classList.add('is-flow');
     const reveal = (tl, it, t, m) => {
       const q = gsap.utils.selector(it);
       tl.from(q('.ill-bg'), { scale: 0.6, autoAlpha: 0, transformOrigin: '50% 50%', duration: 0.5, ease: 'back.out(1.6)' }, t)
@@ -207,26 +207,15 @@
     });
     function sync() { state.forEach((s, i) => s.tl.paused(!(ready && s.active && !items[i].classList.contains('is-open')))); }
 
-    // Mobile / tablette : une tige se dessine au défilement (scrub) avec un bourgeon à sa pointe ; à chaque service une feuille se déploie et se met à vibrer,
-    // l'illustration grandit en arrivant au centre, puis le contenu pousse. Défilement naturel, rien d'épinglé.
+    // Mobile / tablette : défilement naturel, rien d'épinglé. Chaque illustration se dévoile par un balayage latéral lié au scroll (alternance gauche / droite)
+    // en grandissant, puis son contenu pousse ; le bouton surgit à la fin.
     if (pin) {
-      const bud = document.createElement('i');
-      bud.className = 'svc__bud';
-      bud.setAttribute('aria-hidden', 'true');
-      grid.append(bud);
-      const setBud = gsap.quickSetter(bud, 'y', 'px');
-      gsap.to(bud, { scale: 1.3, duration: 0.8, yoyo: true, repeat: -1, ease: 'sine.inOut' });
-      gsap.fromTo(grid, { '--stem': 0 }, { '--stem': 1, ease: 'none', scrollTrigger: {
-        trigger: grid, start: 'top 70%', end: 'bottom 70%', scrub: 0.6,
-        onUpdate: (self) => setBud(self.progress * (grid.offsetHeight - 19)), // le bourgeon suit la pointe de la tige
-      } });
       items.forEach((it, i) => {
-        const at = { trigger: it, start: 'top 72%', once: true };
-        gsap.fromTo(it, { '--leaf': 0, '--leaf-r': '-80deg' }, { '--leaf': 1, '--leaf-r': '0deg', duration: 1, ease: 'back.out(2.4)', scrollTrigger: at,
-          onComplete: () => gsap.to(it, { '--leaf-r': '7deg', duration: 2 + i * 0.35, yoyo: true, repeat: -1, ease: 'sine.inOut' }) });
-        reveal(gsap.timeline({ scrollTrigger: at }), it, 0.15, true);
-        gsap.fromTo(it.querySelector('.svc__ill'), { scale: 0.88, rotation: i % 2 ? 2 : -2, transformOrigin: '0% 60%' }, { scale: 1, rotation: 0, ease: 'none',
-          scrollTrigger: { trigger: it, start: 'top 95%', end: 'top 40%', scrub: 0.5 } });
+        reveal(gsap.timeline({ scrollTrigger: { trigger: it, start: 'top 72%', once: true } }), it, 0.15, true);
+        // marges négatives : le clip ne rogne pas les éléments qui débordent de l'illustration (cœurs qui montent, etc.)
+        gsap.fromTo(it.querySelector('.svc__ill'),
+          { clipPath: i % 2 ? 'inset(-40% -10% -40% 110%)' : 'inset(-40% 110% -40% -10%)', scale: 0.9, rotation: i % 2 ? 2 : -2, transformOrigin: '50% 60%' },
+          { clipPath: 'inset(-40% -10% -40% -10%)', scale: 1, rotation: 0, ease: 'none', scrollTrigger: { trigger: it, start: 'top 95%', end: 'top 45%', scrub: 0.5 } });
       });
       gsap.from('.svc__top .btn', { scale: 0.7, autoAlpha: 0, duration: 0.8, ease: 'back.out(2)', scrollTrigger: { trigger: '.svc__top .btn', start: 'top 94%', once: true } });
     }
@@ -323,7 +312,7 @@
       grid.removeEventListener('click', onMore);
       document.removeEventListener('keydown', onKey);
       document.removeEventListener('pointerdown', onOutside);
-      section.classList.remove('is-stem'); document.querySelector('.svc__bud')?.remove();
+      section.classList.remove('is-flow');
       sheets.forEach((s) => { s.sheet.remove(); [...s.it.children].forEach((c) => { c.inert = false; }); });
     };
   });

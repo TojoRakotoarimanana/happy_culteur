@@ -449,7 +449,7 @@ h3 { font-size: 1.25rem; font-weight: 600; }
 }
 
 /* Nos prestations, mobile et tablette. Sans JS / mouvement réduit : services empilés, aérés.
-   Avec GSAP (main.js) : classe .is-stem : une tige se dessine au défilement, une feuille jaune par service. */
+   Avec GSAP (main.js) : classe .is-flow : services empilés, illustrations qui se dévoilent au défilement (la tige verticale est celle de « Pourquoi collaborer »). */
 @media (max-width: 62rem) {
   .services { padding-bottom: 2rem; }
   .svc__top { margin-bottom: 1rem; }
@@ -461,17 +461,11 @@ h3 { font-size: 1.25rem; font-weight: 600; }
   .svc__more summary { min-height: 44px; }
   .svc__sheet, .svc__sheet-in { inset: 0; }
 
-  .is-stem > .container { display: flex; flex-direction: column; }
-  .is-stem .svc__top { display: contents; }
-  .is-stem .svc__title { order: 0; margin-bottom: 1.5rem; }
-  .is-stem .svc__grid { order: 1; }
-  .is-stem .svc__top .btn { order: 2; align-self: flex-start; margin-top: 2.5rem; }
-  .is-stem .svc__grid { --stem: 1; --leaf: 1; position: relative; gap: 3rem; padding-left: 2.3rem; }
-  .is-stem .svc__grid::before, .is-stem .svc__grid::after { content: ""; position: absolute; left: .55rem; top: .6rem; bottom: .6rem; width: 2px; border-radius: 2px; }
-  .is-stem .svc__grid::before { background: var(--c-line); }
-  .is-stem .svc__grid::after { background: var(--c-ink); transform: scaleY(var(--stem)); transform-origin: top; }
-  .is-stem .svc__item { padding-right: 0; }
-  .is-stem .svc__item::before { content: ""; position: absolute; left: -1.7rem; top: -.2rem; width: 1.5rem; height: 1.5rem; border-radius: 0 100% 0 100%; background: var(--c-accent); transform: scale(var(--leaf)) rotate(var(--leaf-r, 0deg)); transform-origin: 0 100%; }
-  .is-stem .svc__bud { position: absolute; z-index: 2; left: calc(.55rem + 1px - .5rem); top: .1rem; width: 1rem; height: 1rem; box-sizing: border-box; border: 2px solid var(--c-ink); border-radius: 50%; background: var(--c-accent); pointer-events: none; }
+  .is-flow > .container { display: flex; flex-direction: column; }
+  .is-flow .svc__top { display: contents; }
+  .is-flow .svc__title { order: 0; margin-bottom: 1.5rem; }
+  .is-flow .svc__grid { order: 1; }
+  .is-flow .svc__top .btn { order: 2; align-self: flex-start; margin-top: 2.5rem; }
+  .is-flow .svc__grid { gap: 3.25rem; }
 }
 
