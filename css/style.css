@@ -32,6 +32,8 @@ html { scroll-behavior: smooth; scroll-padding-top: var(--header-h); }
 @media (min-width: 120rem) { html { font-size: 125%; } }
 @media (min-width: 160rem) { html { font-size: 150%; } }
 
+.nb { white-space: nowrap; } /* mots composés (rendez-vous, sommes-nous…) : jamais coupés au trait d'union */
+html { hyphens: none; overflow-wrap: normal; word-break: normal; } /* aucun mot n'est jamais coupé */
 body {
   margin: 0;
   font-family: var(--f-body);
@@ -341,7 +343,6 @@ h3 { font-size: 1.25rem; font-weight: 600; }
   .about__inner { grid-template-columns: minmax(0, 1fr); } /* minmax(0,…) : sans lui, un long mot (« professionnellement ») élargit la colonne et fait déborder la page à 320 px */
   .about__intro { order: 0; }
   .hero__title { font-size: clamp(2.1rem, 7vw, 3.4rem); }
-  .about__lead { hyphens: auto; }
   :root { --leaf: 4rem; }
   .hero__inner { grid-template-columns: 1fr; }
   .collab__body { grid-template-columns: 1fr; }

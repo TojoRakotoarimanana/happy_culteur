@@ -234,7 +234,7 @@
       undo.push(() => { alive = false; });
       // Les lignes se découpent après le chargement des polices (sinon elles se recoupent et l'animation vise d'anciennes lignes)
       (document.fonts?.ready ?? Promise.resolve()).then(() => { if (!alive) return;
-      paras = items.map((it) => { const p = it.querySelector('.svc__text > p'); return window.SplitText ? SplitText.create(p, { type: 'lines', mask: 'lines' }) : { lines: [p], revert() {} }; });
+      paras = items.map((it) => { const p = it.querySelector('.svc__text > p'); return window.SplitText ? SplitText.create(p, { type: 'lines', mask: 'lines', reduceWhiteSpace: false }) : { lines: [p], revert() {} }; });
       undo.push(() => paras.forEach((p) => p.revert()));
       items.forEach((it, i) => {
         const q = gsap.utils.selector(it), dir = i % 2 ? -1 : 1;
@@ -281,7 +281,7 @@
       inner.className = 'svc__sheet-in';
       inner.innerHTML = `<button type="button" class="svc__close" aria-label="Fermer le détail"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button><p class="svc__sheet-title">${it.dataset.t || title.innerHTML}</p>`;
       more.querySelectorAll('p').forEach((p) => inner.append(p.cloneNode(true)));
-      inner.insertAdjacentHTML('beforeend', '<a class="btn svc__sheet-cta" href="#contact">Discuter de ce service <span aria-hidden="true">→</span></a>');
+      inner.insertAdjacentHTML('beforeend', '<a class="btn svc__sheet-cta" href="#contact">Parlons de ce service <span aria-hidden="true">→</span></a>');
       sheet.append(inner);
       it.append(sheet);
       return { it, sheet, inner, sum: more.querySelector('summary'), content: [...inner.children].filter((c) => !c.matches('.svc__close')), isOpen: false };
