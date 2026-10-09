@@ -23,6 +23,20 @@
   menu.addEventListener('click', (e) => { if (e.target.closest('a')) setMenu(false); });
   document.addEventListener('keydown', (e) => { if (e.key === 'Escape') setMenu(false); });
 
+  /* ---------- Nos prestations (mobile / tablette) : points de progression, un par service ---------- */
+  const svcDots = document.createElement('div');
+  svcDots.className = 'svc__dots';
+  svcDots.setAttribute('aria-hidden', 'true');
+  const svcItems = [...document.querySelectorAll('.svc__item')];
+  svcItems.forEach(() => svcDots.append(document.createElement('span')));
+  document.body.append(svcDots);
+  new IntersectionObserver(([e]) => svcDots.classList.toggle('is-on', e.isIntersecting && matchMedia('(max-width: 62rem)').matches),
+    { rootMargin: '-45% 0px -45% 0px' }).observe(document.querySelector('.services'));
+  const svcSee = new IntersectionObserver((entries) => entries.forEach(({ target, isIntersecting }) => {
+    if (isIntersecting) [...svcDots.children].forEach((dot, i) => dot.classList.toggle('is-active', svcItems[i] === target));
+  }), { rootMargin: '-45% 0px -45% 0px' });
+  svcItems.forEach((it) => svcSee.observe(it));
+
   /* ---------- Navigation native : défilement classique (petits écrans ou GSAP indisponible) ---------- */
   const startNativeNav = () => {
     const observer = new IntersectionObserver((entries) => {
@@ -160,16 +174,24 @@
     gsap.set(strokes, { strokeDasharray: 1 });
 
     // 1. Arrivée : par colonne, filet jaune → feuille → traits → pastilles jaunes → texte
-    const intro = gsap.timeline({ scrollTrigger: { trigger: grid, start: 'top 90%', once: true } });
+    // Mobile / tablette : un service par écran, chaque service s'anime à SON arrivée ; sur desktop, les 4 colonnes arrivent ensemble
+    const mob = matchMedia('(max-width: 62rem)').matches;
+    const intro = gsap.timeline(mob ? {} : { scrollTrigger: { trigger: grid, start: 'top 90%', once: true } });
     items.forEach((it, i) => {
       const q = gsap.utils.selector(it);
-      const t = i * 0.1;
-      intro
+      const t = mob ? 0 : i * 0.1;
+      const tl = mob ? gsap.timeline({ scrollTrigger: { trigger: it, start: 'top 60%', once: true } }) : intro;
+      tl
         .from(it, { '--bar': 0, duration: 0.5, ease: 'power3.out' }, t)
         .from(q('.ill-bg'), { scale: 0.6, autoAlpha: 0, transformOrigin: '50% 50%', duration: 0.5, ease: 'back.out(1.6)' }, t)
         .from(q('.d'), { strokeDashoffset: 1, duration: 0.6, stagger: 0.02, ease: 'power2.out' }, t + 0.1)
         .from(q('.pop, .heart, .dot'), { scale: 0, transformOrigin: '50% 50%', duration: 0.35, stagger: 0.05, ease: 'back.out(3)' }, t + 0.4)
-        .from(q('.svc__head > *, .svc__text > *'), { autoAlpha: 0, y: 16, duration: 0.45, stagger: 0.05, ease: 'power3.out' }, t + 0.2);
+        .from(q('.svc__head > *, .svc__text > *'), { autoAlpha: 0, y: mob ? 28 : 16, duration: mob ? 0.7 : 0.45, stagger: mob ? 0.1 : 0.05, ease: 'power3.out' }, t + 0.2);
+      if (!mob) return;
+      tl.from(q('.svc__head h3'), { '--bar-x': 0, duration: 0.8, ease: 'power3.inOut' }, t + 0.6); // le trait jaune sous le titre se trace
+      // en défilant, l'illustration glisse plus lentement que le texte (profondeur) puis le service s'estompe en sortant
+      gsap.fromTo(q('.svc__ill'), { yPercent: 10 }, { yPercent: -10, ease: 'none', scrollTrigger: { trigger: it, start: 'top bottom', end: 'bottom top', scrub: true } });
+      gsap.to(it, { opacity: 0.1, ease: 'none', scrollTrigger: { trigger: it, start: 'bottom 55%', end: 'bottom 5%', scrub: true } });
     });
 
     // 2. Boucles de vie, une par illustration, jouées seulement quand la colonne est à l'écran et l'arrivée terminée

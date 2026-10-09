@@ -407,15 +407,6 @@ h3 { font-size: 1.25rem; font-weight: 600; }
 @media (max-width: 62rem) { .is-slider .about__inner:has(details[open]) .about__lead { font-size: .9rem; line-height: 1.4; margin-top: .5rem; } }
 @media (max-width: 62rem) { .is-slider .about__inner:has(details[open]) .about__head span { display: none; } }
 
-/* Nos prestations sur mobile : carrousel horizontal (swipe), une carte à la fois, la suivante dépasse pour inviter à glisser */
-@media (max-width: 39.99rem) {
-  .services { min-height: 100svh; display: flex; align-items: center; padding-bottom: 2rem; }
-  .svc__grid { display: flex; gap: 1rem; margin-inline: -1.5rem; padding: 0 1.5rem 1.5rem; overflow-x: auto; scroll-snap-type: x mandatory; scroll-padding-inline: 1.5rem; scrollbar-width: none; overscroll-behavior-x: contain; }
-  .svc__grid::-webkit-scrollbar { display: none; }
-  .svc__item { flex: 0 0 82%; scroll-snap-align: start; padding: 0; }
-  .svc__ill { height: clamp(7.5rem, 20svh, 10rem); }
-}
-
 /* ===== Audit mobile ===== */
 /* Menu : panneau pleine largeur sous le header, liens à bonne taille tactile */
 @media (max-width: 72rem) {
@@ -441,11 +432,43 @@ h3 { font-size: 1.25rem; font-weight: 600; }
   .collab { padding-block: calc(var(--header-h) + 1rem) 3rem; }
   .collab__list { gap: 1.5rem; }
   .reason .reason__text { font-size: .96rem; line-height: 1.6; }
-
-  /* Nos outils : carrousel de catégories (swipe), comme Nos prestations, au lieu de 5 blocs empilés */
-  .tools { padding-bottom: 2.5rem; }
-  .tools__grid { display: flex; gap: 1rem; margin-inline: -1.5rem; padding: 0 1.5rem 1rem; overflow-x: auto; scroll-snap-type: x mandatory; scroll-padding-inline: 1.5rem; scrollbar-width: none; overscroll-behavior-x: contain; }
-  .tools__grid::-webkit-scrollbar { display: none; }
-  .tools__block, .tools__block--3, .tools__block--more { flex: 0 0 86%; scroll-snap-align: start; grid-column: auto; }
-  .tools__block--more { grid-template-columns: 1fr; align-content: center; }
 }
+
+/* Mobile, sections denses : listes compactes au lieu de grandes cartes */
+@media (max-width: 39.99rem) {
+  /* Nos outils : blocs resserrés, vignettes plus petites */
+  .tools__inner { gap: 1.25rem; }
+  .tools__grid { gap: .75rem; }
+  .tools__block { padding: 1rem 1.1rem 1.25rem; gap: .9rem; }
+  .tools__block h3 { font-size: 1.1rem; }
+  .tools__list { gap: .9rem .25rem; }
+  .tool { width: 4rem; font-size: .8rem; }
+  .tool__icon { width: 3rem; }
+  .tools__block--more { padding-block: 1rem; gap: .75rem; }
+}
+
+/* Nos prestations, mobile et tablette : un service par écran, comme les panneaux du haut de page.
+   Aucun cadre : fond blanc, grande illustration, titre serif, un repère de progression (points jaunes) sur le bord. */
+@media (max-width: 62rem) {
+  html:has(.svc__grid) { scroll-snap-type: y proximity; }
+  .services { padding-bottom: 0; }
+  .svc__top { margin-bottom: 1rem; }
+  .svc__grid { grid-template-columns: minmax(0, 1fr); gap: 0; max-width: 34rem; margin-inline: auto; }
+  .svc__item { grid-template-columns: minmax(0, 1fr); align-content: center; justify-items: start; gap: 1.1rem; min-height: 100svh; padding: calc(var(--header-h) * .8) 0 2.5rem; scroll-snap-align: start; }
+  .svc__ill { height: clamp(11rem, 36svh, 17rem); margin: 0 0 .5rem; }
+  .svc__head { gap: .6rem; }
+  .svc__head h3 { font-size: clamp(1.7rem, 7vw, 2.1rem); line-height: 1.12; }
+  .svc__head h3::after { content: ""; display: block; width: 3rem; height: 3px; margin-top: .9rem; border-radius: 2px; background: var(--c-accent); transform: scaleX(var(--bar-x, 1)); transform-origin: left; }
+  .svc__tags { font-size: .95rem; }
+  .svc__text { gap: .9rem; max-width: 36ch; }
+  .svc__text p { font-size: 1.05rem; line-height: 1.65; }
+  .svc__more summary { min-height: 44px; }
+  .svc__sheet, .svc__sheet-in { inset: 0; }
+}
+
+/* Points de progression des prestations (créés par main.js), visibles seulement pendant la section */
+.svc__dots { position: fixed; right: .6rem; top: 50%; z-index: 50; display: grid; gap: .6rem; translate: 0 -50%; opacity: 0; pointer-events: none; transition: opacity .4s var(--ease); }
+.svc__dots.is-on { opacity: 1; }
+.svc__dots span { width: .5rem; height: .5rem; border-radius: 1rem; background: var(--c-line); transition: height .4s var(--ease), background .4s var(--ease); }
+.svc__dots span.is-active { height: 1.6rem; background: var(--c-accent); }
+
