@@ -214,68 +214,46 @@
       if (!pin) st.create({ trigger: it, start: 'top 90%', end: 'bottom 10%', onToggle: (self) => { s.active = self.isActive; sync(); } });
       return s;
     });
-    function sync() { state.forEach((s, i) => s.tl.paused(!(ready && s.active && !items[i].classList.contains('is-open')))); }
+    function sync() { state.forEach((s, i) => s.tl.paused(!((pin ? s.done : ready) && s.active && !items[i].classList.contains('is-open')))); }
 
     const undo = []; // à défaire quand on quitte le mode mobile
-    // Mobile / tablette : un grand service par écran. La section s'épingle ; le défilement choisit seulement le service actif
-    // (accroché sur chacun), puis une entrée complète se joue : jamais d'état à moitié construit si on lâche entre deux.
-    // Signature : la feuille crème est commune aux 4 services et se retourne (ses coins arrondis basculent) à chaque changement.
+    // Mobile / tablette : défilement natif, rien d'épinglé ni d'accroché. Chaque service joue une entrée complète quand il arrive à l'écran
+    // (une seule fois, indépendante du doigt) : sa feuille crème bascule d'un coin à l'autre, les traits se dessinent, le titre monte
+    // lettre par lettre, le texte sort ligne par ligne. La boucle de vie de l'illustration tourne tant que le bloc est visible.
     if (pin) {
-      const n = items.length;
-      const steps = document.createElement('div');
-      steps.className = 'svc__steps';
-      steps.innerHTML = items.map((it) => `<button type="button" aria-label="${it.querySelector('h3').textContent}"><i></i></button>`).join('');
-      document.querySelector('.svc__title').after(steps);
-      const fills = [...steps.querySelectorAll('i')];
-      const leaf = document.createElement('div');
-      leaf.className = 'svc__leaf';
-      leaf.setAttribute('aria-hidden', 'true');
-      grid.prepend(leaf);
       const heads = items.map((it) => { const h = it.querySelector('h3'); it.dataset.t = h.innerHTML; return splitChars(h); }); // dataset : la feuille de détail reprend le titre intact
-      const paras = items.map((it) => { const p = it.querySelector('.svc__text > p'); return window.SplitText ? SplitText.create(p, { type: 'lines', mask: 'lines', autoSplit: true }) : { lines: [p], revert() {} }; });
-      undo.push(...heads.map((h) => h.restore), () => paras.forEach((p) => p.revert()));
-      const LEAF = ['0% 17% 0% 17% / 0% 22% 0% 22%', '17% 0% 17% 0% / 22% 0% 22% 0%']; // la feuille et son reflet (coins opposés)
-      gsap.set(items, { autoAlpha: 0 });
-      let cur = -1, tl;
-      const go = (i) => {
-        if (i === cur) return;
-        const dir = i > cur ? 1 : -1, prev = items[cur], it = items[i], q = gsap.utils.selector(it);
-        cur = i;
-        tl?.progress(1).kill(); // une entrée interrompue se termine net avant la suivante
-        tl = gsap.timeline({ defaults: { ease: 'power3.out' } });
-        if (prev) {
-          tl.to(prev.querySelectorAll('.d, .pop, .heart, .dot'), { autoAlpha: 0, duration: 0.25 }, 0)
-            .to(prev.querySelectorAll('.svc__head, .svc__text'), { autoAlpha: 0, y: -24 * dir, duration: 0.3, ease: 'power2.in' }, 0)
-            .set(prev, { autoAlpha: 0 }, 0.3)
-            .set(prev.querySelectorAll('.d, .pop, .heart, .dot, .svc__head, .svc__text'), { clearProps: 'opacity,visibility,transform' }, 0.3);
-        }
-        tl.to(leaf, { borderRadius: LEAF[i % 2], rotation: 0, scale: 1, duration: 0.9, ease: 'power3.inOut' }, 0) // la feuille se retourne
-          .fromTo(leaf, { rotation: -4 * dir, scale: 0.94 }, { rotation: 0, scale: 1, duration: 0.9, ease: 'back.out(1.4)', immediateRender: false }, 0)
-          .set(it, { autoAlpha: 1 }, prev ? 0.3 : 0)
-          .fromTo(q('.d'), { strokeDashoffset: 1 }, { strokeDashoffset: 0, duration: 0.7, stagger: 0.025, ease: 'power2.inOut' }, 0.35)
-          .fromTo(q('.pop, .heart, .dot'), { scale: 0 }, { scale: 1, transformOrigin: '50% 50%', duration: 0.4, stagger: 0.05, ease: 'back.out(3)' }, 0.75)
-          .fromTo(heads[i].chars, { yPercent: 110 }, { yPercent: 0, duration: 0.7, stagger: 0.018, ease: 'power4.out' }, 0.4)
-          .fromTo(q('.svc__head h3'), { '--bar-x': 0 }, { '--bar-x': 1, duration: 0.7, ease: 'power3.inOut' }, 0.7)
-          .fromTo(q('.svc__tags'), { autoAlpha: 0, y: 10 }, { autoAlpha: 1, y: 0, duration: 0.5 }, 0.75)
-          .fromTo(paras[i].lines, { yPercent: 105 }, { yPercent: 0, duration: 0.8, stagger: 0.07, ease: 'power4.out' }, 0.8)
-          .fromTo(q('.svc__more'), { autoAlpha: 0, y: 10 }, { autoAlpha: 1, y: 0, duration: 0.5 }, 1.1);
-        fills.forEach((f, k) => gsap.to(f, { '--f': k <= i ? 1 : 0, duration: 0.6, ease: 'power3.out', overwrite: 'auto' }));
-        state.forEach((s, k) => { s.active = k === i; });
-        sync();
-      };
-      const trig = st.create({
-        trigger: section, start: 'top top', end: () => `+=${window.innerHeight * (n - 1) * 0.6}`, pin: true, anticipatePin: 1,
-        snap: { snapTo: 1 / (n - 1), duration: { min: 0.2, max: 0.5 }, ease: 'power2.inOut', directional: true },
-        onUpdate: (self) => cur >= 0 && go(Math.round(self.progress * (n - 1))),
-        onEnter: () => cur < 0 && go(0),
+      let paras = [];
+      const leaves = items.map((it) => { const l = document.createElement('div'); l.className = 'svc__leaf'; l.setAttribute('aria-hidden', 'true'); it.prepend(l); return l; });
+      const end = document.createElement('div');
+      end.className = 'svc__end';
+      const cta = document.querySelector('.svc__top .btn');
+      end.append(cta);
+      grid.after(end);
+      undo.push(...heads.map((h) => h.restore), () => { document.querySelector('.svc__top').append(cta); end.remove(); leaves.forEach((l) => l.remove()); });
+      let alive = true;
+      undo.push(() => { alive = false; });
+      // Les lignes se découpent après le chargement des polices (sinon elles se recoupent et l'animation vise d'anciennes lignes)
+      (document.fonts?.ready ?? Promise.resolve()).then(() => { if (!alive) return;
+      paras = items.map((it) => { const p = it.querySelector('.svc__text > p'); return window.SplitText ? SplitText.create(p, { type: 'lines', mask: 'lines' }) : { lines: [p], revert() {} }; });
+      undo.push(() => paras.forEach((p) => p.revert()));
+      items.forEach((it, i) => {
+        const q = gsap.utils.selector(it), dir = i % 2 ? -1 : 1;
+        const fills = [...it.querySelectorAll('.svc__ill *')].filter((e) => getComputedStyle(e).fill === 'rgb(255, 255, 255)'); // remplissages blancs : ils n'apparaissent qu'avec le trait
+        const tl = gsap.timeline({ paused: true, defaults: { ease: 'power3.out' }, onComplete: () => { state[i].done = true; sync(); } })
+          .fromTo(leaves[i], { rotation: -5 * dir, scale: 0.9, autoAlpha: 0 }, { rotation: 0, scale: 1, autoAlpha: 1, duration: 0.9, ease: 'back.out(1.5)' }, 0)
+          .fromTo(q('.d'), { strokeDashoffset: 1 }, { strokeDashoffset: 0, duration: 0.7, stagger: 0.025, ease: 'power2.inOut' }, 0.3)
+          .fromTo(fills, { fillOpacity: 0 }, { fillOpacity: 1, duration: 0.5, ease: 'power1.in' }, 0.65)
+          .fromTo(q('.pop, .heart, .dot'), { scale: 0 }, { scale: 1, transformOrigin: '50% 50%', duration: 0.4, stagger: 0.05, ease: 'back.out(3)' }, 0.7)
+          .fromTo(heads[i].chars, { yPercent: 110 }, { yPercent: 0, duration: 0.7, stagger: 0.018, ease: 'power4.out' }, 0.45)
+          .fromTo(q('.svc__head h3'), { '--bar-x': 0 }, { '--bar-x': 1, duration: 0.7, ease: 'power3.inOut' }, 0.75)
+          .fromTo(q('.svc__tags'), { autoAlpha: 0, y: 10 }, { autoAlpha: 1, y: 0, duration: 0.5 }, 0.8)
+          .fromTo(paras[i].lines, { yPercent: 105 }, { yPercent: 0, duration: 0.8, stagger: 0.07, ease: 'power4.out' }, 0.85)
+          .fromTo(q('.svc__more'), { autoAlpha: 0, y: 10 }, { autoAlpha: 1, y: 0, duration: 0.5 }, 1.15);
+        st.create({ trigger: it, start: 'top 72%', once: true, onEnter: () => tl.play() });
+        st.create({ trigger: it, start: 'top 90%', end: 'bottom 10%', onToggle: (self) => { state[i].active = self.isActive; sync(); } });
       });
-      st.create({ trigger: section, start: 'top 70%', once: true, onEnter: () => cur < 0 && go(0) }); // le premier service arrive avec la section
-      steps.addEventListener('click', (e) => {
-        const k = [...steps.children].indexOf(e.target.closest('button'));
-        if (k < 0) return;
-        const y = trig.start + ((trig.end - trig.start) * k) / (n - 1);
-        lenis ? lenis.scrollTo(y) : window.scrollTo({ top: y, behavior: 'smooth' });
-      });
+      }); // fin de document.fonts.ready
+      gsap.from(cta, { scale: 0.7, autoAlpha: 0, duration: 0.7, ease: 'back.out(2)', scrollTrigger: { trigger: cta, start: 'top 92%', once: true } });
     }
 
     // 3. Survol : le filet jaune s'étend, l'illustration se soulève
@@ -398,8 +376,7 @@
       document.removeEventListener('keydown', onKey);
       document.removeEventListener('pointerdown', onOutside);
       section.classList.remove('is-flow');
-      document.querySelector('.svc__steps')?.remove(); document.querySelector('.svc__leaf')?.remove();
-      gsap.set(items, { clearProps: 'visibility,opacity' }); document.documentElement.classList.remove('svc-lock');
+            gsap.set(items, { clearProps: 'visibility,opacity' }); document.documentElement.classList.remove('svc-lock');
       sheets.forEach((s) => { s.sheet.remove(); [...s.it.children].forEach((c) => { c.inert = false; }); });
     };
   });
@@ -427,20 +404,31 @@
     let unlocking = false;
     const last = panels.length - 1;
 
+    // Doigt posé ? Lenis annule tout scrollTo au moindre touchmove : le défilement automatique attend donc que le doigt se lève.
+    let touching = false;
+    const onTouch = (e) => { touching = e.type === 'touchstart'; };
+    ['touchstart', 'touchend', 'touchcancel'].forEach((t) => window.addEventListener(t, onTouch, { passive: true, capture: true }));
     const unlock = (target = free) => {
       if (!locked || unlocking) return;
       locked = false;
       unlocking = true;
       observer.disable();
       root.classList.replace('is-locked', 'is-free');
-      if (lenis) { lenis.start(); lenis.scrollTo(target, { duration: calm ? 0 : 1.2 }); }
-      else target.scrollIntoView({ behavior: calm ? 'auto' : 'smooth' });
-      gsap.delayedCall(1.4, () => {
-        unlocking = false;
-        // Les sections libres suivent le dernier panneau : en remontant on repasse par lui, jamais directement à l'accueil
-        current = last;
-        panels.forEach((p, i) => p.classList.toggle('is-current', i === last));
-      });
+      const hold = (e) => e.preventDefault(); // la fin du swipe ne fait pas défiler la page en natif
+      const go = () => {
+        window.removeEventListener('touchmove', hold);
+        if (lenis) { lenis.start(); lenis.scrollTo(target, { duration: calm ? 0 : 1.2 }); }
+        else target.scrollIntoView({ behavior: calm ? 'auto' : 'smooth' });
+        gsap.delayedCall(1.4, () => {
+          unlocking = false;
+          // Les sections libres suivent le dernier panneau : en remontant on repasse par lui, jamais directement à l'accueil
+          current = last;
+          panels.forEach((p, i) => p.classList.toggle('is-current', i === last));
+        });
+      };
+      if (!touching) return go();
+      window.addEventListener('touchmove', hold, { passive: false });
+      window.addEventListener('touchend', go, { once: true });
     };
     const relock = () => {
       if (locked || unlocking || window.scrollY > 0) return;
@@ -504,10 +492,12 @@
 
     // Molette et swipe : avec wheelSpeed -1, « onUp » = aller à la section suivante.
     // Deux observers : le mode touch d'Observer avale les clics, on l'écarte donc des liens et boutons.
+    // Les <summary> de « Qui sommes-nous » couvrent presque tout l'écran mobile : on ne les ignore pas (sinon il faut swiper deux fois),
+    // dragMinimum garde un tap (< 10 px) comme un clic qui ouvre l'accordéon.
     const nav = { wheelSpeed: -1, tolerance: 12,
       onUp: () => (current < last ? goTo(current + 1) : unlock()), onDown: () => goTo(current - 1) };
     const observers = [Observer.create({ ...nav, type: 'wheel' }),
-      Observer.create({ ...nav, type: 'touch', ignore: 'a, button, summary' })];
+      Observer.create({ ...nav, type: 'touch', dragMinimum: 10 })];
     const observer = ['enable', 'disable', 'kill'].reduce((o, m) => ({ ...o, [m]: () => observers.forEach((x) => x[m]()) }), {});
 
     const onKey = (e) => {
@@ -548,6 +538,7 @@
 
     return () => {
       observer.kill();
+      ['touchstart', 'touchend', 'touchcancel'].forEach((t) => window.removeEventListener(t, onTouch, { capture: true }));
       window.removeEventListener('hashchange', onHash);
       window.removeEventListener('scroll', relock);
       freeNav.disconnect();
