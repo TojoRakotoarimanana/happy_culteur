@@ -7,6 +7,7 @@
 :root {
   --c-accent: #F7B731;
   --c-accent-dark: #E5A21B;
+  --c-accent-ink: #B87A06; /* jaune foncé pour du TEXTE sur blanc (contraste 3,6:1 ; le jaune vif n'a que 1,8:1) */
   --c-ink: #14142B;
   --c-ink-soft: #4B4B5A;
   --c-bg: #FFFFFF;
@@ -91,17 +92,17 @@ h3 { font-size: 1.25rem; font-weight: 600; }
 .underline { position: absolute; left: 0; bottom: 0; width: 100%; height: .3em; display: block; }
 .underline path { fill: var(--c-accent); }
 
+/* Alvéole : forme commune à tous les boutons qui déplient du contenu */
+:root { --hex: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%); }
+
 /* 4. Header ---------------------------------------------------------------- */
 /* Barre pleine largeur collée en haut, sans fond : elle se fond dans la page (comme la maquette) */
 .header { position: fixed; inset: 0 0 auto; z-index: 100; height: var(--header-h); }
 .header__inner { height: 100%; display: grid; grid-template-columns: auto 1fr; align-items: center; }
 
-.logo { display: flex; align-items: center; gap: .6rem; justify-self: start; line-height: 1; text-decoration: none; color: var(--c-ink); }
-.logo__mark { width: 2.5rem; height: 2.5rem; flex: none; transition: transform .5s cubic-bezier(.34, 1.56, .64, 1); }
-.logo:hover .logo__mark { transform: rotate(-8deg) scale(1.06); }
-.logo__text { display: flex; flex-direction: column; gap: .2rem; }
-.logo__name { font: 600 1.6rem/1 var(--f-display); letter-spacing: -.01em; }
-.logo__tag { font-size: .58rem; letter-spacing: .38em; text-transform: uppercase; color: var(--c-ink-soft); }
+.logo { display: flex; align-items: center; justify-self: start; line-height: 1; text-decoration: none; }
+.logo__img { height: 4.25rem; width: auto; transition: transform .5s cubic-bezier(.34, 1.56, .64, 1); }
+.logo:hover .logo__img { transform: scale(1.04); }
 
 .nav { display: flex; align-items: center; justify-self: end; } /* collé au bord droit du conteneur */
 .nav__list { display: flex; }
@@ -124,24 +125,30 @@ h3 { font-size: 1.25rem; font-weight: 600; }
 .nav-toggle { display: none; }
 
 /* 5. Hero -------------------------------------------------------------- */
+/* Titre géant à l'encre sur blanc ; derrière, un rayon de miel au trait déborde à droite (décor SVG, main.js le trace) */
 .hero { position: relative; padding-top: var(--header-h); overflow: hidden; }
-.hero__inner {
-  min-height: calc(100svh - var(--header-h));
-  display: grid; grid-template-columns: 1fr; align-items: center;
-}
-.hero__content { position: relative; z-index: 1; display: grid; justify-items: start; gap: 1.5rem; padding-block: 3rem; }
-.hero__title { font-size: clamp(2.1rem, 3.6vw, 3.2rem); }
+.hero__inner { position: relative; z-index: 1; min-height: calc(100svh - var(--header-h)); display: grid; align-items: center; }
+.hero__content { display: grid; justify-items: start; gap: clamp(1.25rem, 3.5svh, 2.25rem); padding-block: 2rem; }
+.hero__title { font-size: clamp(2.2rem, 6.2vw, 6.4rem); line-height: 1.02; letter-spacing: -.015em; }
 .line { display: block; }
-.line.accent { position: relative; display: inline-block; padding-bottom: .32em; } /* dégage le filet sous la jambe du « g » */
-.hero__lead { max-width: 28ch; color: var(--c-ink-soft); font-size: 1.15rem; }
+.hero .accent { position: relative; display: inline-block; padding-bottom: .2em; color: var(--c-accent); } /* même jaune que le rayon et le bouton (choix client, contraste faible assumé) */
+.hero .underline { height: .14em; }
+.hero__lead { max-width: 30ch; color: var(--c-ink-soft); font-size: clamp(1rem, 1.1vw, 1.125rem); }
+.hero__actions { display: flex; flex-wrap: wrap; align-items: center; gap: 1rem 1.75rem; }
+/* Offre d'essai : lien secondaire, souligné en jaune */
+.hero__trial { color: var(--c-ink); font-weight: 600; text-decoration: underline 2px var(--c-accent); text-underline-offset: .4em; transition: color .3s var(--ease); }
+.hero__trial:hover { color: var(--c-accent-ink); }
+/* Rayon de miel : centré sur la moitié droite, coupé par les bords du hero */
+.comb { position: absolute; z-index: 0; top: var(--header-h); left: 76%; height: calc(100% - var(--header-h)); width: auto; translate: -50% 0; overflow: visible; pointer-events: none; } /* jamais sous la navbar */
+/* Bords du rayon : fondu vers le blanc et dernier anneau flouté */
+.comb { -webkit-mask-image: radial-gradient(closest-side, #000 60%, transparent 100%); mask-image: radial-gradient(closest-side, #000 60%, transparent 100%); }
+.hc[data-d="3"] { filter: blur(1.5px); }
+.hc__shape { fill: var(--c-bg); stroke: var(--c-ink); stroke-opacity: .14; stroke-width: 1.5; }
+.hc--fill .hc__shape { fill: var(--c-accent); stroke: none; }
+.hc--tint .hc__shape { fill: var(--c-tint); stroke: var(--c-accent); stroke-opacity: 1; }
+.hc--icon .hc__shape { stroke-opacity: .7; }
+.hc__icon { fill: none; stroke: var(--c-ink); stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; }
 
-/* Photo qui déborde jusqu'au bord droit de l'écran, avec une courbe organique à gauche */
-.hero__media {
-  position: absolute; top: var(--header-h); right: 0; bottom: 1.5rem; width: 48vw;
-  clip-path: url(#hero-shape);
-}
-.hero__frame { height: 100%; overflow: hidden; }
-.hero__img { width: 100%; height: 100%; object-fit: cover; object-position: 28% 35%; }
 
 /* À propos : titre + chapeau à gauche, trois idées numérotées sur un fond crème à droite */
 .about { display: flex; align-items: center; padding-block: calc(var(--header-h) + .5rem) 2rem; }
@@ -167,7 +174,7 @@ h3 { font-size: 1.25rem; font-weight: 600; }
 }
 .about__points summary::-webkit-details-marker { display: none; }
 .about__points summary::after { /* + qui devient − à l'ouverture */
-  content: "+"; display: grid; place-items: center; width: 1.5rem; height: 1.5rem; border-radius: 50%;
+  content: "+"; display: grid; place-items: center; width: 1.5rem; height: 1.72rem; clip-path: var(--hex);
   background: var(--c-accent); font-weight: 700; line-height: 1;
 }
 .about__points details[open] summary::after { content: "−"; }
@@ -178,18 +185,20 @@ h3 { font-size: 1.25rem; font-weight: 600; }
 .about__points details p { margin: .9rem 0 0 4rem; font-size: .95rem; line-height: 1.6; color: var(--c-ink-soft); }
 
 /* Pourquoi collaborer : section libre (hors slider) sur fond blanc, titre, accroche et trois arguments, sans visuel. */
-/* fond doux : dégradé crème qui s'estompe vers le blanc en haut et en bas, avec une lueur jaune très légère */
-.collab { background: radial-gradient(60rem 28rem at 88% 22%, rgba(247, 183, 49, .10), transparent 70%), linear-gradient(180deg, #fff 0%, var(--c-tint) 22%, var(--c-tint) 78%, #fff 100%); min-height: 100svh; display: flex; align-items: center; padding-block: calc(var(--header-h) + 2rem) 5rem; }
+/* fond blanc, simple lueur jaune très légère (le rayon de miel est réservé au hero) */
+.collab { position: relative; isolation: isolate; background: radial-gradient(50rem 26rem at 85% 30%, color-mix(in srgb, var(--c-accent) 9%, transparent), transparent 70%), var(--c-bg); min-height: 100svh; display: flex; align-items: center; padding-block: calc(var(--header-h) + 2rem) 5rem; }
 
 /* Titre à gauche, tige à droite : chaque argument est une feuille accrochée à la tige, qui se dessine au scroll */
 .collab__body { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 6fr); gap: clamp(2rem, 6vw, 6rem); align-items: center; max-width: 72rem; margin-inline: auto; }
 .collab .about__title { font-size: clamp(2rem, 3.4vw, 2.8rem); }
 .collab .about__title::after { margin-top: .8rem; }
 .collab .about__lead { margin-top: 1.1rem; font-size: clamp(1.05rem, 1.4vw, 1.25rem); }
-.collab__list { position: relative; display: grid; gap: clamp(1.75rem, 5svh, 2.75rem); padding-left: 3.25rem; }
-.collab__list::before { content: ""; position: absolute; left: .8rem; top: .6rem; bottom: .6rem; width: 2px; background: var(--c-ink); transform: scaleY(var(--stem, 1)); transform-origin: top; }
+.collab__list { position: relative; display: grid; gap: clamp(1.75rem, 5svh, 2.75rem); padding-left: 8.75rem; }
+/* Trajectoire de vol en pointillés (même vocabulaire que .sep), révélée de haut en bas par --stem (GSAP scrub) */
+.collab__list::before { content: ""; position: absolute; left: calc(3.5rem - 2px); top: 4rem; bottom: 4rem; width: 4px; background: radial-gradient(circle, var(--c-accent-dark) 1.5px, transparent 2px) center top / 4px 9px repeat-y; clip-path: inset(0 0 calc((1 - var(--stem, 1)) * 100%) 0); }
 .reason { position: relative; }
-.reason__leaf { position: absolute; left: -3.25rem; top: .1rem; width: 1.6rem; height: 1.6rem; border-radius: 0 100% 0 100%; background: var(--c-accent); }
+/* petite illustration de l'argument, même style que celles des prestations */
+.reason__ill { position: absolute; left: -8.75rem; top: -.3rem; width: 7rem; height: auto; overflow: visible; fill: none; stroke: var(--c-ink); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 .reason h3 { font: 600 clamp(1.35rem, 1.9vw, 1.65rem)/1.15 var(--f-display); }
 .reason .reason__text { margin-top: .6rem; max-width: 42ch; font-size: 1.02rem; line-height: 1.7; color: var(--c-ink-soft); }
 
@@ -200,11 +209,11 @@ h3 { font-size: 1.25rem; font-weight: 600; }
 .svc__grid { display: grid; gap: 2.5rem 0; }
 .svc__item { --bar: 1; --bw: 4rem; position: relative; display: grid; align-content: start; gap: .85rem; padding: 0 1.5rem 0 0; }
 .svc__ill { width: 100%; height: clamp(8.5rem, 23svh, 12.5rem); margin-bottom: .4rem; fill: none; stroke: var(--c-ink); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; overflow: visible; }
-.svc__ill .ill-bg { fill: var(--c-tint); stroke: none; }
-.svc__ill .w { fill: #fff; }
-.svc__ill .y { fill: var(--c-accent); }
+:is(.svc__ill, .reason__ill) .ill-bg { fill: var(--c-tint); stroke: none; }
+:is(.svc__ill, .reason__ill) .w { fill: #fff; }
+:is(.svc__ill, .reason__ill) .y { fill: var(--c-accent); }
 .svc__ill .wave { stroke: var(--c-accent-dark); stroke-width: 3; }
-.svc__ill .dot { fill: var(--c-ink); stroke: none; }
+:is(.svc__ill, .reason__ill) .dot { fill: var(--c-ink); stroke: none; }
 .svc__ill .heart path { stroke: var(--c-ink); stroke-width: 1.6; }
 .svc__ill .hand { stroke-width: 2.5; }
 .svc__head { display: grid; gap: .45rem; }
@@ -217,7 +226,7 @@ h3 { font-size: 1.25rem; font-weight: 600; }
 .svc__text > p:first-child { color: var(--c-ink); }
 .svc__more summary { display: inline-flex; align-items: center; gap: .5rem; cursor: pointer; list-style: none; font-size: .9rem; font-weight: 700; }
 .svc__more summary::-webkit-details-marker { display: none; }
-.svc__more summary::before { content: "+"; display: grid; place-items: center; width: 1.3rem; height: 1.3rem; border: 1px solid var(--c-ink); font-weight: 600; line-height: 1; }
+.svc__more summary::before { content: "+"; display: grid; place-items: center; width: 1.3rem; height: 1.5rem; clip-path: var(--hex); background: var(--c-accent); font-weight: 600; line-height: 1; }
 .svc__more[open] summary::before { content: "−"; }
 .svc__more p { margin-top: .6rem; }
 
@@ -282,8 +291,13 @@ h3 { font-size: 1.25rem; font-weight: 600; }
   .nav__link.is-active { font-weight: 600; }
 }
 
-/* Séparateur entre deux sections libres : vague jaune fine */
-.sep { width: min(100% - 3rem, var(--container)); height: 12px; margin-inline: auto; background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='48' height='12' viewBox='0 0 48 12'%3E%3Cpath d='M0 6Q12 0 24 6T48 6' fill='none' stroke='%23F7B731' stroke-width='2.5' stroke-linecap='round'/%3E%3C/svg%3E") repeat-x center; }
+/* Séparateur entre deux sections libres : trajectoire de vol en pointillés (se trace de gauche à droite, main.js) */
+.sep { position: relative; width: min(100% - 3rem, var(--container)); height: 2.5rem; margin-inline: auto; }
+.sep::before {
+  content: ""; position: absolute; inset: 0; background: var(--c-accent-dark);
+  --m: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='96' height='24'%3E%3Cpath d='M0 12Q24 0 48 12T96 12' pathLength='14' fill='none' stroke='%23000' stroke-width='3' stroke-linecap='round' stroke-dasharray='0 1'/%3E%3C/svg%3E") repeat-x left center / 96px 24px;
+  -webkit-mask: var(--m); mask: var(--m);
+}
 
 /* Les outils : fond blanc, comme le reste de la page.
    Cinq catégories d'outils en mosaïque. */
@@ -342,21 +356,25 @@ h3 { font-size: 1.25rem; font-weight: 600; }
 @media (max-width: 62rem) {
   .about__inner { grid-template-columns: minmax(0, 1fr); } /* minmax(0,…) : sans lui, un long mot (« professionnellement ») élargit la colonne et fait déborder la page à 320 px */
   .about__intro { order: 0; }
-  .hero__title { font-size: clamp(2.1rem, 7vw, 3.4rem); }
+  .hero__title { font-size: clamp(2.1rem, 9.5vw, 4rem); }
+  /* mobile : le rayon passe sous le contenu (dans le flux, jamais par-dessus le texte) et dépasse en bas */
+  .hero { display: flex; flex-direction: column; min-height: 100svh; }
+  .hero__inner { min-height: 0; align-items: start; }
+  .comb { position: relative; order: 1; top: auto; left: 62%; height: auto; width: max(130vw, 30rem); margin-block: 0 -45%; }
   :root { --leaf: 4rem; }
-  .hero__inner { grid-template-columns: 1fr; }
   .collab__body { grid-template-columns: 1fr; }
-  .hero__media { position: relative; inset: auto; width: 100%; height: 22rem; margin-top: 1rem; clip-path: none; border-radius: 1.5rem 0 0 1.5rem; overflow: hidden; }
 }
 
 /* Soulignement masqué au départ seulement si JS actif et mouvement autorisé (GSAP le trace) */
 @media (prefers-reduced-motion: no-preference) {
-  .js .underline { clip-path: inset(0 100% 0 0); }
+  .js .hero:not(.is-done) .underline { clip-path: inset(0 100% 0 0); }
 }
 
 /* États de départ des animations d'entrée (GSAP les joue ; sans JS ou en reduced-motion, tout reste visible) */
 @media (prefers-reduced-motion: no-preference) {
-  .js .logo, .js .nav__link, .js .hero .line, .js .hero__lead, .js .hero .btn { opacity: 0; }
+  /* .is-done (posée par main.js à la fin de l'intro) : si le h1 est reconstruit (découpage en lettres annulé), il ne redevient pas invisible */
+  .js .logo, .js .nav__link, .js .hero:not(.is-done) :is(.line, .hero__lead, .hero__actions) { opacity: 0; }
+  .js .hero:not(.is-done) .hc { opacity: 0; } /* alvéoles : main.js les trace une à une */
   /* Section À propos : surlignage et trait jaune se tracent quand la section devient courante */
   .is-slider .about__title::after { transform: scaleX(0); transform-origin: left; transition: transform .8s var(--ease) 1.2s; }
   .is-slider .about.is-current .about__title::after { transform: scaleX(1); }
@@ -375,12 +393,9 @@ h3 { font-size: 1.25rem; font-weight: 600; }
 /* Petits écrans en mode slider : même logique « une section = un écran » que sur desktop, le contenu est compacté pour tenir dans 100svh.
    Sous 36rem de haut (téléphone en paysage), le slider est désactivé (index.html / main.js) et la page défile normalement. */
 @media (max-width: 62rem) {
-  .is-slider .hero__inner { min-height: 0; height: calc(100svh - var(--header-h)); grid-template-rows: auto minmax(0, 1fr); align-items: stretch; }
-  .is-slider .hero__content { gap: 1rem; padding-block: 1rem 0; }
-  .is-slider .hero__title { font-size: clamp(1.9rem, 8vw, 3.6rem); }
+  .is-slider .hero__inner { min-height: 0; height: calc(100svh - var(--header-h)); }
+  .is-slider .hero__content { gap: 1.25rem; padding-block: 1rem; }
   .is-slider .hero__lead { max-width: 26ch; }
-  /* la photo déborde jusqu'au bord droit et jusqu'en bas, grand arrondi « feuille » en haut à gauche comme sur desktop */
-  .is-slider .hero__media { width: auto; height: auto; min-height: 0; margin: 1.25rem calc((100% - 100vw) / 2) 0 0; border-radius: var(--leaf) 0 0 0; }
 
   .is-slider .about { padding-block: calc(var(--header-h) + .25rem) 1rem; }
   .is-slider .about__inner { gap: 1rem; }
@@ -423,19 +438,21 @@ h3 { font-size: 1.25rem; font-weight: 600; }
 
 @media (max-width: 62rem) {
   .logo { min-height: 44px; }
-  .logo__tag { font-size: .62rem; }
+  .logo__img { height: 3.5rem; }
   /* zones tactiles ≥ 44 px */
   .svc__more summary, .about__points summary { min-height: 44px; }
   .svc__close { width: 2.75rem; height: 2.75rem; }
   .svc__sheet-cta { min-height: 44px; padding-block: .85rem; }
-  /* hero : visages dégagés */
-  .hero__img { object-position: 38% 12%; }
 }
 
 /* Pourquoi collaborer : plus dense sur mobile pour réduire le défilement */
 @media (max-width: 39.99rem) {
   .collab { padding-block: calc(var(--header-h) + 1rem) 3rem; }
   .collab__list { gap: 1.5rem; }
+  /* étroit : l'illustration passe au-dessus du titre, sans trajectoire */
+  .collab__list { padding-left: 0; }
+  .collab__list::before { display: none; }
+  .reason__ill { position: static; display: block; width: 5.5rem; margin-bottom: .6rem; }
   .reason .reason__text { font-size: .96rem; line-height: 1.6; }
 }
 
