@@ -74,6 +74,8 @@
 
   /* ---------- Section libre : animation à l'arrivée dans l'écran (ScrollTrigger, calé sur Lenis) ---------- */
   const st = window.ScrollTrigger;
+  const draw = window.DrawSVGPlugin; // CDN bloqué : on saute les tracés, le reste des animations joue quand même
+  if (draw) gsap.registerPlugin(draw);
   if (st) {
     gsap.registerPlugin(st);
     if (lenis) lenis.on('scroll', st.update);
@@ -92,11 +94,18 @@
       .fromTo('.collab__body > div[data-reveal]', { opacity: 0, y: 30 }, { opacity: 1, y: 0, duration: 0.9 }, 0.2)
       .fromTo('.collab mark', { backgroundSize: '0% 100%' }, { backgroundSize: '100% 100%', duration: 0.9, ease: 'power2.inOut' }, 0.9);
 
-    // la tige se dessine avec le scroll ; chaque feuille pousse puis son texte apparaît quand la tige l'atteint
+    // la trajectoire de vol se trace avec le scroll (l'abeille suit --stem en CSS) ; chaque alvéole éclot puis son texte apparaît quand l'abeille l'atteint
     gsap.to('.collab__list', { '--stem': 1, ease: 'none', scrollTrigger: { trigger: '.collab__list', start: 'top 75%', end: 'bottom 60%', scrub: true } });
     gsap.utils.toArray('.reason').forEach((row) => {
       gsap.timeline({ scrollTrigger: { trigger: row, start: 'top 75%', once: true }, defaults: { ease: 'power3.out' } })
-        .fromTo(row.querySelector('.reason__leaf'), { opacity: 0, scale: 0, rotate: -90 }, { opacity: 1, scale: 1, rotate: 0, duration: 0.6, ease: 'back.out(2.5)' }, 0)
+        .fromTo(row.querySelector('.reason__ill'), { opacity: 0, scale: 0.85 }, { opacity: 1, scale: 1, duration: 0.7, ease: 'back.out(2)' }, 0)
+        .add(draw ? gsap.fromTo(row.querySelectorAll('.reason__ill .d:not(.piece)'), { drawSVG: 0 }, { drawSVG: '100%', duration: 0.8, ease: 'power2.inOut', stagger: 0.06 }) : gsap.timeline(), 0.1)
+        // chaque illustration a son geste : la pièce s'emboîte, la batterie se charge et le wifi s'allume, les 14 jours se colorient
+        .fromTo(row.querySelectorAll('.piece'), { x: 26, rotation: 18, transformOrigin: '50% 50%' }, { x: 0, rotation: 0, duration: 0.9, ease: 'back.out(1.8)' }, 0.6)
+        .fromTo(row.querySelectorAll('.level'), { scaleY: 0, transformOrigin: '50% 100%' }, { scaleY: 1, duration: 1, ease: 'power2.out' }, 0.6)
+        .fromTo(row.querySelectorAll('.wifi'), { opacity: 0 }, { opacity: 1, duration: 0.3, stagger: 0.15 }, 1.1)
+        .fromTo(row.querySelectorAll('.day'), { scale: 0, transformOrigin: '50% 50%' }, { scale: 1, duration: 0.35, ease: 'back.out(3)', stagger: 0.06 }, 0.6)
+        .fromTo(row.querySelectorAll('.reason__ill .pop'), { scale: 0, transformOrigin: '50% 50%' }, { scale: 1, duration: 0.5, ease: 'back.out(3)' }, 1.2)
         .fromTo(row.querySelectorAll('.reason__head, .reason__text'), { opacity: 0, x: -16 }, { opacity: 1, x: 0, duration: 0.7, stagger: 0.12 }, 0.15);
     });
 
@@ -451,7 +460,7 @@
     sync();
 
     // Éléments décalés en parallaxe (pas le conteneur : un transform y casserait le positionnement absolu de la photo du hero)
-    const parallax = (panel) => panel.querySelectorAll('.hero__content, .hero__media, .about__inner > *');
+    const parallax = (panel) => panel.querySelectorAll('.hero__content, .about__inner > *');
 
     const goTo = (index) => {
       if (busy || index < 0 || index >= panels.length || index === current) return;
@@ -551,16 +560,94 @@
     };
   });
 
-  /* ---------- Hero : tracé du soulignement ---------- */
+  /* ---------- Hero : ouverture ---------- */
+  // Le rayon de miel se trace depuis l'alvéole centrale (DrawSVG), les alvéoles pleines éclosent, les icônes des services
+  // se dessinent, puis une onde dorée le parcourt. Le titre monte lettre par lettre (lettres déjà découpées par le slider) ou ligne par ligne.
+  const fromCenter = (each) => (i, el) => el.closest('.hc').dataset.d * each + gsap.utils.random(0, each * 0.6); // anneau par anneau, un peu de désordre
+
   gsap.matchMedia().add('(prefers-reduced-motion: no-preference)', () => {
-    const tl = gsap.timeline({ defaults: { ease: 'power3.out' } });
-    tl.fromTo('.logo, .nav__link', { opacity: 0, y: -12 }, { opacity: 1, y: 0, duration: 0.7, stagger: 0.06, clearProps: 'transform' }, 0)
-      .fromTo('.hero .line', { opacity: 0, y: 28 }, { opacity: 1, y: 0, duration: 0.9, stagger: 0.12, clearProps: 'transform' }, 0.15)
-      .fromTo('.hero__lead', { opacity: 0, y: 20 }, { opacity: 1, y: 0, duration: 0.8, clearProps: 'transform' }, 0.6)
-      .fromTo('.hero .btn', { opacity: 0 }, { opacity: 1, duration: 0.8 }, 0.8)
-      .fromTo('.hero__img', { scale: 1.15 }, { scale: 1, duration: 1.8, ease: 'power2.out' }, 0)
-      .fromTo('.underline', { clipPath: 'inset(0 100% 0 0)' },
-        { clipPath: 'inset(0 0% 0 0)', duration: 1, ease: 'power2.inOut' }, 1);
+    const hero = document.querySelector('.hero');
+    const q = (sel) => [...hero.querySelectorAll(sel)];
+    const chars = q('.hero__title .char');
+    const done = () => hero.classList.add('is-done'); // .is-done : plus aucun état masqué (CSS)
+    const gold = getComputedStyle(document.documentElement).getPropertyValue('--c-accent').trim();
+
+    // Vie du rayon après l'ouverture : une onde dorée part d'une alvéole au hasard, une alvéole s'emplit de miel puis se vide,
+    // les alvéoles pleines respirent. Tout s'arrête quand le hero n'est pas à l'écran.
+    const shapes = q('.hc--line .hc__shape');
+    const pos = (el) => el.closest('.hc').getAttribute('transform').match(/[-\d.]+/g).map(Number);
+    const html = document.documentElement;
+    let seen = true, loop, breathe;
+    const io = new IntersectionObserver(([e]) => { seen = e.isIntersecting; });
+    io.observe(hero);
+    const live = () => seen && !document.hidden && !html.classList.contains('is-free')
+      && (!html.classList.contains('is-slider') || hero.classList.contains('is-current'));
+    const pulse = () => {
+      breathe.paused(!live());
+      if (live()) {
+        const [ox, oy] = pos(gsap.utils.random(shapes));
+        gsap.to(shapes, { stroke: gold, strokeOpacity: 1, strokeWidth: 3, duration: 0.4, ease: 'sine.inOut', yoyo: true, repeat: 1, overwrite: 'auto',
+          clearProps: 'stroke,strokeOpacity,strokeWidth', stagger: (i, el) => { const [x, y] = pos(el); return Math.hypot(x - ox, y - oy) / 450; } });
+        gsap.to(gsap.utils.random(shapes), { fill: gold, duration: 1.2, ease: 'power2.inOut', yoyo: true, repeat: 1, repeatDelay: 1.5, overwrite: 'auto', clearProps: 'fill' });
+      }
+      loop = gsap.delayedCall(gsap.utils.random(3.5, 5), pulse);
+    };
+    const ambient = () => {
+      breathe = gsap.to(q('.hc--fill .hc__in, .hc--tint .hc__in'), { scale: 0.88, duration: 2.4, ease: 'sine.inOut', yoyo: true, repeat: -1,
+        stagger: { each: 0.7, from: 'random' } });
+      pulse();
+    };
+
+    const tl = gsap.timeline({ defaults: { ease: 'expo.out' }, onComplete: () => { done(); ambient(); } })
+      .fromTo('.logo, .nav__link', { opacity: 0, y: -12 }, { opacity: 1, y: 0, duration: 0.7, stagger: 0.05, ease: 'power3.out', clearProps: 'transform' }, 0)
+      .set(q('.hc'), { opacity: 1 }, 0);
+    if (draw) tl.fromTo(q('.hc--line .hc__shape, .hc--icon .hc__shape'), { drawSVG: '50% 50%' },
+        { drawSVG: '0% 100%', duration: 1.1, ease: 'power2.inOut', stagger: fromCenter(0.16) }, 0.1);
+    tl.fromTo(q('.hc--fill .hc__in, .hc--tint .hc__in'), { scale: 0, rotation: -60, transformOrigin: '50% 50%' },
+        { scale: 1, rotation: 0, duration: 1.2, ease: 'back.out(1.6)', stagger: fromCenter(0.16) }, 0.3);
+    if (draw) tl.fromTo(q('.hc__icon > *'), { drawSVG: 0 }, { drawSVG: '100%', duration: 0.8, ease: 'power2.inOut', stagger: 0.07 }, 1.1);
+    tl // onde dorée qui traverse le rayon, du centre vers les bords
+      .to(q('.hc--line .hc__shape'), { stroke: gold, strokeOpacity: 1, strokeWidth: 3, duration: 0.3, ease: 'sine.inOut', yoyo: true, repeat: 1,
+        stagger: fromCenter(0.12), clearProps: 'stroke,strokeOpacity,strokeWidth' }, 2);
+
+    if (chars.length) {
+      tl.set('.hero .line', { opacity: 1 }, 0)
+        .fromTo(chars, { yPercent: 115, rotation: 12 }, { yPercent: 0, rotation: 0, duration: 1.1, stagger: 0.022 }, 0.3);
+    } else { // pas de slider (mobile) : masque de ligne simulé, translation et découpe sur la même courbe
+      tl.fromTo('.hero .line', { opacity: 1, yPercent: 110, clipPath: 'inset(-20% -5% 110% -5%)' },
+        { yPercent: 0, clipPath: 'inset(-20% -5% -40% -5%)', duration: 1.1, stagger: 0.12 }, 0.3);
+    }
+    tl.fromTo('.underline', { clipPath: 'inset(0 100% 0 0)' }, { clipPath: 'inset(0 0% 0 0)', duration: 0.9, ease: 'power2.inOut' }, 1.2)
+      .fromTo('.hero__lead, .hero__actions', { opacity: 0, y: 18 }, { opacity: 1, y: 0, duration: 0.9, stagger: 0.1, ease: 'power3.out', clearProps: 'transform' }, 1.2);
+
+    return () => { // intro interrompue (rotation, changement de media query) : le hero ne doit pas rester masqué
+      done(); io.disconnect(); loop?.kill(); breathe?.revert(); gsap.killTweensOf(shapes);
+    };
+  });
+
+  /* ---------- Hero : le rayon suit le pointeur, en profondeur ---------- */
+  // Profondeur d'une alvéole : multiplicateur de son déplacement (d = anneau depuis le centre, 0 à 3 ; kind = line | fill | tint | icon)
+  const depth = (d, kind) => {
+    // TODO(human)
+    return 1;
+  };
+
+  gsap.matchMedia().add('(prefers-reduced-motion: no-preference) and (hover: hover) and (pointer: fine)', () => {
+    const hero = document.querySelector('.hero');
+    const cells = [...hero.querySelectorAll('.hc')].map((c) => ({
+      k: depth(+c.dataset.d, c.classList[1].slice(4)), // hc--fill → fill
+      x: gsap.quickTo(c.firstChild, 'x', { duration: 1.2, ease: 'power3' }),
+      y: gsap.quickTo(c.firstChild, 'y', { duration: 1.2, ease: 'power3' }),
+    }));
+    const onMove = (e) => {
+      const r = hero.getBoundingClientRect();
+      const nx = (e.clientX - r.left) / r.width - 0.5, ny = (e.clientY - r.top) / r.height - 0.5; // -0,5 … 0,5
+      cells.forEach((c) => { c.x(nx * 40 * c.k); c.y(ny * 40 * c.k); });
+    };
+    const onLeave = () => cells.forEach((c) => { c.x(0); c.y(0); });
+    hero.addEventListener('pointermove', onMove, { passive: true });
+    hero.addEventListener('pointerleave', onLeave);
+    return () => { hero.removeEventListener('pointermove', onMove); hero.removeEventListener('pointerleave', onLeave); };
   });
 
   /* ---------- À propos : accordéon, un seul paragraphe ouvert à la fois (<details>) ---------- */
