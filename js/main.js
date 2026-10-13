@@ -87,7 +87,7 @@
   }
 
   gsap.matchMedia().add('(prefers-reduced-motion: no-preference)', () => {
-    if (!st) { free.classList.add('is-in'); document.querySelector('.tools').classList.add('is-in'); document.querySelector('.sep').classList.add('is-in'); return; } // sans ScrollTrigger : tout reste visible
+    if (!st) { free.classList.add('is-in'); document.querySelector('.tools').classList.add('is-in'); return; } // sans ScrollTrigger : tout reste visible
 
     gsap.timeline({ scrollTrigger: { trigger: free, start: 'top 65%', once: true }, defaults: { ease: 'power3.out' } })
       // titre + accroche, puis surlignage peint
@@ -108,9 +108,6 @@
         .fromTo(row.querySelectorAll('.reason__ill .pop'), { scale: 0, transformOrigin: '50% 50%' }, { scale: 1, duration: 0.5, ease: 'back.out(3)' }, 1.2)
         .fromTo(row.querySelectorAll('.reason__head, .reason__text'), { opacity: 0, x: -16 }, { opacity: 1, x: 0, duration: 0.7, stagger: 0.12 }, 0.15);
     });
-
-    // séparateur : la vague se trace de gauche à droite quand on l'atteint
-    gsap.fromTo('.sep', { clipPath: 'inset(0 100% 0 0)' }, { clipPath: 'inset(0 0% 0 0)', duration: 1.4, ease: 'power2.inOut', scrollTrigger: { trigger: '.sep', start: 'top 90%', once: true } });
 
     // outils : l'intro se pose, chaque bloc se dévoile en « feuille » (clip-path) puis ses outils éclosent un à un ;
     // ensuite les icônes flottent doucement tant que la section est à l'écran, et réagissent au survol
@@ -426,7 +423,12 @@
       const hold = (e) => e.preventDefault(); // la fin du swipe ne fait pas défiler la page en natif
       const go = () => {
         window.removeEventListener('touchmove', hold);
-        if (lenis) { lenis.start(); lenis.scrollTo(target, { duration: calm ? 0 : 1.2 }); }
+        // Molette / swipe : simple élan d'un tiers d'écran, la suite se fait librement (pas d'alignement forcé sur #collaborer).
+        // Lien vers une section : on s'aligne sur elle.
+        const nudge = target === free;
+        const to = nudge ? window.innerHeight * 0.4 : target;
+        if (lenis) { lenis.start(); lenis.scrollTo(to, { duration: calm ? 0 : nudge ? 0.8 : 1.2, lock: !nudge, force: true }); }
+        else if (nudge) window.scrollBy({ top: to, behavior: calm ? 'auto' : 'smooth' });
         else target.scrollIntoView({ behavior: calm ? 'auto' : 'smooth' });
         gsap.delayedCall(1.4, () => {
           unlocking = false;
@@ -679,6 +681,24 @@
     };
     document.addEventListener('click', onClick);
     return () => document.removeEventListener('click', onClick);
+  });
+
+  /* ---------- Notre équipe : galerie horizontale ---------- */
+  // Ordinateur et mobile : la section se fige et le défilement (molette ou doigt) fait glisser la rangée (scrub) ; chaque photo glisse un peu dans son cadre
+  // (containerAnimation), la jauge suit. Mouvement réduit : rangée native au doigt (CSS).
+  gsap.matchMedia().add('(prefers-reduced-motion: no-preference)', () => {
+    if (!st) return;
+    const team = document.querySelector('.team'), crew = team.querySelector('.crew'), track = crew.querySelector('.crew__track'), bar = team.querySelector('.team__bar');
+    crew.classList.add('is-driven');
+    const dist = () => track.scrollWidth - window.innerWidth;
+    const slide = gsap.to(track, { x: () => -dist(), ease: 'none', scrollTrigger: { trigger: team, pin: true, scrub: true, end: () => '+=' + dist(), invalidateOnRefresh: true,
+      onUpdate: (self) => bar.style.setProperty('--p', self.progress) } });
+    // élan : pendant que la section monte, les portraits glissent déjà vers la gauche ; le virage vertical → horizontal se fait en douceur
+    gsap.fromTo(track.querySelector('.crew__list'), { x: () => window.innerHeight * 0.85 }, { x: 0, ease: 'none',
+      scrollTrigger: { trigger: team, start: 'top bottom', end: 'top top', scrub: true, invalidateOnRefresh: true } });
+    track.querySelectorAll('.mate__photo img').forEach((img) => gsap.fromTo(img, { xPercent: -14 }, { xPercent: 0, ease: 'none',
+      scrollTrigger: { trigger: img.parentNode, containerAnimation: slide, start: 'left right', end: 'right left', scrub: true } }));
+    return () => crew.classList.remove('is-driven');
   });
 
   /* ---------- Bouton : attraction douce + lueur qui suit le curseur (souris précise, hors reduced-motion) ---------- */
