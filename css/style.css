@@ -204,7 +204,10 @@ h3 { font-size: 1.25rem; font-weight: 600; }
 
 /* Nos prestations : les 4 services sur un seul écran. Chaque colonne = illustration SVG animée (GSAP, main.js) + titre + tags + texte.
    Traits d'encre, touches de jaune, fond « feuille » crème. Sur grand écran la section tient dans 100svh. */
-.services { padding-block: calc(var(--header-h) + 1.5rem) 4rem; }
+.services { padding-block: calc(var(--header-h) + 1.5rem) 4rem;
+  /* séparation par fondu : le crème monte du blanc de « Pourquoi collaborer » puis redescend vers le blanc de « Nos outils », sans bord net */
+  background: linear-gradient(var(--c-bg), var(--c-tint) min(14rem, 30%), var(--c-tint) max(calc(100% - 14rem), 70%), var(--c-bg)); }
+.services .svc__ill .ill-bg, .services .svc__leaf { fill: var(--c-bg); background: var(--c-bg); } /* sur crème, le fond des illustrations passe au blanc */
 .svc__top { display: flex; flex-wrap: wrap; align-items: end; justify-content: space-between; gap: 1rem 2rem; margin-bottom: clamp(1.25rem, 3svh, 2.25rem); }
 .svc__grid { display: grid; gap: 2.5rem 0; }
 .svc__item { --bar: 1; --bw: 4rem; position: relative; display: grid; align-content: start; gap: .85rem; padding: 0 1.5rem 0 0; }
@@ -266,6 +269,51 @@ h3 { font-size: 1.25rem; font-weight: 600; }
 .is-slider .panel.is-current { visibility: visible; }
 
 
+/* Notre équipe : galerie horizontale. Grand écran (main.js, .crew.is-driven) : la section se fige sur un écran, la molette fait
+   glisser une seule rangée (intro, six grands portraits, appel à l'action) ; chaque photo glisse dans son cadre, jauge en bas.
+   Ailleurs : intro au-dessus, portraits à faire défiler au doigt (aimantés). Même fondu crème que « Nos prestations ». */
+.team { --gutter: max(1.5rem, calc((100vw - var(--container)) / 2)); position: relative; padding-block: calc(var(--header-h) + 2rem) 4rem; overflow: hidden;
+  background: linear-gradient(var(--c-bg), var(--c-tint) min(14rem, 30%), var(--c-tint) max(calc(100% - 14rem), 70%), var(--c-bg)); }
+.team__top, .team__end { padding-inline: var(--gutter); }
+.team__title { margin: 0; font-size: clamp(2.3rem, 4.6vw, 4.4rem); line-height: 1.02; letter-spacing: -.015em; text-wrap: balance; }
+.team__lead { max-width: 26rem; margin: 1.4rem 0 0; font: 500 clamp(1.05rem, 1.3vw, 1.25rem)/1.5 var(--f-display); color: var(--c-ink-soft); }
+.team__hint { display: none; margin: 2.5rem 0 0; font-size: .9rem; font-weight: 600; color: var(--c-ink-soft); }
+.team__hint span { display: inline-block; margin-left: .4rem; color: var(--c-ink); animation: hint 1.8s ease-in-out infinite; }
+@keyframes hint { 50% { translate: .4rem 0; } }
+.crew__list { display: flex; gap: clamp(1.25rem, 2.5vw, 2.75rem); margin: 2.5rem 0 0; padding: 0 var(--gutter) .5rem; list-style: none;
+  overflow-x: auto; scroll-snap-type: x mandatory; scroll-padding-inline: var(--gutter); scrollbar-width: none; }
+.mate { position: relative; flex: none; width: min(80vw, 22rem); overflow: hidden; border-radius: .9rem; scroll-snap-align: start; }
+.mate__photo { aspect-ratio: 4 / 5; overflow: hidden; background: var(--c-line); }
+.mate__photo img { display: block; width: 100%; height: 100%; object-fit: cover; filter: saturate(.86) contrast(1.03); transition: filter .6s; } /* même étalonnage pour des photos d'origines différentes */
+.mate:hover .mate__photo img { filter: none; }
+/* texte posé sur la photo, sur un voile d'encre qui monte du bas */
+.mate__txt { position: absolute; inset: auto 0 0; padding: 5rem clamp(1.1rem, 2vw, 1.75rem) clamp(1.1rem, 2vw, 1.6rem); color: var(--c-bg);
+  background: linear-gradient(transparent, color-mix(in srgb, var(--c-ink) 55%, transparent) 35%, color-mix(in srgb, var(--c-ink) 88%, transparent)); }
+.mate__name { margin: 0; font: 600 clamp(1.6rem, 2.4vw, 2.3rem)/1.05 var(--f-display); color: inherit; }
+.mate__role { display: flex; align-items: center; gap: .6rem; margin: .4rem 0 0; font-size: .92rem; font-weight: 600; color: inherit; }
+.mate__role::before { content: ""; width: 1.25rem; height: 2px; border-radius: 2px; background: var(--c-accent); }
+.mate__quote { max-width: 32ch; margin: .8rem 0 0; font: italic 500 clamp(.98rem, 1.15vw, 1.1rem)/1.5 var(--f-display); color: inherit; opacity: .92; }
+.mate__quote p { margin: 0; }
+.team__end { margin-top: 3rem; }
+.team__end-title { max-width: 16ch; margin: 0 0 1.5rem; font: 600 clamp(1.6rem, 2.4vw, 2.2rem)/1.15 var(--f-display); color: var(--c-ink); text-wrap: balance; }
+.team__bar { display: none; }
+
+/* galerie pilotée par la molette : un écran, une seule rangée qui glisse */
+.team:has(.is-driven) { height: 100svh; padding-block: var(--header-h) 0; }
+.crew.is-driven { height: 100%; }
+.crew.is-driven .crew__track { display: flex; align-items: center; gap: clamp(3rem, 6vw, 6rem); width: max-content; height: 100%; padding-inline: var(--gutter); }
+.crew.is-driven .team__top, .crew.is-driven .team__end { flex: none; padding: 0; }
+.crew.is-driven .team__top { width: min(34rem, 36vw); }
+.crew.is-driven .team__hint { display: block; }
+.crew.is-driven .crew__list { margin: 0; padding: 0; overflow: visible; }
+.crew.is-driven .mate { width: min(84vw, calc(min(72svh, 48rem) * .8)); }
+.crew.is-driven .mate__photo img { width: 116%; max-width: none; }
+.crew.is-driven .team__end { width: 22rem; margin: 0; }
+@media (max-width: 62rem) { .crew.is-driven .team__top { width: 82vw; } .crew.is-driven .team__end { width: 78vw; } .crew.is-driven .crew__track { gap: 1.25rem; } .crew.is-driven .crew__list { gap: 1rem; } }
+.team:has(.is-driven) .team__bar { display: block; position: absolute; inset: auto var(--gutter) 2rem; height: 2px; background: var(--c-line); }
+.team__bar span { display: block; height: 100%; background: var(--c-accent); transform: scaleX(var(--p, 0)); transform-origin: left; }
+@media (prefers-reduced-motion: reduce) { .team__hint span { animation: none; } }
+
 /* 6. Responsive & mouvement ------------------------------------------------ */
 @media (max-width: 72rem) {
   .header__inner { display: flex; justify-content: space-between; }
@@ -289,14 +337,6 @@ h3 { font-size: 1.25rem; font-weight: 600; }
   .nav__link { padding: .6rem 0; font-size: 1.05rem; }
   .nav__link::after { display: none; }
   .nav__link.is-active { font-weight: 600; }
-}
-
-/* Séparateur entre deux sections libres : trajectoire de vol en pointillés (se trace de gauche à droite, main.js) */
-.sep { position: relative; width: min(100% - 3rem, var(--container)); height: 2.5rem; margin-inline: auto; }
-.sep::before {
-  content: ""; position: absolute; inset: 0; background: var(--c-accent-dark);
-  --m: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='96' height='24'%3E%3Cpath d='M0 12Q24 0 48 12T96 12' pathLength='14' fill='none' stroke='%23000' stroke-width='3' stroke-linecap='round' stroke-dasharray='0 1'/%3E%3C/svg%3E") repeat-x left center / 96px 24px;
-  -webkit-mask: var(--m); mask: var(--m);
 }
 
 /* Les outils : fond blanc, comme le reste de la page.
@@ -386,7 +426,6 @@ h3 { font-size: 1.25rem; font-weight: 600; }
   .js .collab:not(.is-in) mark { background-size: 0% 100%; }
   .js .collab:not(.is-in) .collab__list { --stem: 0; }
   .js .collab:not(.is-in) .reason > * { opacity: 0; }
-  .js .sep:not(.is-in) { clip-path: inset(0 100% 0 0); }
   .js .tools:not(.is-in) :is(.tools__head, .tools__block, .tool, .tools__plus) { opacity: 0; }
 }
 
@@ -455,6 +494,9 @@ h3 { font-size: 1.25rem; font-weight: 600; }
   .reason__ill { position: static; display: block; width: 5.5rem; margin-bottom: .6rem; }
   .reason .reason__text { font-size: .96rem; line-height: 1.6; }
 }
+
+/* Téléphones courts : la phrase de conclusion de « Qui sommes-nous » cède sa place, sinon le titre passe sous la navbar */
+@media (max-width: 62rem) and (max-height: 45rem) { .is-slider .about__closing { display: none; } }
 
 /* Mobile, sections denses : listes compactes au lieu de grandes cartes */
 @media (max-width: 39.99rem) {
