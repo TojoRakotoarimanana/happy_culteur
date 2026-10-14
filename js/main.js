@@ -58,6 +58,7 @@
     const y = window.scrollY;
     header.classList.toggle('is-scrolled', y > 10); // fond blanc dès qu'on a quitté le haut de page
     if (Math.abs(y - lastY) < 4) return; // ignore les micro-mouvements du trackpad
+    if (traveling) { lastY = y; moveHeader(0); return; } // trajet lancé depuis la navbar : elle reste visible
     if (document.documentElement.classList.contains('svc-lock')) { lastY = y; return; } // feuille de détail ouverte : le verrou / la barre d'adresse décalent le scroll, ce n'est pas l'utilisateur qui remonte
     if (y <= 10 || y < lastY || header.classList.contains('is-open')) moveHeader(0);
     else if (y > header.offsetHeight) moveHeader(-100);
@@ -71,6 +72,35 @@
     gsap.ticker.add((t) => lenis.raf(t * 1000));
     gsap.ticker.lagSmoothing(0);
   }
+
+  /* ---------- Trajets vers une section (liens) : toujours doux, quelle que soit la distance ---------- */
+  // Court (≤ 1 écran) : glissé dont la durée suit la distance. Long : un voile blanc couvre la page, saut exact sur la cible, le voile s'efface
+  // (pas de glissé final : il montrait le bas de la section précédente ; on ne traverse pas non plus en accéléré les sections épinglées).
+  const veil = Object.assign(document.createElement('div'), { className: 'veil' });
+  veil.setAttribute('aria-hidden', 'true');
+  document.body.append(veil);
+  const easeInOut = (t) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
+  const glide = (to, duration, done) => {
+    if (lenis) return lenis.scrollTo(to, { duration, immediate: !duration, easing: easeInOut, lock: true, force: true, onComplete: done });
+    window.scrollTo({ top: to, behavior: duration ? 'smooth' : 'instant' });
+    if (done) setTimeout(done, duration * 1000 + 50);
+  };
+  // Sous le voile, `done(true)` est appelé avant qu'il ne s'efface (retour vers un panneau : il s'affiche sans transition)
+  let traveling = false;
+  const travel = (target, done) => {
+    const at = () => (typeof target === 'number' ? target : target.getBoundingClientRect().top + window.scrollY); // relu à chaque étape : la page a pu bouger
+    const dist = at() - window.scrollY, vh = window.innerHeight;
+    const end = (veiled) => { traveling = false; if (done) done(veiled); };
+    traveling = true;
+    if (target.id) setActiveLink(target.id); // lien actif tout de suite, sans défiler sur ceux des sections traversées
+    if (!smooth) return glide(at(), 0, end);
+    if (Math.abs(dist) <= vh) return glide(at(), gsap.utils.clamp(0.6, 1.3, (Math.abs(dist) / vh) * 0.9), end);
+    gsap.to(veil, { opacity: 1, duration: 0.3, ease: 'power2.in', overwrite: true, onComplete: () => {
+      glide(at(), 0);
+      end(true);
+      gsap.to(veil, { opacity: 0, duration: 0.7, delay: 0.1, ease: 'power2.out' });
+    } });
+  };
 
   /* ---------- Section libre : animation à l'arrivée dans l'écran (ScrollTrigger, calé sur Lenis) ---------- */
   const st = window.ScrollTrigger;
@@ -391,10 +421,19 @@
   gsap.matchMedia().add({
     slider: '(max-width: 62rem) and (min-height: 36rem), (min-width: 62rem) and (min-height: 46rem)',
     calm: '(prefers-reduced-motion: reduce)',
-  }, ({ conditions: { slider, calm } }) => {
+  }, ({ conditions: { slider, calm: quiet } }) => {
     if (!slider) {
       root.classList.remove('is-slider', 'is-locked', 'is-free');
-      return startNativeNav();
+      const onNav = (e) => {
+        const link = e.target.closest('a[href^="#"]');
+        const target = link && link.hash.length > 1 && document.querySelector(link.hash);
+        if (!target) return;
+        e.preventDefault();
+        travel(target);
+      };
+      document.addEventListener('click', onNav);
+      const stopNav = startNativeNav();
+      return () => { stopNav(); document.removeEventListener('click', onNav); };
     }
     root.classList.add('is-slider', 'is-locked');
     if (lenis) lenis.stop();
@@ -427,9 +466,10 @@
         // Lien vers une section : on s'aligne sur elle.
         const nudge = target === free;
         const to = nudge ? window.innerHeight * 0.4 : target;
-        if (lenis) { lenis.start(); lenis.scrollTo(to, { duration: calm ? 0 : nudge ? 0.8 : 1.2, lock: !nudge, force: true }); }
-        else if (nudge) window.scrollBy({ top: to, behavior: calm ? 'auto' : 'smooth' });
-        else target.scrollIntoView({ behavior: calm ? 'auto' : 'smooth' });
+        if (lenis) lenis.start();
+        if (!nudge) travel(target);
+        else if (lenis) lenis.scrollTo(to, { duration: quiet ? 0 : 0.8, force: true });
+        else window.scrollBy({ top: to, behavior: quiet ? 'auto' : 'smooth' });
         gsap.delayedCall(1.4, () => {
           unlocking = false;
           // Les sections libres suivent le dernier panneau : en remontant on repasse par lui, jamais directement à l'accueil
@@ -451,7 +491,7 @@
     };
     window.addEventListener('scroll', relock, { passive: true });
     const freeNav = new IntersectionObserver((entries) => entries.forEach(({ target, isIntersecting }) => {
-      if (isIntersecting && !locked) setActiveLink(target.id);
+      if (isIntersecting && !locked && !traveling) setActiveLink(target.id);
     }), { rootMargin: '-50% 0px -50% 0px' });
     freeZone.querySelectorAll('section').forEach((s) => freeNav.observe(s));
 
@@ -464,11 +504,12 @@
     // Éléments décalés en parallaxe (pas le conteneur : un transform y casserait le positionnement absolu de la photo du hero)
     const parallax = (panel) => panel.querySelectorAll('.hero__content, .about__inner > *');
 
-    const goTo = (index) => {
+    const goTo = (index, instant) => {
       if (busy || index < 0 || index >= panels.length || index === current) return;
       busy = true;
 
       const dir = index > current ? 1 : -1;
+      const calm = quiet || instant; // instant : panneau affiché sous le voile, sans transition
       const from = panels[current];
       const to = panels[index];
 
@@ -527,7 +568,12 @@
       const index = panels.indexOf(target.closest('.panel'));
       if (index < 0 && !freeZone.contains(target)) return;
       e.preventDefault();
-      if (!locked) { lenis ? lenis.scrollTo(target) : target.scrollIntoView({ behavior: 'smooth' }); return; }
+      // Page libre : vers une section libre, trajet doux ; vers un panneau, retour en haut puis passage au bon panneau
+      if (!locked) {
+        if (index < 0) return travel(target);
+        unlocking = true; // pas de reverrouillage en arrivant en haut : il arrêterait Lenis avant la fin du trajet
+        return travel(0, (veiled) => { unlocking = false; relock(); goTo(index, veiled); });
+      }
       if (index < 0) unlock(target.closest('section')); else goTo(index);
     };
 
@@ -605,7 +651,7 @@
       .set(q('.hc'), { opacity: 1 }, 0);
     if (draw) tl.fromTo(q('.hc--line .hc__shape, .hc--icon .hc__shape'), { drawSVG: '50% 50%' },
         { drawSVG: '0% 100%', duration: 1.1, ease: 'power2.inOut', stagger: fromCenter(0.16) }, 0.1);
-    tl.fromTo(q('.hc--fill .hc__in, .hc--tint .hc__in'), { scale: 0, rotation: -60, transformOrigin: '50% 50%' },
+    tl.fromTo(q('.hc--fill .hc__in, .hc--tint .hc__in, .hc--logo .hc__in'), { scale: 0, rotation: -60, transformOrigin: '50% 50%' },
         { scale: 1, rotation: 0, duration: 1.2, ease: 'back.out(1.6)', stagger: fromCenter(0.16) }, 0.3);
     if (draw) tl.fromTo(q('.hc__icon > *'), { drawSVG: 0 }, { drawSVG: '100%', duration: 0.8, ease: 'power2.inOut', stagger: 0.07 }, 1.1);
     tl // onde dorée qui traverse le rayon, du centre vers les bords
@@ -620,7 +666,7 @@
         { yPercent: 0, clipPath: 'inset(-20% -5% -40% -5%)', duration: 1.1, stagger: 0.12 }, 0.3);
     }
     tl.fromTo('.underline', { clipPath: 'inset(0 100% 0 0)' }, { clipPath: 'inset(0 0% 0 0)', duration: 0.9, ease: 'power2.inOut' }, 1.2)
-      .fromTo('.hero__lead, .hero__actions', { opacity: 0, y: 18 }, { opacity: 1, y: 0, duration: 0.9, stagger: 0.1, ease: 'power3.out', clearProps: 'transform' }, 1.2);
+      .fromTo('.hero__actions', { opacity: 0, y: 18 }, { opacity: 1, y: 0, duration: 0.9, ease: 'power3.out', clearProps: 'transform' }, 1.2);
 
     return () => { // intro interrompue (rotation, changement de media query) : le hero ne doit pas rester masqué
       done(); io.disconnect(); loop?.kill(); breathe?.revert(); gsap.killTweensOf(shapes);
@@ -700,6 +746,239 @@
       scrollTrigger: { trigger: img.parentNode, containerAnimation: slide, start: 'left right', end: 'right left', scrub: true } }));
     return () => crew.classList.remove('is-driven');
   });
+
+  /* ---------- Notre histoire : une scène au trait raconte l'équipe qui grandit, au rythme des chapitres ----------
+     2023 : huit personnes, chacune chez soi, reliées par des pointillés qui défilent → Depuis : les locaux se dessinent (îlots de bureaux,
+     tableau, coin café), les huit (en jaune) s'y rejoignent, les autres arrivent et l'équipe se remplit jusqu'à une trentaine → Ensemble :
+     certaines prennent des responsabilités → Aujourd'hui : l'alvéole du logo s'allume, puis les locaux vivent : les personnes
+     interagissent entre elles (tope-là, café, réunion au tableau, dossier qui passe, entraide, discussion, ola). Sans JS : la scène est
+     masquée, les photos restent. */
+  {
+    const story = document.querySelector('.story'), frame = story.querySelector('.story__frame');
+    const homes = [90, 230, 370, 510].flatMap((x) => [{ x, y: 150 }, { x, y: 330 }]);
+    // cinq îlots de six : trois en haut, deux en bas ; le coin tableau + café en bas à droite
+    const pods = [[130, 195], [300, 195], [470, 195], [130, 335], [300, 335]].map(([x, y]) => ({ x, y }));
+    const seats = pods.flatMap((p, pod) => [-40, 0, 40].flatMap((dx) => [{ x: p.x + dx, y: p.y - 8, side: 'top', pod }, { x: p.x + dx, y: p.y + 42, side: 'back', pod }]));
+    const near = (s, x, y) => Math.hypot(s.x - x, s.y - y);
+    const order = seats.map((s, k) => k).sort((a, b) => near(seats[a], 300, 230) - near(seats[b], 300, 230));
+    const firstSeats = order.slice(0, 8), restSeats = order.slice(8); // les huit du début au centre, les autres autour, des plus proches aux plus loin
+    const ups = order.filter((k) => seats[k].side === 'top').filter((k, m) => [4, 7, 10, 13].includes(m)); // responsabilités (badge qui suit la personne)
+    const hair = ['', '<circle class="ink" cy="-37" r="3.6"/>', '<path d="M-8.5-27c-1 9-2 12-4 15M8.5-27c1 9 2 12 4 15"/>', '<path class="ink" d="M-8.5-27c2-9 15-9 17 0z"/>'];
+    const person = (n, seat, cls) => `<g class="p ${cls} p--${seat.side}"><circle class="p__ping" cy="-20" r="20"/><g class="p__w"><g class="p__l"><g class="p__legs"><path d="M-5-2v10"/><path d="M5-2v10"/></g><g class="p__b" style="--d:-${(n * 0.29 % 1.6).toFixed(2)}s">
+      <path class="p__shirt" d="M-13 0c0-13 6-17 13-17s13 4 13 17z"/><path class="p__arm p__arm--l" d="M-9-13l-6 10"/><path class="p__arm p__arm--r" d="M9-13l6 10"/><circle class="p__head" cy="-26" r="8.5"/>${seat.side === 'top' ? hair[n % 4] + '<g class="p__eyes"><circle class="ink" cx="-3" cy="-26.5" r="1.1"/><circle class="ink" cx="3" cy="-26.5" r="1.1"/></g><path d="M-2.6-22.6q2.6 2.2 5.2 0" stroke-width="1.4"/>' : ''}</g>${ups.includes(n) ? '<path class="badge" d="M0-50l7 8h-14z"/>' : ''}</g></g></g>`;
+    const house = ({ x, y }) => `<g class="house"><path d="M${x - 62} ${y - 30}L${x} ${y - 78}L${x + 62} ${y - 30}"/><rect x="${x - 52}" y="${y - 30}" width="104" height="92" rx="4"/></g>`;
+    const ring = [0, 2, 4, 6, 7, 5, 3, 1, 0].map((k) => `${homes[k].x},${homes[k].y + 20}`).join(' ');
+    const table = (p) => `<rect class="table" x="${p.x - 64}" y="${p.y - 14}" width="128" height="28" rx="10"/>`
+      + [-40, 0, 40].map((dx) => `<rect class="lap" x="${p.x + dx - 10}" y="${p.y - 13}" width="20" height="11" rx="2"/><circle class="lap__dot" cx="${p.x + dx}" cy="${p.y - 7.5}" r="1.6"/><rect class="lap" x="${p.x + dx - 10}" y="${p.y + 2}" width="20" height="11" rx="2"/>`).join('');
+    const hexPts = '0,-6 5.2,-3 5.2,3 0,6 -5.2,3 -5.2,-3';
+    frame.outerHTML = `<svg class="scene" viewBox="0 0 600 450" role="img" aria-label="L’équipe grandit : huit personnes chez elles en 2023, une trentaine aujourd’hui dans nos locaux, qui travaillent et s’entraident">
+      <g class="office">
+        <polygon class="office__hex" points="226,82 233,86 233,94 226,98 219,94 219,86"/><text x="243" y="98">happy culteur</text></g>
+      <g class="lounge"><g class="board"><rect x="432" y="262" width="112" height="66" rx="4"/><path d="M452 328l-6 34M524 328l6 34"/><path class="board__notes" d="M446 276h38M446 285h24M500 276h30"/>
+        <path class="board__chart" pathLength="1" d="M446 316l20-14 18 6 22-22 24-12"/></g>
+        <g class="coffee"><path d="M470 409h95"/><rect x="520" y="370" width="32" height="39" rx="4"/><rect class="coffee__cup" x="530" y="394" width="11" height="10" rx="2"/>
+        <path class="steam" d="M535 388c-4-5 4-8 0-13"/></g></g>
+      <g class="homes">${homes.map(house).join('')}<polyline class="link" points="${ring}"/></g>
+      <g class="row-top">${seats.map((s, k) => (s.side === 'top' ? person(k, s, firstSeats.includes(k) ? 'p--first' : `p--s${k % 3}`) : '')).join('')}</g>
+      <g class="tables">${pods.map(table).join('')}</g>
+      <g class="row-back">${seats.map((s, k) => (s.side === 'back' ? person(k, s, firstSeats.includes(k) ? 'p--first' : `p--s${k % 3}`) : '')).join('')}</g>
+      <g class="walkers"></g>
+      <g class="fx">${'<g class="chat"><rect x="0" y="-18" width="30" height="18" rx="6"/><circle class="ink" cx="8" cy="-9" r="1.8"/><circle class="ink" cx="15" cy="-9" r="1.8"/><circle class="ink" cx="22" cy="-9" r="1.8"/></g>'.repeat(5)}
+        ${`<polygon class="spark" points="${hexPts}"/>`.repeat(12)}${'<g class="paper"><rect x="-7" y="-9" width="14" height="18" rx="1.5"/><path d="M-4-4h8M-4 0h8M-4 4h5" stroke-width="1.2"/></g>'.repeat(2)}</g></svg>`;
+    const scene = story.querySelector('.scene');
+    // people[k] est assise sur seats[k] (l'ordre du DOM sépare la rangée de face et celle de dos, d'où cette correspondance)
+    const people = seats.map((s, k) => scene.querySelectorAll(`.row-${s.side} .p`)[seats.slice(0, k).filter((t) => t.side === s.side).length]);
+    const found = firstSeats.map((k) => people[k]), seq = restSeats.map((k) => people[k]);
+    const W = (k) => people[k].querySelector('.p__w'), Lf = (k) => people[k].querySelector('.p__l'), P = (k) => people[k].querySelector('.p__ping');
+    const door = { x: 405, y: 455 };
+    // État final (mouvement réduit) : tout le monde à sa place, badges visibles
+    gsap.set(people, { x: (k) => seats[k].x, y: (k) => seats[k].y });
+    gsap.set(scene.querySelector('.homes'), { opacity: 0 });
+    gsap.set(scene.querySelectorAll('.p__ping, .spark, .paper'), { transformOrigin: '50% 50%' });
+    gsap.set(scene.querySelectorAll('.p__l'), { transformOrigin: '50% 100%' });
+    gsap.set(scene.querySelectorAll('.p__arm--r'), { transformOrigin: '0% 0%' }); // bras et jambes pivotent à l'épaule / à la hanche
+    gsap.set(scene.querySelectorAll('.p__arm--l'), { transformOrigin: '100% 0%' });
+    gsap.set(scene.querySelectorAll('.p__legs path'), { transformOrigin: '50% 0%' });
+    gsap.set(scene.querySelectorAll('.p__eyes'), { transformOrigin: '50% 50%' });
+
+    gsap.matchMedia().add('(prefers-reduced-motion: no-preference)', () => {
+      scene.classList.add('is-alive'); // les personnes « tapent » doucement sur leur ordinateur (CSS)
+      const tl = gsap.timeline({ defaults: { ease: 'power2.inOut' }, scrollTrigger: { trigger: '.story__chapters', start: 'top 55%', end: 'bottom 55%', scrub: 0.6 } });
+      // 2023 : chacun chez soi, reliés par le travail en commun
+      tl.fromTo(scene.querySelector('.homes'), { opacity: 1 }, { opacity: 1, duration: 0.01 }, 0) // pas tl.set : à 0 il ne serait jamais rendu
+        .fromTo(found, { x: (i) => homes[i].x, y: (i) => homes[i].y + 40 }, { x: (i) => homes[i].x, y: (i) => homes[i].y + 40, duration: 0.01 }, 0)
+        .fromTo(['.scene .office', '.scene .lounge', '.scene .tables'], { opacity: 0 }, { opacity: 0, duration: 0.01 }, 0)
+        .fromTo('.scene .link', { opacity: 0 }, { opacity: 1, duration: 0.5 }, 0)
+      // Depuis : les maisons s'effacent, les locaux se dessinent, les huit y marchent, les autres arrivent et l'équipe se remplit
+        .to('.scene .homes', { opacity: 0, scale: 0.92, transformOrigin: '50% 50%', duration: 0.4 }, 0.9)
+        // caméra : on s'approche de l'îlot central où arrivent les huit, puis on recule quand les autres arrivent
+        .fromTo(scene, { attr: { viewBox: '0 0 600 450' } }, { attr: { viewBox: innerWidth < 992 ? '0 0 600 450' : '140 95 320 240' }, duration: 0.5, ease: 'power2.inOut' }, 0.95)
+        .to(scene, { attr: { viewBox: '0 0 600 450' }, duration: 0.8, ease: 'power2.inOut' }, 1.75)
+        .to(['.scene .office', '.scene .lounge'], { opacity: 1, duration: 0.2 }, 1)
+        .fromTo('.scene .table, .scene .lap, .scene .lap__dot', { scale: 0, transformOrigin: '50% 50%' }, { scale: 1, duration: 0.3, stagger: 0.01, ease: 'back.out(2)' }, 1.05)
+        .to('.scene .tables', { opacity: 1, duration: 0.1 }, 1.05)
+        .to(found, { x: (i) => seats[firstSeats[i]].x, y: (i) => seats[firstSeats[i]].y, duration: 0.6, stagger: 0.04, ease: 'power1.inOut' }, 1.1)
+        .to(found.map((p) => p.querySelector('.p__w')), { y: -5, duration: 0.06, repeat: 9, yoyo: true, ease: 'sine.inOut', stagger: 0.04 }, 1.1) // repeat impair : finit au sol
+        .to(found.map((p) => p.querySelector('.p__ping')), { keyframes: { scale: [0.3, 1.7], opacity: [0, 1, 0] }, duration: 0.25, stagger: 0.04, ease: 'power1.out' }, 1.65)
+        .fromTo(seq, { x: door.x, y: door.y, opacity: 0 }, { x: (i) => seats[restSeats[i]].x, y: (i) => seats[restSeats[i]].y, opacity: 1, duration: 0.35, stagger: 0.035, ease: 'power1.inOut' }, 1.7)
+        .to(seq.map((p) => p.querySelector('.p__w')), { y: -4, duration: 0.058, repeat: 5, yoyo: true, ease: 'sine.inOut', stagger: 0.035 }, 1.7)
+        .to(seq.map((p) => p.querySelector('.p__ping')), { keyframes: { scale: [0.3, 1.7], opacity: [0, 1, 0] }, duration: 0.22, stagger: 0.035, ease: 'power1.out' }, 2.03)
+      // Ensemble : certains prennent des responsabilités
+        .fromTo('.scene .badge', { scale: 0, opacity: 0, transformOrigin: '50% 100%' }, { scale: 1, opacity: 1, duration: 0.25, stagger: 0.08, ease: 'back.out(2.5)' }, 2.75)
+      // Aujourd'hui : l'alvéole du logo s'allume
+        .fromTo('.scene .office__hex', { opacity: 0 }, { opacity: 1, duration: 0.3 }, 3.2);
+
+      /* Une fois l'équipe au complet, les personnes interagissent entre elles, plusieurs scènes à la fois. Chaque personne occupée est
+         réservée (busy) ; quand elle marche (jambes qui alternent), elle passe au premier plan (.walkers) puis retourne dans sa rangée.
+         Les bras n'apparaissent que pour un geste (tope, applaudir, montrer, saluer) ; les autres clignent des yeux et regardent ce qui se passe. */
+      const chats = [...scene.querySelectorAll('.chat')], sparks = [...scene.querySelectorAll('.spark')], papers = [...scene.querySelectorAll('.paper')];
+      const walkers = scene.querySelector('.walkers'), rows = { top: scene.querySelector('.row-top'), back: scene.querySelector('.row-back') };
+      gsap.set(chats, { opacity: 0, scale: 0, transformOrigin: '0% 100%' });
+      gsap.set([...sparks, ...papers, '.scene .steam'], { opacity: 0 });
+      gsap.set('.scene .board__chart', { strokeDashoffset: 1 });
+      const busy = new Set(), zones = new Set();
+      let nc = 0, ns = 0, np = 0, active = 0, inView = false, timer, blinker;
+      const rnd = gsap.utils.random, clamp = gsap.utils.clamp, freeOnes = () => seats.map((s, k) => k).filter((k) => !busy.has(k));
+      const part = (k, sel) => people[k].querySelector(sel), arm = (k, side) => part(k, `.p__arm--${side}`);
+      const lift = (k) => walkers.appendChild(people[k]), drop = (k) => rows[seats[k].side].appendChild(people[k]);
+      // gestes : rotation du bras autour de l'épaule (0 = bras le long du corps)
+      const pose = (k, l, r, d = 0.25) => gsap.timeline().set([arm(k, 'l'), arm(k, 'r')], { opacity: 1 })
+        .to(arm(k, 'l'), { rotation: l, duration: d, ease: 'back.out(2)' }, 0).to(arm(k, 'r'), { rotation: r, duration: d, ease: 'back.out(2)' }, 0);
+      const rest = (k) => gsap.timeline().to([arm(k, 'l'), arm(k, 'r')], { rotation: 0, duration: 0.2 }).set([arm(k, 'l'), arm(k, 'r')], { opacity: 0 });
+      const clap = (k, n = 4) => gsap.timeline().add(pose(k, -55, 55, 0.12))
+        .to(arm(k, 'l'), { rotation: -25, duration: 0.1, repeat: n * 2 - 1, yoyo: true }, '>').to(arm(k, 'r'), { rotation: 25, duration: 0.1, repeat: n * 2 - 1, yoyo: true }, '<').add(rest(k));
+      // marche (aller ou retour) jusqu'à un point de la scène : petits sauts + jambes qui alternent
+      const walk = (k, x, y, back) => { const s = seats[k], d = clamp(0.5, 1.1, near(s, x, y) / 200), legs = part(k, '.p__legs');
+        return gsap.timeline().set(legs, { opacity: 1 }).to(Lf(k), { x: back ? 0 : x - s.x, y: back ? 0 : y - s.y, duration: d, ease: 'power1.inOut' }, 0)
+          .to(W(k), { y: -4, duration: d / 8, repeat: 7, yoyo: true, ease: 'sine.inOut' }, 0)
+          .fromTo(legs.children, { rotation: (m) => (m ? -24 : 24) }, { rotation: (m) => (m ? 24 : -24), duration: d / 4, repeat: 3, yoyo: true, ease: 'sine.inOut' }, 0)
+          .set(legs.children, { rotation: 0 }).set(legs, { opacity: back ? 0 : 1 }); };
+      const say = (x, y) => { const c = chats[nc++ % chats.length];
+        return gsap.timeline().set(c, { x: x + 4, y: y - 42 }).to(c, { opacity: 1, scale: 1, duration: 0.22, ease: 'back.out(2.5)' })
+          .to(c.querySelectorAll('circle'), { y: -2.5, duration: 0.15, repeat: 5, yoyo: true, stagger: 0.07, ease: 'sine.inOut' }, '<')
+          .to(c, { opacity: 0, scale: 0, duration: 0.16 }); };
+      const burst = (x, y, n = 5, r = 28) => { const t = gsap.timeline();
+        for (let m = 0; m < n; m++) { const s = sparks[ns++ % sparks.length], a = n > 6 ? (m / n) * Math.PI * 2 : -Math.PI / 2 + (m - (n - 1) / 2) * 0.6;
+          t.fromTo(s, { x, y, scale: 0, opacity: 1, rotation: 0 }, { x: x + Math.cos(a) * r, y: y + Math.sin(a) * r, scale: 1.1, rotation: 90, opacity: 0, duration: 0.75, ease: 'power2.out' }, 0); }
+        return t; };
+      const ping = (k) => gsap.to(P(k), { keyframes: { scale: [0.3, 1.8], opacity: [0, 1, 0] }, duration: 0.55, ease: 'power1.out' });
+      const jump = (ks, h = 10, n = 1) => gsap.to(ks.map(W), { y: -h, duration: 0.15, repeat: n * 2 - 1, yoyo: true, ease: 'power2.out' });
+      const nod = (k, n = 2) => gsap.to(Lf(k), { rotation: 6, duration: 0.12, repeat: n * 2 - 1, yoyo: true });
+      const pickPair = (ok) => { const f = freeOnes(); for (let t = 0; t < 25; t++) { const i = rnd(f), j = rnd(f); if (i !== j && ok(seats[i], seats[j])) return [i, j]; } return []; };
+      const mate = (k) => seats.map((s, m) => m).filter((m) => !busy.has(m) && seats[m].pod === seats[k].pod && seats[m].side === seats[k].side && Math.abs(seats[m].x - seats[k].x) === 40); // voisins de rangée libres
+      // les curieux : les personnes de face non occupées tournent les yeux vers ce qui se passe, puis reviennent à leur écran
+      const look = (x, y, hold) => seats.forEach((s, k) => { if (s.side !== 'top' || busy.has(k) || near(s, x, y) > 190) return;
+        gsap.timeline().to(part(k, '.p__eyes'), { x: clamp(-1.8, 1.8, (x - s.x) / 50), y: clamp(-1, 1, (y - s.y + 26) / 60), duration: 0.25, delay: rnd(0, 0.3) })
+          .to(part(k, '.p__eyes'), { x: 0, y: 0, duration: 0.3 }, `+=${hold}`); });
+
+      const acts = {
+        // tope-là : deux personnes de deux îlots différents se rejoignent, lèvent la main, la tape, étincelles en cercle
+        highFive() { const [i, j] = pickPair((a, b) => a.pod !== b.pod && near(a, b.x, b.y) < 260 && !((a.x + b.x) / 2 > 400 && (a.y + b.y) / 2 > 240)); if (i == null) return;
+          const a = seats[i], b = seats[j], mx = (a.x + b.x) / 2, my = Math.max(a.y, b.y, 150);
+          return [[i, j], gsap.timeline().call(lift, [i]).call(lift, [j]).add(walk(i, mx - 12, my), 0).add(walk(j, mx + 12, my), 0)
+            .add(pose(i, 0, -125)).add(pose(j, 125, 0), '<').add(jump([i, j], 9), '+=0.1').add(burst(mx, my - 42, 8, 22), '<0.1')
+            .add(rest(i), '+=0.2').add(rest(j), '<').add(walk(i, mx - 12, my, true), '+=0.15').add(walk(j, mx + 12, my, true), '<')
+            .call(drop, [i]).call(drop, [j]), [mx, my - 30]]; },
+        // pause café : deux collègues vont à la machine, la vapeur monte, elles trinquent et discutent
+        coffee() { if (zones.has('coffee')) return; const [i, j] = pickPair(() => true); if (i == null) return; zones.add('coffee');
+          return [[i, j], gsap.timeline({ onComplete: () => zones.delete('coffee') }).call(lift, [i]).call(lift, [j])
+            .add(walk(i, 516, 402), 0).add(walk(j, 548, 402), 0.15)
+            .fromTo('.scene .steam', { opacity: 0, y: 0 }, { opacity: 1, y: -6, duration: 0.5, repeat: 3, yoyo: true, ease: 'sine.inOut' })
+            .add(pose(i, 0, -70), '<').add(pose(j, 70, 0), '<0.1').add(say(516, 402), '<').add(say(548, 402), '>-0.1').add(nod(i), '<').add(say(516, 402), '>-0.1').add(nod(j), '<')
+            .add(rest(i)).add(rest(j), '<').add(walk(i, 516, 402, true), '+=0.1').add(walk(j, 548, 402, true), '<0.1').call(drop, [i]).call(drop, [j]), [530, 380]]; },
+        // réunion au tableau : une personne montre la courbe qui monte, deux autres hochent la tête puis applaudissent
+        board() { if (zones.has('board')) return; const f = freeOnes(); if (f.length < 3) return; const [i, j, k] = gsap.utils.shuffle(f).slice(0, 3); zones.add('board');
+          return [[i, j, k], gsap.timeline({ onComplete: () => zones.delete('board') }).call(lift, [i]).call(lift, [j]).call(lift, [k])
+            .add(walk(i, 420, 368), 0).add(walk(j, 458, 394), 0.1).add(walk(k, 488, 394), 0.2)
+            .add(pose(i, 0, -95)).fromTo('.scene .board__chart', { strokeDashoffset: 1, opacity: 1 }, { strokeDashoffset: 0, duration: 1, ease: 'power2.inOut' }, '<')
+            .to(arm(i, 'r'), { rotation: -130, duration: 1, ease: 'power2.inOut' }, '<').add(nod(j, 3), '<0.2').add(nod(k, 3), '<0.15')
+            .add(clap(j)).add(clap(k), '<0.05').add(burst(520, 282, 8, 26), '<').add(() => ping(i), '<').add(jump([i], 8), '<')
+            .add(rest(i), '<').add(walk(i, 420, 368, true), '+=0.3').add(walk(j, 458, 394, true), '<0.1').add(walk(k, 488, 394, true), '<0.1')
+            .to('.scene .board__chart', { opacity: 0, duration: 0.3 }, '<').call(drop, [i]).call(drop, [j]).call(drop, [k]), [480, 300]]; },
+        // un dossier passe d'un bureau à l'autre en arc ; on le reçoit, on remercie d'un signe de la main
+        toss() { const [i, j] = pickPair((a, b) => a.pod !== b.pod); if (i == null) return; const a = seats[i], b = seats[j], p = papers[np++ % papers.length], dir = b.x > a.x ? 1 : -1;
+          return [[i, j], gsap.timeline().add(pose(i, dir < 0 ? 120 : 0, dir > 0 ? -120 : 0)).add(jump([i], 6), '<')
+            .set(p, { x: a.x, y: a.y - 32, opacity: 1, rotation: 0, scale: 1 }).add(rest(i))
+            .to(p, { x: b.x, rotation: 360 * dir, duration: 0.8, ease: 'none' }, '<').to(p, { y: Math.min(a.y, b.y) - 100, duration: 0.4, ease: 'power1.out' }, '<')
+            .to(p, { y: b.y - 32, duration: 0.4, ease: 'power1.in' }, '>').to(p, { opacity: 0, scale: 0.5, duration: 0.15 })
+            .add(() => ping(j), '<').add(jump([j], 8)).add(say(b.x, b.y), '<')
+            .add(pose(j, 0, -125)).to(arm(j, 'r'), { rotation: -95, duration: 0.15, repeat: 3, yoyo: true }).add(rest(j)), [a.x, a.y - 60]]; },
+        // discussion entre voisins de face : on se tourne l'un vers l'autre, les bulles se répondent, on rit
+        chat() { const f = freeOnes().filter((k) => mate(k).length); if (!f.length) return; const i = rnd(f), j = rnd(mate(i)), dir = seats[j].x > seats[i].x ? 1 : -1;
+          return [[i, j], gsap.timeline().to(Lf(i), { rotation: 9 * dir, duration: 0.3 }).to(Lf(j), { rotation: -9 * dir, duration: 0.3 }, '<')
+            .to([part(i, '.p__eyes'), part(j, '.p__eyes')], { x: (m) => (m ? -dir : dir) * 1.6, duration: 0.2 }, '<')
+            .add(say(seats[i].x, seats[i].y)).add(say(seats[j].x, seats[j].y), '>-0.1').add(say(seats[i].x, seats[i].y), '>-0.1')
+            .add(jump([i, j], 5, 2)).to([Lf(i), Lf(j)], { rotation: 0, duration: 0.3 }).to([part(i, '.p__eyes'), part(j, '.p__eyes')], { x: 0, duration: 0.2 }, '<')]; },
+        // entraide : on se lève pour aider son voisin, on montre son écran, une idée éclot
+        help() { const f = freeOnes().filter((k) => mate(k).length); if (!f.length) return; const i = rnd(f), j = rnd(mate(i)), b = seats[j], x = b.x + (b.x > seats[i].x ? -16 : 16), dir = x < b.x ? 1 : -1;
+          return [[i, j], gsap.timeline().call(lift, [i]).add(walk(i, x, b.y - 6)).to(Lf(i), { rotation: 12 * dir, duration: 0.25 })
+            .add(pose(i, dir < 0 ? 60 : 0, dir > 0 ? -60 : 0), '<').add(say(x, b.y - 6), '<').add(nod(j), '<0.3')
+            .add(burst(b.x, b.y - 44, 3), '+=0.1').add(jump([j], 6), '<').add(rest(i), '+=0.2')
+            .to(Lf(i), { rotation: 0, duration: 0.2 }, '<').add(walk(i, x, b.y - 6, true)).call(drop, [i]), [b.x, b.y - 30]]; },
+        // mentorat : une des huit du début va voir une nouvelle recrue, lui montre, la recrue progresse (triangle qui monte)
+        mentor() { const f = freeOnes(), m = f.filter((k) => firstSeats.includes(k)), r = f.filter((k) => !firstSeats.includes(k)); if (!m.length || !r.length) return;
+          const i = rnd(m), j = rnd(r), b = seats[j], x = b.x + (b.x > 300 ? -18 : 18), dir = x < b.x ? 1 : -1, up = sparks[ns++ % sparks.length];
+          return [[i, j], gsap.timeline().call(lift, [i]).add(walk(i, x, b.y - 4)).add(pose(i, dir < 0 ? 70 : 0, dir > 0 ? -70 : 0))
+            .to(arm(i, 'r'), { rotation: dir > 0 ? -45 : 0, duration: 0.2, repeat: 3, yoyo: true }).to(arm(i, 'l'), { rotation: dir < 0 ? 45 : 0, duration: 0.2, repeat: 3, yoyo: true }, '<')
+            .add(nod(j, 3), '<').add(say(x, b.y - 4), '<').add(() => ping(j)).add(jump([j], 9))
+            .fromTo(up, { x: b.x, y: b.y - 40, scale: 0.4, opacity: 1, rotation: 0 }, { y: b.y - 80, scale: 1.4, rotation: 180, opacity: 0, duration: 1, ease: 'power1.out' }, '<')
+            .add(rest(i), '<').add(walk(i, x, b.y - 4, true), '+=0.2').call(drop, [i]), [b.x, b.y - 30]]; },
+        // cercle d'équipe : quatre personnes de quatre îlots se retrouvent dans l'allée, mains au centre, puis se séparent en fête
+        huddle() { if (zones.has('huddle')) return; const f = gsap.utils.shuffle(freeOnes()), ks = [];
+          for (const k of f) if (ks.length < 4 && !ks.some((m) => seats[m].pod === seats[k].pod)) ks.push(k);
+          if (ks.length < 4) return; zones.add('huddle'); const [cx, cy] = rnd([[215, 268], [385, 268]]), spot = (n) => [cx + [-22, 22, -9, 9][n], cy + [0, 0, -10, -10][n]];
+          const t = gsap.timeline({ onComplete: () => zones.delete('huddle') }); ks.forEach((k, n) => t.call(lift, [k], 0).add(walk(k, ...spot(n)), n * 0.12));
+          ks.forEach((k, n) => t.add(pose(k, spot(n)[0] < cx ? 0 : 100, spot(n)[0] < cx ? -100 : 0), n ? '<' : '>'));
+          t.add(jump(ks, 6, 2), '+=0.15').add(pose(ks[0], 0, -150), '<0.3');
+          ks.forEach((k, n) => t.add(pose(k, 150, -150, 0.2), n ? '<' : '>'));
+          t.add(burst(cx, cy - 46, 10, 30), '<').add(jump(ks, 12), '<');
+          ks.forEach((k) => t.add(rest(k), '<'));
+          t.addLabel('out', '+=0.25'); ks.forEach((k, n) => t.add(walk(k, ...spot(n), true), `out+=${n * 0.08}`));
+          return [ks, t.call(() => ks.forEach(drop)), [cx, cy - 20]]; },
+        // ola : tout un îlot se lève à tour de rôle, bras en l'air
+        ola() { const pod = rnd(pods.map((p, n) => n)), ks = seats.map((s, m) => m).filter((m) => seats[m].pod === pod);
+          if (ks.some((k) => busy.has(k))) return; ks.sort((a, b) => (seats[a].side === seats[b].side ? (seats[a].side === 'top' ? 1 : -1) * (seats[a].x - seats[b].x) : seats[a].side === 'top' ? -1 : 1));
+          const t = gsap.timeline(); ks.forEach((k, n) => t.add(pose(k, 140, -140, 0.15), n * 0.09).to(W(k), { y: -12, duration: 0.16, repeat: 1, yoyo: true, ease: 'power2.out' }, n * 0.09).add(rest(k), n * 0.09 + 0.35));
+          return [ks, t.add(burst(pods[pod].x, pods[pod].y - 60, 8, 34), 0.3), [pods[pod].x, pods[pod].y]]; },
+      };
+      const names = ['highFive', 'highFive', 'coffee', 'board', 'toss', 'toss', 'chat', 'chat', 'help', 'mentor', 'mentor', 'huddle', 'ola'];
+      const ready = () => inView && tl.progress() > 0.75; // une fois tout le monde arrivé
+      const start = (max) => { if (!ready() || active >= max) return;
+        const got = acts[rnd(names)]();
+        if (got) { const [ks, t, at] = got; ks.forEach((k) => busy.add(k)); active++; if (at) look(...at, t.duration() * 0.6);
+          t.eventCallback('onComplete', ((done) => () => { if (done) done(); ks.forEach((k) => busy.delete(k)); active--; })(t.eventCallback('onComplete'))); } };
+      const loop = () => { start(2); timer = gsap.delayedCall(rnd(1.2, 2.6), loop); }; // au repos : calme
+      // En défilant : une vague de petits sauts traverse la salle dans le sens du défilement, on se penche, on lève ou baisse les yeux,
+      // et chaque bout de défilement lance une interaction de plus (fromTo : chaque vague repart du sol, sinon une vague coupée en plein saut décale tout le monde)
+      let lastY = window.scrollY, moved = 0, lastWave = 0;
+      const onScroll = () => {
+        const dy = window.scrollY - lastY; lastY = window.scrollY;
+        if (!ready() || !dy) return;
+        if ((moved += Math.abs(dy)) > 260) { moved = 0; start(4); }
+        const now = performance.now(); if (now - lastWave < 420) return; lastWave = now;
+        const free = freeOnes().sort((a, b) => seats[a].y - seats[b].y || seats[a].x - seats[b].x), down = dy > 0;
+        gsap.fromTo(free.map(W), { y: 0 }, { y: -clamp(4, 10, Math.abs(dy) / 3), duration: 0.16, repeat: 1, yoyo: true, ease: 'power2.out', overwrite: true, stagger: { each: 0.018, from: down ? 'start' : 'end' } });
+        gsap.fromTo(free.map(Lf), { rotation: 0 }, { rotation: rnd([-1, 1]) * 5, duration: 0.2, repeat: 1, yoyo: true, ease: 'sine.inOut', overwrite: true, stagger: { each: 0.018, from: down ? 'start' : 'end' } });
+        gsap.to(free.filter((k) => seats[k].side === 'top').map((k) => part(k, '.p__eyes')), { y: down ? 1 : -1, duration: 0.2, overwrite: 'auto' });
+        gsap.delayedCall(0.6, () => gsap.to(scene.querySelectorAll('.p__eyes'), { y: 0, duration: 0.3, overwrite: 'auto' }));
+      };
+      window.addEventListener('scroll', onScroll, { passive: true });
+      // clignements d'yeux, au hasard
+      const blink = () => { if (inView) gsap.to(part(rnd(seats.map((s, k) => k).filter((k) => seats[k].side === 'top')), '.p__eyes'), { scaleY: 0.1, duration: 0.07, repeat: 1, yoyo: true });
+        blinker = gsap.delayedCall(rnd(0.5, 1.2), blink); };
+      const io = new IntersectionObserver(([e]) => { inView = e.isIntersecting; }); // la vie s'arrête hors de l'écran
+      io.observe(scene);
+      loop(); blink();
+      // Photos de groupe des chapitres : montent par le bas en se posant, puis glissent doucement dans leur cadre
+      story.querySelectorAll('.chap__pic').forEach((pic) => {
+        const img = pic.querySelector('img'), trigger = { trigger: pic, start: 'top 85%' };
+        gsap.fromTo(pic, { clipPath: 'inset(100% 0% 0% 0%)' }, { clipPath: 'inset(0% 0% 0% 0%)', duration: 1.1, ease: 'power3.inOut', clearProps: 'clipPath', onStart: () => pic.classList.add('is-shown'), scrollTrigger: trigger }); // clearProps : l'ombre jaune réapparaît
+        gsap.fromTo(img, { scale: 1.25 }, { scale: 1.08, duration: 1.6, ease: 'power3.out', scrollTrigger: trigger });
+        gsap.fromTo(img, { yPercent: -4 }, { yPercent: 4, ease: 'none', scrollTrigger: { trigger: pic, start: 'top bottom', end: 'bottom top', scrub: true } });
+      });
+      return () => { scene.classList.remove('is-alive'); timer.kill(); blinker.kill(); io.disconnect(); window.removeEventListener('scroll', onScroll); };
+    });
+  }
 
   /* ---------- Bouton : attraction douce + lueur qui suit le curseur (souris précise, hors reduced-motion) ---------- */
   gsap.matchMedia().add('(hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference)', () => {
