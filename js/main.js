@@ -134,6 +134,9 @@
     lastY = y;
   }, { passive: true });
   header.addEventListener('focusin', () => moveHeader(0)); // navigation clavier : le header ne reste jamais caché sur un lien focalisé
+  // Slider : la navbar est rangée sur les panneaux après l'accueil (posé par le slider) ; elle revient quand le pointeur monte en haut de l'écran
+  let navAway = false;
+  document.addEventListener('pointermove', (e) => { if (navAway && e.pointerType === 'mouse') moveHeader(e.clientY < headerH * 1.3 ? 0 : -100); }, { passive: true });
 
   /* ---------- Défilement fluide (inertie) : ne sert que dans la partie libre de la page ---------- */
   const lenis = smooth && window.Lenis ? new Lenis({ duration: 1.3, easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)), wheelMultiplier: 0.9 }) : null;
@@ -157,12 +160,10 @@
   };
   // Sous le voile, `done(true)` est appelé avant qu'il ne s'efface (retour vers un panneau : il s'affiche sans transition)
   let traveling = false;
-  let leaveStory = null; // posé par « Notre histoire » : un trajet libère l'arrêt sur chapitre
   const travel = (target, done) => {
     const at = () => (typeof target === 'number' ? target : target.getBoundingClientRect().top + window.scrollY); // relu à chaque étape : la page a pu bouger
     const dist = at() - window.scrollY, vh = window.innerHeight;
     const end = (veiled) => { traveling = false; if (done) done(veiled); };
-    leaveStory?.();
     traveling = true;
     if (target.id) setActiveLink(target.id); // lien actif tout de suite, sans défiler sur ceux des sections traversées
     if (!smooth) return glide(at(), 0, end);
@@ -529,6 +530,7 @@
     const unlock = (target = free) => {
       if (!locked || unlocking) return;
       locked = false;
+      navAway = false;
       unlocking = true;
       observer.disable();
       root.classList.replace('is-locked', 'is-free');
@@ -561,6 +563,7 @@
       if (lenis) lenis.stop();
       observer.enable();
       setActiveLink(panels[current].id);
+      navFor(current);
     };
     window.addEventListener('scroll', relock, { passive: true });
     const freeNav = new IntersectionObserver((entries) => entries.forEach(({ target, isIntersecting }) => {
@@ -568,14 +571,22 @@
     }), { rootMargin: '-50% 0px -50% 0px' });
     freeZone.querySelectorAll('section').forEach((s) => freeNav.observe(s));
 
+    // navbar rangée dès le 2e panneau (elle cachait le titre de « Qui sommes-nous ») ; dans la page libre, le header directionnel reprend la main
+    const navFor = (i) => { navAway = locked && i > 0 && matchMedia('(hover: hover)').matches; moveHeader(navAway ? -100 : 0); }; // tactile : on garde le menu
     const sync = () => {
       panels.forEach((p, i) => p.classList.toggle('is-current', i === current));
       setActiveLink(panels[current].id);
+      navFor(current);
     };
     sync();
 
     // Éléments décalés en parallaxe (pas le conteneur : un transform y casserait le positionnement absolu de la photo du hero)
     const parallax = (panel) => panel.querySelectorAll('.hero__content, .about__inner > *');
+    // Profondeur (premier plan / arrière-plan) : les éléments [data-depth] arrivent et repartent avec un décalage de data-depth % de
+    // l'écran, d'autant plus grand qu'ils sont proches (« Qui sommes-nous » : feuille 3, photo 16). Toujours visibles pendant
+    // le trajet (pas de fondu) : c'est l'écart de vitesse entre les plans qui se voit. `y` ici, `xPercent/yPercent` pour le pointeur.
+    const depth = (panel) => [...panel.querySelectorAll('[data-depth]')];
+    const dy = (dir) => (i, el) => el.dataset.depth * dir * window.innerHeight / 100;
 
     const goTo = (index, instant) => {
       if (busy || index < 0 || index >= panels.length || index === current) return;
@@ -588,6 +599,7 @@
 
       to.classList.add('is-current');
       setActiveLink(to.id);
+      navFor(index);
       // Effet « rideau » : la nouvelle section se dévoile depuis le bord, son contenu reste en place (parallaxe douce),
       // l'ancienne recule un peu, et les lettres du titre montent en ordre aléatoire (démo GSAP « Animated Sections »)
       const reveal = dir > 0 ? 'inset(100% 0% 0% 0%)' : 'inset(0% 0% 100% 0%)';
@@ -598,6 +610,7 @@
         defaults: { duration: calm ? 0 : 1.25, ease: 'power1.inOut' },
         onComplete: () => {
           gsap.set([from, to, ...parallax(from), ...parallax(to)], { clearProps: 'transform,zIndex,clipPath' });
+          gsap.set([...depth(from), ...depth(to)], { y: 0 });
           current = index;
           sync();
           history.replaceState(null, '', `#${to.id}`);
@@ -607,6 +620,8 @@
       tl.to(to, { clipPath: 'inset(0% 0% 0% 0%)' }, 0)
         .to(from, { yPercent: -15 * dir }, 0)
         .fromTo(parallax(to), { yPercent: 15 * dir }, { yPercent: 0 }, 0)
+        .fromTo(depth(to), { y: dy(dir) }, { y: 0, ease: 'power3.out' }, 0)
+        .to(depth(from), { y: dy(-dir), ease: 'power2.in' }, 0)
         .fromTo(to.querySelectorAll('[data-slide-in]'),
           { opacity: 0, y: 40 * dir },
           { opacity: 1, y: 0, duration: calm ? 0 : 0.9, stagger: calm ? 0 : 0.09, ease: 'power3.out', clearProps: 'opacity,transform' },
@@ -672,6 +687,7 @@
       window.removeEventListener('hashchange', onHash);
       window.removeEventListener('scroll', relock);
       freeNav.disconnect();
+      navAway = false; moveHeader(0);
       splits.forEach((s) => s.restore());
       if (lenis) lenis.start();
       document.removeEventListener('keydown', onKey);
@@ -771,6 +787,22 @@
     return () => { hero.removeEventListener('pointermove', onMove); hero.removeEventListener('pointerleave', onLeave); };
   });
 
+  // « Qui sommes-nous » : les trois plans suivent le pointeur, d'autant plus qu'ils sont proches (data-depth) ; xPercent/yPercent pour
+  // ne pas se battre avec le `y` de la transition de panneau
+  gsap.matchMedia().add('(prefers-reduced-motion: no-preference) and (hover: hover) and (pointer: fine)', () => {
+    const about = document.querySelector('.about');
+    const layers = [...about.querySelectorAll('[data-depth]')].map((el) => ({ k: el.dataset.depth * 0.25,
+      x: gsap.quickTo(el, 'xPercent', { duration: 1.2, ease: 'power3' }), y: gsap.quickTo(el, 'yPercent', { duration: 1.2, ease: 'power3' }) }));
+    const onMove = (e) => {
+      const nx = e.clientX / window.innerWidth - 0.5, ny = e.clientY / window.innerHeight - 0.5;
+      layers.forEach((l) => { l.x(-nx * l.k); l.y(-ny * l.k); });
+    };
+    const onLeave = () => layers.forEach((l) => { l.x(0); l.y(0); });
+    about.addEventListener('pointermove', onMove, { passive: true });
+    about.addEventListener('pointerleave', onLeave);
+    return () => { about.removeEventListener('pointermove', onMove); about.removeEventListener('pointerleave', onLeave); };
+  });
+
   /* ---------- À propos : accordéon, un seul paragraphe ouvert à la fois (<details>) ---------- */
   gsap.matchMedia().add({ any: 'all', calm: '(prefers-reduced-motion: reduce)' }, ({ conditions: { calm } }) => { // « any » : sans condition vraie, GSAP n'appelle pas la fonction
     
@@ -810,8 +842,14 @@
     const team = document.querySelector('.team'), crew = team.querySelector('.crew'), track = crew.querySelector('.crew__track'), bar = team.querySelector('.team__bar');
     crew.classList.add('is-driven');
     const dist = () => track.scrollWidth - window.innerWidth;
+    const mates = [...track.querySelectorAll('.mate')];
     const slide = gsap.to(track, { x: () => -dist(), ease: 'none', scrollTrigger: { trigger: team, pin: true, scrub: true, end: () => '+=' + dist(), invalidateOnRefresh: true,
       onUpdate: (self) => bar.style.setProperty('--p', self.progress) } });
+    // le mot géant au trait glisse deux fois moins vite que la rangée : profondeur
+    gsap.to(track.querySelector('.crew__ghost'), { x: () => dist() * .5, ease: 'none', scrollTrigger: { trigger: team, start: 'top top', end: () => '+=' + dist(), scrub: true, invalidateOnRefresh: true } });
+    // texte de chaque portrait : prénom, métier puis citation montent quand le portrait entre à l'écran
+    mates.forEach((m) => gsap.from(m.querySelectorAll('.mate__txt > *'), { y: 28, opacity: 0, stagger: .15, ease: 'power2.out',
+      scrollTrigger: { trigger: m, containerAnimation: slide, start: 'left right', end: 'left 55%', scrub: true } }));
     // élan : pendant que la section monte, les portraits glissent déjà vers la gauche ; le virage vertical → horizontal se fait en douceur
     gsap.fromTo(track.querySelector('.crew__list'), { x: () => window.innerHeight * 0.85 }, { x: 0, ease: 'none',
       scrollTrigger: { trigger: team, start: 'top bottom', end: 'top top', scrub: true, invalidateOnRefresh: true } });
@@ -820,10 +858,9 @@
     return () => crew.classList.remove('is-driven');
   });
 
-  /* ---------- Notre histoire : un chapitre à la fois ----------
-     Le défilement s'arrête sur chaque chapitre, centré à l'écran (plus haut que l'écran, sur mobile : calé sous la navbar puis lu par
-     tranches), et son animation se joue alors d'un trait, en temps réel : pas de scrub, donc fluide, et pratique au doigt.
-     Molette, swipe et flèches avancent d'un arrêt ; avant le premier et après le dernier chapitre, le défilement redevient libre. */
+  /* ---------- Notre histoire : un chapitre par écran, défilement libre ----------
+     Chaque chapitre joue son animation d'un trait, en temps réel, quand il entre à l'écran : pas de scrub, donc fluide.
+     (L'arrêt automatique sur chaque chapitre a été retiré à la demande du client.) */
   {
     const story = document.querySelector('.story'), chaps = [...story.querySelectorAll('.chap')];
     const split = (els) => window.SplitText ? SplitText.create(els, { type: 'words' }) : { words: [], revert() {} };
@@ -878,97 +915,48 @@
         return tl;
       });
       const play = (i) => { if (!plays[i].progress() && !plays[i].isActive()) plays[i].play(); };
-      // filet de sécurité (barre de défilement, saut clavier…) : un chapitre atteint sans arrêt joue quand même son animation
-      chaps.forEach((c, i) => st.create({ trigger: c, start: 'top 30%', end: 'bottom 70%', onToggle: (self) => self.isActive && play(i) }));
-
-      // arrêts : position de défilement de chaque chapitre (ou de chacune de ses tranches)
-      let stops = [];
-      const measure = () => {
-        const vh = window.innerHeight, y0 = window.scrollY;
-        stops = chaps.flatMap((c, i) => {
-          const r = c.querySelector('.chap__in').getBoundingClientRect(), top = r.top + y0, H = r.height;
-          if (H <= vh - 2 * headerH) return [{ i, y: Math.round(top + H / 2 - vh / 2) }]; // centré, jamais sous la navbar
-          const ys = [top - headerH], last = top + H - vh + 16;
-          while (ys.at(-1) + vh * 0.7 < last) ys.push(ys.at(-1) + vh * 0.7);
-          if (last > ys.at(-1)) ys.push(last);
-          return ys.map((y) => ({ i, y: Math.round(y) }));
-        });
-      };
-      measure();
-      st.addEventListener('refresh', measure);
-
-      let at = -1;          // arrêt courant (-1 : défilement libre)
-      let busy = false;     // trajet en cours (+ un temps pour laisser retomber l'inertie du trackpad)
-      let touching = false, pending = -1, lastY = window.scrollY;
-      const hold = (e) => e.preventDefault();
-      const freeze = (on) => window[on ? 'addEventListener' : 'removeEventListener']('touchmove', hold, { passive: false });
-      const go = (k) => {
-        const s = stops[k], d = gsap.utils.clamp(0.6, 1.1, (Math.abs(s.y - window.scrollY) / window.innerHeight) * 1.1);
-        at = k; busy = true;
-        lenis?.stop(); observer.enable(); freeze(true);
-        glide(s.y, d, () => gsap.delayedCall(0.25, () => { busy = false; }));
-        gsap.delayedCall(d * 0.5, () => play(s.i)); // l'animation part quand le chapitre se pose
-      };
-      // rend la main au défilement libre ; `to` : petit élan pour sortir de la zone d'accroche
-      const release = (to) => {
-        at = -1; busy = false;
-        observer.disable(); freeze(false); lenis?.start();
-        if (to === undefined) return;
-        busy = true;
-        glide(to, 0.7, () => { busy = false; });
-      };
-      const step = (d) => {
-        if (busy || at < 0) return;
-        const k = at + d, vh = window.innerHeight;
-        if (k < 0) release(stops[0].y - vh * 0.6);
-        else if (k >= stops.length) release(stops.at(-1).y + vh * 0.6);
-        else go(k);
-      };
-      // une fois arrêté : molette et swipe avancent d'un arrêt (mêmes réglages que le slider du haut de page)
-      const observer = Observer.create({ type: 'wheel,touch', wheelSpeed: -1, tolerance: 12, dragMinimum: 10, preventDefault: true, ignore: 'a, button',
-        onUp: () => step(1), onDown: () => step(-1) });
-      observer.disable();
-
-      // accroche : en défilement libre, en arrivant sur un chapitre (dans le sens de la marche), on s'y arrête
-      const onScroll = () => {
-        const y = window.scrollY, dir = Math.sign(y - lastY), vh = window.innerHeight;
-        lastY = y;
-        if (at >= 0) { if (!busy && Math.abs(y - stops[at].y) > vh * 0.6) release(); return; } // déplacé à la barre de défilement
-        if (busy || traveling || pending >= 0 || !dir) return;
-        const k = dir > 0 ? stops.findIndex((s) => y > s.y - vh * 0.5 && y < s.y + vh * 0.3)
-          : stops.findLastIndex((s) => y < s.y + vh * 0.5 && y > s.y - vh * 0.3);
-        if (k < 0) return;
-        if (touching) { pending = k; freeze(true); } else go(k); // doigt posé : la page se fige, le trajet part quand il se lève
-      };
-      const onTouch = (e) => {
-        touching = e.type === 'touchstart';
-        if (!touching && pending >= 0) { const k = pending; pending = -1; go(k); }
-      };
-      const onKey = (e) => {
-        if (at < 0 || e.target.closest?.('input, textarea, select')) return;
-        const d = { ArrowDown: 1, PageDown: 1, ArrowUp: -1, PageUp: -1, ' ': e.shiftKey ? -1 : 1 }[e.key];
-        if (!d) return;
-        e.preventDefault();
-        step(d);
-      };
-      leaveStory = () => { pending = -1; if (at >= 0) release(); else freeze(false); };
-      window.addEventListener('scroll', onScroll, { passive: true });
-      ['touchstart', 'touchend', 'touchcancel'].forEach((t) => window.addEventListener(t, onTouch, { passive: true, capture: true }));
-      document.addEventListener('keydown', onKey);
+      // défilement libre : chaque chapitre joue son animation au moment où son contenu entre à l'écran
+      chaps.forEach((c, i) => st.create({ trigger: c.querySelector('.chap__in'), start: 'top bottom', once: true, onEnter: () => play(i) }));
 
       return () => {
-        leaveStory(); leaveStory = null;
-        observer.kill();
-        st.removeEventListener('refresh', measure);
-        window.removeEventListener('scroll', onScroll);
-        ['touchstart', 'touchend', 'touchcancel'].forEach((t) => window.removeEventListener(t, onTouch, { capture: true }));
-        document.removeEventListener('keydown', onKey);
         splits.forEach((s) => s.revert());
         extras.forEach((el) => el.remove());
         story.classList.remove('is-stepped');
       };
     });
   }
+
+  /* ---------- Profondeur au défilement : premier plan / arrière-plan, sur tout le site ----------
+     Même idée que les illustrations de « Nos services » (dessin posé sur sa forme de fond), rendue vivante : pendant que l'élément
+     traverse l'écran, l'arrière-plan glisse moins vite que le premier plan. `d` > 0 : arrière-plan (suit la page, paraît loin) ;
+     `d` < 0 : premier plan (devance la page, paraît proche). Transform seulement, scrub, de son entrée à sa sortie de l'écran. */
+  gsap.matchMedia().add('(prefers-reduced-motion: no-preference)', () => {
+    if (!st) return;
+    const layers = [
+      ['.svc__ill .ill-bg, .reason__ill .ill-bg', 14],  // forme de fond des illustrations (unités du dessin SVG)
+      ['.chap__num', 90],                               // grand numéro au trait derrière chaque chapitre
+      ['.chap__pic', -40],                              // photo du chapitre, devant son numéro et son texte
+      ['.contact__pic img', 30],                        // photo du contact qui glisse dans son cadre en feuille
+    ];
+    layers.forEach(([sel, d]) => gsap.utils.toArray(sel).forEach((el) => gsap.fromTo(el, { y: -d }, { y: d, ease: 'none', immediateRender: false,
+      scrollTrigger: { trigger: el.closest('svg, .chap, .contact__pic') || el, start: 'top bottom', end: 'bottom top', scrub: true } })));
+
+    // Sortie de « Qui sommes-nous » vers « Pourquoi collaborer » : les plans défilent à des vitesses différentes — la feuille jaune
+    // (la plus lointaine) puis la photo traînent, le texte (premier plan) part plus vite que la page, donc jamais coupé par le bord —,
+    // le bas se dissout dans un fondu blanc, puis vient la passerelle (.bridge). En mode slider, la page ne défile qu'une fois le dernier panneau quitté : rien ne bouge avant.
+    // passerelle : les mots de la phrase de conclusion s'allument au fil du défilement, du moment où elle entre à l'écran à son centre
+    const bridge = document.querySelector('.bridge__text');
+    if (window.SplitText) gsap.fromTo(SplitText.create(bridge, { type: 'words' }).words, { opacity: 0.12 }, { opacity: 1, ease: 'none', stagger: 0.1,
+      scrollTrigger: { trigger: bridge, start: 'top bottom', end: 'center 55%', scrub: true } });
+    const about = document.querySelector('.about'), vh = (k) => () => window.innerHeight * k;
+    const back = (sel, k) => [about.querySelector(sel), { y: 0 }, { y: vh(k), ease: 'none', immediateRender: false }, 0];
+    gsap.timeline({ scrollTrigger: { trigger: about, start: 'top top', end: 'bottom top', scrub: true, invalidateOnRefresh: true } })
+      .fromTo(...back('.about__leaf', 0.45))
+      .fromTo(...back('.about__pic', 0.25))
+      .fromTo(...back('.about__copy', -0.12))
+      .fromTo(about.querySelector('.about__fade'), { opacity: 0 }, { opacity: 1, ease: 'power2.out', immediateRender: false }, 0)
+      .fromTo(about.querySelector('.about__inner'), { opacity: 1 }, { opacity: 0.3, ease: 'power1.in', immediateRender: false }, 0);
+  });
 
   /* ---------- Nous contacter : arrivée, chaque élément au moment où il entre à l'écran ---------- */
   // Filet jaune qui se trace, titre lettre par lettre dans son masque, coordonnées qui éclosent, photo qui se dézoome, formulaire champ par champ
