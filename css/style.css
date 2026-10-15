@@ -158,7 +158,7 @@ h3 { font-size: 1.25rem; font-weight: 600; }
 .about__title { font-size: clamp(2.4rem, 3.9vw, 3.25rem); } /* plafonné : la colonne de droite (≈ 508 px) doit contenir « Qui sommes-nous ? » sur une ligne */
 .about__title::after { content: ""; display: block; width: 3.5rem; height: 4px; margin-top: 1.1rem; border-radius: 2px; background: var(--c-accent); }
 .about__lead { margin-top: 1.75rem; font: 500 clamp(1.15rem, 1.6vw, 1.45rem)/1.5 var(--f-display); }
-.about__lead mark { padding-inline: .1em; background: linear-gradient(transparent 80%, rgb(247 183 49 / .45) 80%) no-repeat 0 0 / 100% 100%; color: inherit; -webkit-box-decoration-break: clone; box-decoration-break: clone; } /* trait fin sous le texte, pas un aplat */
+.about__lead mark, .reason__text strong { padding-inline: .1em; background: linear-gradient(transparent 80%, rgb(247 183 49 / .45) 80%) no-repeat 0 0 / 100% 100%; color: inherit; -webkit-box-decoration-break: clone; box-decoration-break: clone; } /* trait fin sous le texte, pas un aplat */
 .brand { font-weight: 700; white-space: nowrap; background: linear-gradient(var(--c-accent), var(--c-accent)) 0 88% / 100% .35em no-repeat; } /* nom de l'entreprise surligné au feutre jaune */
 .about__closing { margin-top: 2rem; padding-left: 1.1rem; border-left: 3px solid var(--c-accent); color: var(--c-ink-soft); font-weight: 500; max-width: 38ch; }
 
@@ -219,6 +219,8 @@ h3 { font-size: 1.25rem; font-weight: 600; }
 :is(.svc__ill, .reason__ill) .y { fill: var(--c-accent); }
 .svc__ill .wave { stroke: var(--c-accent-dark); stroke-width: 3; }
 :is(.svc__ill, .reason__ill) .dot { fill: var(--c-ink); stroke: none; }
+.reason__text strong { font-weight: 700; color: var(--c-ink); } /* les langues, même surlignage que le chapeau */
+.reason__ill .lang { fill: var(--c-ink); stroke: none; font: 700 12px var(--f-body); letter-spacing: .04em; text-anchor: middle; }
 .svc__ill .heart path { stroke: var(--c-ink); stroke-width: 1.6; }
 .svc__ill .hand { stroke-width: 2.5; }
 .svc__head { display: grid; gap: .45rem; }
@@ -317,67 +319,49 @@ html.lenis { scroll-behavior: auto !important; } /* Lenis gère seul la douceur 
 .team:has(.is-driven) .team__bar { display: block; position: absolute; inset: auto var(--gutter) 2rem; height: 2px; background: var(--c-line); }
 .team__bar span { display: block; height: 100%; background: var(--c-accent); transform: scaleX(var(--p, 0)); transform-origin: left; }
 @media (prefers-reduced-motion: reduce) { .team__hint span { animation: none; } }
-@media (prefers-reduced-motion: no-preference) { .js .chap__pic:not(.is-shown) { clip-path: inset(100% 0 0 0); } } /* révélée par main.js en montant */
+@media (prefers-reduced-motion: no-preference) { .js .chap__pic:not(.is-shown) { clip-path: inset(0 50% 0 50%); } } /* révélée par main.js depuis le centre */
 
-/* Notre histoire : récit en chapitres ; la photo de groupe reste à l'écran et change à chaque chapitre */
-.story { padding-block: calc(var(--header-h) + 2rem) 6rem; background: var(--c-bg); }
-.story__head { max-width: 46rem; }
+/* Notre histoire : récit en magazine. Chaque chapitre = un mot géant (2023, Depuis…), une photo panoramique en feuille,
+   le titre à gauche et le récit à droite ; la dernière phrase devient une grande citation centrée. Animé par main.js. */
+.story { padding-block: calc(var(--header-h) + 2rem) 7rem; background: var(--c-bg); overflow: clip; } /* clip et non hidden : la frise reste collante */
+/* frise collante sous la navbar : quatre étapes, trait jaune qui avance (--p), étape en cours allumée (.is-on) */
+.story__time { position: sticky; top: var(--header-h); z-index: 5; height: 3.4rem; margin: 0; padding: 0; list-style: none; background: var(--c-bg); box-shadow: 0 0 0 100vmax var(--c-bg); clip-path: inset(0 -100vmax); transition: top .4s cubic-bezier(.215, .61, .355, 1); } /* fond blanc sur toute la largeur */
+html:has(.header.is-hidden) .story__time { top: 0; }
+.story__time::before, .story__time::after { content: ""; position: absolute; top: 1.1rem; left: 0; right: 0; height: 2px; background: var(--c-line); }
+.story__time::after { background: var(--c-accent); transform: scaleX(var(--p, 0)); transform-origin: left; }
+.story__time li { position: absolute; top: 1.7rem; font: 700 .72rem/1 var(--f-body); letter-spacing: .14em; text-transform: uppercase; color: var(--c-ink-soft); opacity: .55; transition: opacity .4s, color .4s; white-space: nowrap; }
+.story__time li::before { content: ""; position: absolute; top: calc(-.6rem - 6px); left: 0; width: 12px; height: 12px; border-radius: 50%; background: var(--c-bg); box-shadow: inset 0 0 0 2px var(--c-line); z-index: 1; transition: background .4s, box-shadow .4s, transform .4s; }
+.story__time li:nth-child(2) { left: 33.333%; transform: translateX(-50%); } .story__time li:nth-child(2)::before { left: calc(50% - 6px); }
+.story__time li:nth-child(3) { left: 66.667%; transform: translateX(-50%); } .story__time li:nth-child(3)::before { left: calc(50% - 6px); }
+.story__time li:nth-child(4) { right: 0; } .story__time li:nth-child(4)::before { left: auto; right: 0; }
+.story__time li.is-on { opacity: 1; color: var(--c-ink); }
+.story__time li.is-on::before, .story__time li.is-past::before { background: var(--c-accent); box-shadow: inset 0 0 0 2px var(--c-accent); }
+.story__time li.is-on::before { transform: scale(1.35); }
+@media (max-width: 61.99rem) { .story__time li { font-size: .62rem; letter-spacing: .08em; } .story__time li:not(.is-on) { color: transparent; } } /* téléphone : seule l'étape en cours est écrite */
+.story__head { max-width: 52rem; margin: 0 auto 2rem; text-align: center; }
 .story__title { margin: 0; font-size: clamp(2.3rem, 4.6vw, 4.4rem); line-height: 1.02; letter-spacing: -.015em; }
-.story__lead { margin: 1.4rem 0 0; font: 500 clamp(1.15rem, 1.6vw, 1.45rem)/1.5 var(--f-display); color: var(--c-ink-soft); }
-.story__body { margin-top: 2.5rem; }
-.story__media { position: sticky; top: 0; z-index: 1; padding: .75rem 1rem .5rem 0; background: var(--c-bg); }
-.story__media::after { content: ""; position: absolute; inset: 100% 0 auto; height: 2.5rem; background: linear-gradient(var(--c-bg), transparent); pointer-events: none; } /* le texte passe dessous en se fondant */
-html:not(.js) .story__media { display: none; } /* la scène est dessinée par main.js */
-/* Scène au trait (main.js) : remplace les photos quand le JS tourne */
-.scene { display: block; width: 100%; height: auto; overflow: hidden; fill: none; stroke: var(--c-ink); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
-.scene .ink { fill: var(--c-ink); stroke: none; }
-.scene [pathLength] { stroke-dasharray: 1; }
-.scene .office__wall, .scene .house rect, .scene .lap, .scene .board rect, .scene .coffee rect, .scene .paper rect, .scene .chat rect, .scene .office__door { fill: var(--c-bg); }
-.scene .office text { fill: var(--c-ink); stroke: none; font: 600 22px var(--f-display); }
-.scene .office__hex, .scene .lap__dot, .scene .badge, .scene .spark, .scene .coffee .coffee__cup { fill: var(--c-accent); stroke: none; }
-.scene .office__leaf, .scene .table { fill: var(--c-tint); }
-.scene .house { stroke-opacity: .55; }
-.scene .link { stroke: var(--c-accent-ink); stroke-dasharray: 2 7; stroke-width: 2.2; }
-.scene .board__notes { stroke-width: 1.6; stroke-opacity: .4; }
-.scene .board__chart { stroke: var(--c-accent-ink); stroke-width: 3; }
-.scene .chat rect { stroke-width: 1.8; }
-/* personnes : les huit du début en jaune, les autres en crème, blanc ou encre ; de dos, on ne voit que les cheveux */
-.scene .p__head { fill: var(--c-bg); }
-.scene .p--back .p__head { fill: var(--c-ink); }
-.scene .p--first .p__shirt { fill: var(--c-accent); }
-.scene .p--s0 .p__shirt { fill: var(--c-tint); }
-.scene .p--s1 .p__shirt { fill: var(--c-bg); }
-.scene .p--s2 .p__shirt { fill: var(--c-ink); }
-.scene .p__legs, .scene .p__arm { opacity: 0; } /* visibles seulement en marche / pour un geste (main.js) */
-.scene .p__ping { stroke: var(--c-accent); stroke-width: 2.5; opacity: 0; } /* onde quand quelqu'un s'installe ou réussit (main.js) */
-.scene.is-alive .link { animation: march 0.9s linear infinite; } /* le travail circule entre les maisons */
-@keyframes march { to { stroke-dashoffset: -9; } }
-.scene.is-alive .p__b { animation: typing 1.6s ease-in-out infinite alternate; animation-delay: var(--d); }
-@keyframes typing { to { transform: translateY(1.4px); } }
-.story__count { margin: 1.4rem 0 0; font: 600 .78rem/1.3 var(--f-body); letter-spacing: .08em; text-transform: uppercase; color: var(--c-ink-soft); }
+.story__lead { max-width: 36rem; margin: 1.2rem auto 0; font: 500 clamp(1.1rem, 1.5vw, 1.4rem)/1.5 var(--f-display); color: var(--c-ink-soft); }
 .story__chapters { margin: 0; padding: 0; list-style: none; }
-.chap { display: flex; flex-direction: column; justify-content: center; min-height: 70svh; padding-block: 2rem; }
-.chap__pic { position: relative; width: min(100% - .8rem, 38rem); aspect-ratio: 3 / 2; margin: 0 0 1.8rem; overflow: hidden; border-radius: 0 var(--leaf) 0 var(--leaf); box-shadow: .8rem .8rem 0 var(--c-accent); } /* la feuille, comme les autres photos */
-.chap__pic img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
-.chap__title { margin: 0; font: 600 clamp(1.7rem, 2.9vw, 2.6rem)/1.12 var(--f-display); }
-.chap__title span { display: block; margin-bottom: .6rem; font: 700 .8rem/1 var(--f-body); letter-spacing: .14em; text-transform: uppercase; color: var(--c-accent-ink); }
-.chap p { max-width: 40rem; margin: 1rem 0 0; font-size: clamp(1.05rem, 1.25vw, 1.18rem); line-height: 1.75; color: var(--c-ink-soft); }
-.chap p.chap__end { margin-top: 1.75rem; padding-left: 1.1rem; border-left: 3px solid var(--c-accent); font: 500 clamp(1.2rem, 1.8vw, 1.6rem)/1.5 var(--f-display); color: var(--c-ink); }
+.chap { padding-top: clamp(3rem, 7vw, 6rem); }
+.chap p.chap__word { max-width: none; margin: 0 0 .1em; font: 600 clamp(3.6rem, 13vw, 12.5rem)/1.12 var(--f-display); letter-spacing: -.04em; color: var(--c-ink); white-space: nowrap; }
+.chap__word::after { content: "."; color: var(--c-accent); }
+.chap:nth-child(even) .chap__word { text-align: right; }
+.chap__pic { position: relative; aspect-ratio: 21 / 9; margin: 0; overflow: hidden; border-radius: 0 var(--leaf) 0 var(--leaf); }
+.chap:nth-child(even) .chap__pic { border-radius: var(--leaf) 0 var(--leaf) 0; }
+.chap__pic img { position: absolute; inset: -8% 0; width: 100%; height: 116%; object-fit: cover; } /* marge pour le glissé */
+.chap__txt { display: grid; gap: 1rem clamp(2rem, 6vw, 6rem); margin-top: clamp(2rem, 4vw, 3.5rem); }
+.chap__title { margin: 0; font: 600 clamp(1.7rem, 3vw, 2.8rem)/1.1 var(--f-display); }
+.chap__title::after { content: ""; display: block; width: 3rem; height: 3px; margin-top: 1.2rem; border-radius: 2px; background: var(--c-accent); }
+.chap p { max-width: 40rem; margin: 0; font-size: clamp(1rem, 1.2vw, 1.15rem); line-height: 1.8; color: var(--c-ink-soft); }
+.chap p.chap__end { max-width: 50rem; margin: clamp(3rem, 7vw, 6rem) auto 0; text-align: center; font: 500 clamp(1.4rem, 2.6vw, 2.3rem)/1.4 var(--f-display); color: var(--c-ink); text-wrap: balance; }
 .chap__end em { color: var(--c-accent-ink); }
-/* téléphone et tablette : la scène reste en haut mais en bandeau compact, le texte garde l'essentiel de l'écran */
-@media (max-width: 61.99rem) {
-  .story__media { padding: .5rem 0 .25rem; }
-  .story__media .scene { height: min(26svh, 52vw); } /* le viewBox se centre tout seul dans le bandeau */
-  .story__count { display: none; }
-  .chap { min-height: 0; padding-block: 2.5rem 1rem; }
-  .chap__pic { width: calc(100% - .8rem); }
-}
+@media (max-width: 61.99rem) { .chap__pic { aspect-ratio: 4 / 3; border-radius: 0 4rem 0 4rem !important; } }
+/* ordinateur : titre à gauche, récit à droite, la citation finale sur toute la largeur */
 @media (min-width: 62rem) {
-  .story__body { display: grid; grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); /* le texte d'abord, la scène en accompagnement */ gap: clamp(2rem, 4vw, 4rem); margin-top: 0; }
-  .story__media .scene { max-height: calc(100svh - var(--header-h) - 5rem); }
-  .story__media { order: 2; align-self: start; display: flex; flex-direction: column; justify-content: center; height: 100svh; padding: var(--header-h) 1rem 0 0; background: none; }
-  .story__media::after { display: none; }
-  .chap { min-height: 100svh; }
+  .chap__txt { grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); }
+  .chap__title { grid-column: 1; grid-row: 1 / span 3; }
+  .chap__txt > p { grid-column: 2; }
+  .chap__txt > p.chap__end { grid-column: 1 / -1; }
 }
 
 /* 6. Responsive & mouvement ------------------------------------------------ */

@@ -40,6 +40,7 @@
     "@type": "Organization",
     "name": "Happy Culteur",
     "description": "Équipe de jeunes talents qui s'intègre pleinement à l'activité de ses clients.",
+    "knowsLanguage": ["fr", "en", "de", "es"],
     "url": "https://www.example.com/"
   }
   </script>
@@ -65,7 +66,7 @@
       </nav>
 
       <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="menu">
-        <span class="visually-hidden">Menu</span>
+        <span class="visually-hidden">Menu, </span>
         <span class="nav-toggle__bars" aria-hidden="true"></span>
       </button>
     </div>
@@ -170,7 +171,6 @@
                 </details>
               </li>
             </ol>
-        </div>
       </div>
     </section>
     </div>
@@ -200,6 +200,13 @@
                 <h3>De bonnes conditions de travail</h3>
               </div>
               <p class="reason__text">Nous investissons dans de bonnes conditions de travail : une connexion fiable et une solution de secours en cas de coupure d’électricité. Même quand le réseau nous joue des tours, nous continuons d’avancer.</p>
+            </li>
+            <li class="reason">
+              <svg class="reason__ill" viewBox="0 0 120 96" aria-hidden="true" focusable="false"><path class="ill-bg" d="M0 0H96Q120 0 120 24V96H24Q0 96 0 72Z"/><path class="d w" d="M20 14h40a8 8 0 0 1 8 8v14a8 8 0 0 1-8 8H34l-9 8v-8h-5a8 8 0 0 1-8-8V22a8 8 0 0 1 8-8Z"/><text class="lang" x="40" y="34">EN</text><path class="d y" d="M62 38h36a8 8 0 0 1 8 8v14a8 8 0 0 1-8 8h-3v8l-9-8H62a8 8 0 0 1-8-8V46a8 8 0 0 1 8-8Z"/><text class="lang" x="80" y="58">DE</text><g class="pop"><path class="d w" d="M22 60h22a7 7 0 0 1 7 7v8a7 7 0 0 1-7 7H31l-6 6v-6h-3a7 7 0 0 1-7-7v-8a7 7 0 0 1 7-7Z"/><text class="lang" x="33" y="76">ES</text></g></svg>
+              <div class="reason__head">
+                <h3>Une équipe multilingue</h3>
+              </div>
+              <p class="reason__text">Nos collaborateurs parlent plusieurs langues&nbsp;: nous pouvons traiter vos projets en <strong>français</strong>, en <strong>anglais</strong>, en <strong>allemand</strong> et en <strong>espagnol</strong>.</p>
             </li>
             <li class="reason">
               <svg class="reason__ill" viewBox="0 0 120 96" aria-hidden="true" focusable="false"><path class="ill-bg" d="M0 0H96Q120 0 120 24V96H24Q0 96 0 72Z"/><rect class="d w" x="14" y="16" width="92" height="72" rx="6"/><path class="d" d="M14 30h92M36 9v13M84 9v13"/><rect class="y day" x="22.0" y="38" width="8" height="8" rx="2"/><rect class="y day" x="33.5" y="38" width="8" height="8" rx="2"/><rect class="y day" x="45.0" y="38" width="8" height="8" rx="2"/><rect class="y day" x="56.5" y="38" width="8" height="8" rx="2"/><rect class="y day" x="68.0" y="38" width="8" height="8" rx="2"/><rect class="y day" x="79.5" y="38" width="8" height="8" rx="2"/><rect class="y day" x="91.0" y="38" width="8" height="8" rx="2"/><rect class="y day" x="22.0" y="51" width="8" height="8" rx="2"/><rect class="y day" x="33.5" y="51" width="8" height="8" rx="2"/><rect class="y day" x="45.0" y="51" width="8" height="8" rx="2"/><rect class="y day" x="56.5" y="51" width="8" height="8" rx="2"/><rect class="y day" x="68.0" y="51" width="8" height="8" rx="2"/><rect class="y day" x="79.5" y="51" width="8" height="8" rx="2"/><rect class="y day" x="91.0" y="51" width="8" height="8" rx="2"/><rect class="d w" x="22.0" y="64" width="8" height="8" rx="2"/><rect class="d w" x="33.5" y="64" width="8" height="8" rx="2"/><rect class="d w" x="45.0" y="64" width="8" height="8" rx="2"/><rect class="d w" x="56.5" y="64" width="8" height="8" rx="2"/><rect class="d w" x="68.0" y="64" width="8" height="8" rx="2"/><rect class="d w" x="79.5" y="64" width="8" height="8" rx="2"/><rect class="d w" x="91.0" y="64" width="8" height="8" rx="2"/></svg>
@@ -388,46 +395,54 @@
     </section>
 
     <section class="story" id="histoire" data-label="Notre histoire" aria-labelledby="histoire-titre">
-      <!-- Récit du client en quatre chapitres, une photo de groupe par chapitre ; à côté, une scène au trait raconte l'équipe qui grandit. Photos Unsplash provisoires, à remplacer par les vraies photos de l'équipe. -->
+      <!-- Récit du client en quatre chapitres, une photo de groupe par chapitre. Photos Unsplash provisoires, à remplacer par les vraies photos de l'équipe. -->
       <div class="container">
         <header class="story__head">
           <h2 class="story__title" id="histoire-titre">Notre histoire</h2>
           <p class="story__lead">Happy Culteur est né en 2023, après plusieurs années d’expérience dans le monde de l’externalisation.</p>
         </header>
 
+        <ol class="story__time" aria-hidden="true"> <!-- frise collante : le trait jaune avance avec la lecture (main.js) -->
+          <li>2023</li><li>Depuis</li><li>Ensemble</li><li>Aujourd’hui</li>
+        </ol>
 
-        <div class="story__body">
-          <div class="story__media">
-            <div class="story__frame"></div> <!-- remplacé par la scène au trait (main.js) -->
-            <p class="story__count">Huit en 2023 · une trentaine aujourd’hui</p>
-          </div>
-
-          <ol class="story__chapters">
+        <ol class="story__chapters">
             <li class="chap">
+              <p class="chap__word" aria-hidden="true">2023</p>
               <figure class="chap__pic"><img src="assets/img/histoire/debuts-8-fvuZp32FE.jpg" alt="Les premiers membres de l’équipe réunis, en noir et blanc" width="1200" height="900" loading="lazy" decoding="async"></figure>
-              <h3 class="chap__title"><span>2023</span> Les débuts, à huit</h3>
-              <p>L’aventure a commencé avec une équipe de huit personnes et un premier client qui nous a fait confiance dès nos débuts. À cette époque, nous travaillions encore depuis chez nous.</p>
-              <p>Nous avons appris à avancer ensemble, à nous organiser et à construire notre façon de travailler au fil des projets.</p>
+              <div class="chap__txt">
+                <h3 class="chap__title"><span class="visually-hidden">2023, </span>Les débuts, à huit</h3>
+                <p>L’aventure a commencé avec une équipe de huit personnes et un premier client qui nous a fait confiance dès nos débuts. À cette époque, nous travaillions encore depuis chez nous.</p>
+                <p>Nous avons appris à avancer ensemble, à nous organiser et à construire notre façon de travailler au fil des projets.</p>
+              </div>
             </li>
             <li class="chap">
+              <p class="chap__word" aria-hidden="true">Depuis</p>
               <figure class="chap__pic"><img src="assets/img/histoire/locaux-cdGLbQ5u4c0.jpg" alt="Une partie de l’équipe réunie dans les locaux" width="1200" height="900" loading="lazy" decoding="async"></figure>
-              <h3 class="chap__title"><span>Depuis</span> Une équipe qui a grandi</h3>
-              <p>Depuis, beaucoup de choses ont changé. L’équipe compte aujourd’hui une trentaine de personnes, nous avons nos propres locaux, de meilleurs équipements et une organisation qui s’est construite avec le temps.</p>
+              <div class="chap__txt">
+                <h3 class="chap__title"><span class="visually-hidden">Depuis, </span>Une équipe qui a grandi</h3>
+                <p>Depuis, beaucoup de choses ont changé. L’équipe compte aujourd’hui une trentaine de personnes, nous avons nos propres locaux, de meilleurs équipements et une organisation qui s’est construite avec le temps.</p>
+              </div>
             </li>
             <li class="chap">
+              <p class="chap__word" aria-hidden="true">Ensemble</p>
               <figure class="chap__pic"><img src="assets/img/histoire/ensemble-2_rFy9TFRRc.jpg" alt="Des collègues rient ensemble" width="1200" height="900" loading="lazy" decoding="async"></figure>
-              <h3 class="chap__title"><span>Ensemble</span> Des personnes qui grandissent</h3>
-              <p>Mais la plus belle évolution reste celle des personnes qui ont grandi avec l’entreprise. Certaines ont pris de nouvelles responsabilités, certaines gèrent aujourd’hui leurs propres clients et d’autres ont poursuivi leurs études à l’étranger.</p>
-              <p>Ces trois années n’ont pas toujours été simples, mais elles ont été riches en rencontres, en apprentissages et en remises en question. Chaque personne qui nous a rejoints a apporté quelque chose à Happy Culteur et nous a aussi permis d’évoluer.</p>
+              <div class="chap__txt">
+                <h3 class="chap__title"><span class="visually-hidden">Ensemble, </span>Des personnes qui grandissent</h3>
+                <p>Mais la plus belle évolution reste celle des personnes qui ont grandi avec l’entreprise. Certaines ont pris de nouvelles responsabilités, certaines gèrent aujourd’hui leurs propres clients et d’autres ont poursuivi leurs études à l’étranger.</p>
+                <p>Ces trois années n’ont pas toujours été simples, mais elles ont été riches en rencontres, en apprentissages et en remises en question. Chaque personne qui nous a rejoints a apporté quelque chose à Happy Culteur et nous a aussi permis d’évoluer.</p>
+              </div>
             </li>
             <li class="chap">
+              <p class="chap__word" aria-hidden="true">Aujourd’hui</p>
               <figure class="chap__pic"><img src="assets/img/histoire/aujourdhui-eXe186bFR5Q.jpg" alt="L’équipe réunie, mains jointes au centre" width="1200" height="900" loading="lazy" decoding="async"></figure>
-              <h3 class="chap__title"><span>Aujourd’hui</span> Ce que notre nom veut dire</h3>
-              <p>C’est aussi ce qui a donné tout son sens à notre nom. Nous avons toujours voulu que le travail puisse être un endroit où l’on apprend, où l’on partage et où l’on peut, à notre échelle, rendre une journée un peu meilleure.</p>
-              <p class="chap__end">Aujourd’hui, ce que nous avons construit repose avant tout sur les personnes qui ont fait et qui font encore partie de l’aventure. Et c’est cette manière de <em>grandir ensemble</em> que nous voulons continuer à faire vivre.</p>
+              <div class="chap__txt">
+                <h3 class="chap__title"><span class="visually-hidden">Aujourd’hui, </span>Ce que notre nom veut dire</h3>
+                <p>C’est aussi ce qui a donné tout son sens à notre nom. Nous avons toujours voulu que le travail puisse être un endroit où l’on apprend, où l’on partage et où l’on peut, à notre échelle, rendre une journée un peu meilleure.</p>
+                <p class="chap__end">Aujourd’hui, ce que nous avons construit repose avant tout sur les personnes qui ont fait et qui font encore partie de l’aventure. Et c’est cette manière de <em>grandir ensemble</em> que nous voulons continuer à faire vivre.</p>
+              </div>
             </li>
-          </ol>
-        </div>
+        </ol>
       </div>
     </section>
     </div>
