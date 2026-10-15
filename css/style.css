@@ -319,49 +319,38 @@ html.lenis { scroll-behavior: auto !important; } /* Lenis gère seul la douceur 
 .team:has(.is-driven) .team__bar { display: block; position: absolute; inset: auto var(--gutter) 2rem; height: 2px; background: var(--c-line); }
 .team__bar span { display: block; height: 100%; background: var(--c-accent); transform: scaleX(var(--p, 0)); transform-origin: left; }
 @media (prefers-reduced-motion: reduce) { .team__hint span { animation: none; } }
-@media (prefers-reduced-motion: no-preference) { .js .chap__pic:not(.is-shown) { clip-path: inset(0 50% 0 50%); } } /* révélée par main.js depuis le centre */
-
-/* Notre histoire : récit en magazine. Chaque chapitre = un mot géant (2023, Depuis…), une photo panoramique en feuille,
-   le titre à gauche et le récit à droite ; la dernière phrase devient une grande citation centrée. Animé par main.js. */
-.story { padding-block: calc(var(--header-h) + 2rem) 7rem; background: var(--c-bg); overflow: clip; } /* clip et non hidden : la frise reste collante */
-/* frise collante sous la navbar : quatre étapes, trait jaune qui avance (--p), étape en cours allumée (.is-on) */
-.story__time { position: sticky; top: var(--header-h); z-index: 5; height: 3.4rem; margin: 0; padding: 0; list-style: none; background: var(--c-bg); box-shadow: 0 0 0 100vmax var(--c-bg); clip-path: inset(0 -100vmax); transition: top .4s cubic-bezier(.215, .61, .355, 1); } /* fond blanc sur toute la largeur */
-html:has(.header.is-hidden) .story__time { top: 0; }
-.story__time::before, .story__time::after { content: ""; position: absolute; top: 1.1rem; left: 0; right: 0; height: 2px; background: var(--c-line); }
-.story__time::after { background: var(--c-accent); transform: scaleX(var(--p, 0)); transform-origin: left; }
-.story__time li { position: absolute; top: 1.7rem; font: 700 .72rem/1 var(--f-body); letter-spacing: .14em; text-transform: uppercase; color: var(--c-ink-soft); opacity: .55; transition: opacity .4s, color .4s; white-space: nowrap; }
-.story__time li::before { content: ""; position: absolute; top: calc(-.6rem - 6px); left: 0; width: 12px; height: 12px; border-radius: 50%; background: var(--c-bg); box-shadow: inset 0 0 0 2px var(--c-line); z-index: 1; transition: background .4s, box-shadow .4s, transform .4s; }
-.story__time li:nth-child(2) { left: 33.333%; transform: translateX(-50%); } .story__time li:nth-child(2)::before { left: calc(50% - 6px); }
-.story__time li:nth-child(3) { left: 66.667%; transform: translateX(-50%); } .story__time li:nth-child(3)::before { left: calc(50% - 6px); }
-.story__time li:nth-child(4) { right: 0; } .story__time li:nth-child(4)::before { left: auto; right: 0; }
-.story__time li.is-on { opacity: 1; color: var(--c-ink); }
-.story__time li.is-on::before, .story__time li.is-past::before { background: var(--c-accent); box-shadow: inset 0 0 0 2px var(--c-accent); }
-.story__time li.is-on::before { transform: scale(1.35); }
-@media (max-width: 61.99rem) { .story__time li { font-size: .62rem; letter-spacing: .08em; } .story__time li:not(.is-on) { color: transparent; } } /* téléphone : seule l'étape en cours est écrite */
-.story__head { max-width: 52rem; margin: 0 auto 2rem; text-align: center; }
+/* Notre histoire : lecture pilotée par le défilement. Les mots du récit passent du pâle à l'encre au rythme de la molette, la photo
+   monte, se dézoome et passe du noir et blanc à la couleur (le temps qui passe). Ordinateur : chaque chapitre reste à l'écran le temps
+   de sa lecture (.chap haut, .chap__in collant). Animé par main.js (scrub) ; sans JS ou mouvement réduit, tout est lisible tel quel. */
+.story { padding-block: calc(var(--header-h) + 2rem) 4rem; background: var(--c-bg); overflow: clip; } /* clip : laisse fonctionner le collant */
+.story__head { max-width: 46rem; margin: 0 auto; text-align: center; }
 .story__title { margin: 0; font-size: clamp(2.3rem, 4.6vw, 4.4rem); line-height: 1.02; letter-spacing: -.015em; }
-.story__lead { max-width: 36rem; margin: 1.2rem auto 0; font: 500 clamp(1.1rem, 1.5vw, 1.4rem)/1.5 var(--f-display); color: var(--c-ink-soft); }
-.story__chapters { margin: 0; padding: 0; list-style: none; }
-.chap { padding-top: clamp(3rem, 7vw, 6rem); }
-.chap p.chap__word { max-width: none; margin: 0 0 .1em; font: 600 clamp(3.6rem, 13vw, 12.5rem)/1.12 var(--f-display); letter-spacing: -.04em; color: var(--c-ink); white-space: nowrap; }
-.chap__word::after { content: "."; color: var(--c-accent); }
-.chap:nth-child(even) .chap__word { text-align: right; }
-.chap__pic { position: relative; aspect-ratio: 21 / 9; margin: 0; overflow: hidden; border-radius: 0 var(--leaf) 0 var(--leaf); }
-.chap:nth-child(even) .chap__pic { border-radius: var(--leaf) 0 var(--leaf) 0; }
+.story__lead { max-width: 34rem; margin: 1.2rem auto 0; font: 500 clamp(1.1rem, 1.5vw, 1.4rem)/1.5 var(--f-display); color: var(--c-ink-soft); }
+.story__chapters { margin: 2rem 0 0; padding: 0; list-style: none; counter-reset: chap; }
+.chap { counter-increment: chap; }
+.chap__in { position: relative; display: grid; gap: 1.5rem; padding-block: 2.5rem; isolation: isolate; }
+.chap__in::before { content: "0" counter(chap); position: absolute; z-index: -1; top: 0; right: -.04em; font: 600 clamp(9rem, 34vw, 26rem)/.8 var(--f-display); letter-spacing: -.05em; color: transparent; -webkit-text-stroke: 1.5px var(--c-line); transform: translateY(var(--py, 0)); pointer-events: none; } /* numéro géant au trait, en parallaxe (--py) */
+.chap p.chap__when { margin: 0; font: 600 clamp(2.8rem, 5.5vw, 5rem)/1 var(--f-display); letter-spacing: -.02em; color: var(--c-accent); }
+.chap__pic { position: relative; aspect-ratio: 4 / 3; margin: 0 .6rem .6rem 0; overflow: hidden; border-radius: 0 4rem 0 4rem; }
 .chap__pic img { position: absolute; inset: -8% 0; width: 100%; height: 116%; object-fit: cover; } /* marge pour le glissé */
-.chap__txt { display: grid; gap: 1rem clamp(2rem, 6vw, 6rem); margin-top: clamp(2rem, 4vw, 3.5rem); }
-.chap__title { margin: 0; font: 600 clamp(1.7rem, 3vw, 2.8rem)/1.1 var(--f-display); }
-.chap__title::after { content: ""; display: block; width: 3rem; height: 3px; margin-top: 1.2rem; border-radius: 2px; background: var(--c-accent); }
-.chap p { max-width: 40rem; margin: 0; font-size: clamp(1rem, 1.2vw, 1.15rem); line-height: 1.8; color: var(--c-ink-soft); }
-.chap p.chap__end { max-width: 50rem; margin: clamp(3rem, 7vw, 6rem) auto 0; text-align: center; font: 500 clamp(1.4rem, 2.6vw, 2.3rem)/1.4 var(--f-display); color: var(--c-ink); text-wrap: balance; }
+.chap__title { margin: 0; font: 600 clamp(1.6rem, 2.4vw, 2.3rem)/1.12 var(--f-display); }
+.chap p { max-width: 38rem; margin: 1rem 0 0; font: 500 clamp(1.08rem, 1.35vw, 1.3rem)/1.6 var(--f-body); color: var(--c-ink); }
+.chap p.chap__end { margin-top: 1.4rem; padding-left: 1rem; border-left: 3px solid var(--c-accent); font: 500 clamp(1.15rem, 1.5vw, 1.4rem)/1.5 var(--f-display); }
 .chap__end em { color: var(--c-accent-ink); }
-@media (max-width: 61.99rem) { .chap__pic { aspect-ratio: 4 / 3; border-radius: 0 4rem 0 4rem !important; } }
-/* ordinateur : titre à gauche, récit à droite, la citation finale sur toute la largeur */
+.chap mark { padding-inline: .1em; background: linear-gradient(transparent 62%, rgb(247 183 49 / .5) 62%) no-repeat 0 0 / var(--hl, 100%) 100%; color: inherit; -webkit-box-decoration-break: clone; box-decoration-break: clone; } /* surligneur tracé quand les mots s'allument (--hl) */
+.chap__pic { box-shadow: calc(.6rem * var(--s, 1)) calc(.6rem * var(--s, 1)) 0 var(--c-accent); } /* l'ombre jaune se déploie avec la lecture (--s) */
+/* ordinateur : chaque chapitre tient un écran, collé le temps de sa lecture ; photo et texte s'échangent les côtés d'un chapitre à l'autre */
 @media (min-width: 62rem) {
-  .chap__txt { grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); }
-  .chap__title { grid-column: 1; grid-row: 1 / span 3; }
-  .chap__txt > p { grid-column: 2; }
-  .chap__txt > p.chap__end { grid-column: 1 / -1; }
+  .chap { height: 230svh; } .chap + .chap { margin-top: -35svh; } /* le chapitre suivant arrive pendant que le précédent s’en va : pas d’écran vide */
+  .chap__in { position: sticky; top: 0; height: 100svh; padding: var(--header-h) 0 0; grid-template-columns: minmax(0, 6fr) minmax(0, 5fr); grid-template-rows: auto auto; column-gap: clamp(3rem, 6vw, 6rem); row-gap: 1.2rem; align-content: center; }
+  .chap__in::before { top: 50%; right: -3vw; margin-top: -.4em; } /* côté photo, à moitié derrière elle : ne passe jamais sur le texte */
+  .chap:nth-child(even) .chap__in::before { right: auto; left: -3vw; }
+  .chap__when { grid-area: 1 / 1; }
+  .chap__txt { grid-area: 2 / 1; }
+  .chap__pic { grid-area: 1 / 2 / 3 / 3; align-self: center; margin: 0; border-radius: 0 var(--leaf) 0 var(--leaf); box-shadow: calc(.9rem * var(--s, 1)) calc(.9rem * var(--s, 1)) 0 var(--c-accent); }
+  .chap:nth-child(even) .chap__in { grid-template-columns: minmax(0, 5fr) minmax(0, 6fr); }
+  .chap:nth-child(even) .chap__when, .chap:nth-child(even) .chap__txt { grid-column: 2; }
+  .chap:nth-child(even) .chap__pic { grid-column: 1; border-radius: var(--leaf) 0 var(--leaf) 0; box-shadow: calc(-.9rem * var(--s, 1)) calc(.9rem * var(--s, 1)) 0 var(--c-accent); }
 }
 
 /* 6. Responsive & mouvement ------------------------------------------------ */
@@ -447,10 +436,15 @@ html:has(.header.is-hidden) .story__time { top: 0; }
   .about__inner { grid-template-columns: minmax(0, 1fr); } /* minmax(0,…) : sans lui, un long mot (« professionnellement ») élargit la colonne et fait déborder la page à 320 px */
   .about__intro { order: 0; }
   .hero__title { font-size: clamp(2.1rem, 9.5vw, 4rem); }
-  /* mobile : le rayon passe sous le contenu (dans le flux, jamais par-dessus le texte) et dépasse en bas */
-  .hero { display: flex; flex-direction: column; min-height: 100svh; }
-  .hero__inner { min-height: 0; align-items: start; }
-  .comb { position: relative; order: 1; top: auto; left: 62%; height: auto; width: max(130vw, 30rem); margin-block: 0 -45%; }
+  /* mobile : comme sur ordinateur, le rayon en décor coupé par le bord droit (haut de l'écran, bords fondus),
+     le texte et le bouton calés en bas de l'écran, sous le pouce */
+  .hero { display: flex; flex-direction: column; min-height: 100svh; padding-bottom: max(1.75rem, env(safe-area-inset-bottom)); }
+  .hero__inner { min-height: 0; }
+  .hero__content { padding-block: 0; gap: 1.5rem; }
+  .hero__actions { flex-direction: column; align-items: stretch; gap: 1.1rem; width: 100%; }
+  .hero__actions .btn { justify-content: center; }
+  .hero__trial { align-self: center; }
+  .comb { position: relative; top: auto; left: 0; flex: 1 1 0; width: 150vw; height: 0; min-height: 13rem; margin: -1rem 0 -1rem -12vw; translate: none; }
   :root { --leaf: 4rem; }
   .collab__body { grid-template-columns: 1fr; }
 }
@@ -482,7 +476,7 @@ html:has(.header.is-hidden) .story__time { top: 0; }
 /* Petits écrans en mode slider : même logique « une section = un écran » que sur desktop, le contenu est compacté pour tenir dans 100svh.
    Sous 36rem de haut (téléphone en paysage), le slider est désactivé (index.html / main.js) et la page défile normalement. */
 @media (max-width: 62rem) {
-  .is-slider .hero__inner { min-height: 0; height: calc(100svh - var(--header-h)); }
+  .is-slider .hero__inner { min-height: 0; } /* hauteur du contenu : le rayon prend le reste de l’écran */
   .is-slider .hero__content { gap: 1.25rem; padding-block: 1rem; }
 
   .is-slider .about { padding-block: calc(var(--header-h) + .25rem) 1rem; }
