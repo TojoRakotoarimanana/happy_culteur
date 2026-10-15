@@ -501,43 +501,54 @@
               <div><h3 class="way__title">Nos locaux</h3><address>Ambatomainty, Antananarivo<br>Madagascar</address></div>
             </li>
           </ul>
-
-          <!-- Photo provisoire (Unsplash, Jud Mackrill), à remplacer par une vraie photo de l'équipe -->
-          <figure class="contact__pic">
-            <img src="assets/img/equipe.jpg" alt="" width="1400" height="933" loading="lazy" decoding="async">
-            <figcaption class="contact__quote">Des collaborations durables</figcaption>
-          </figure>
         </div>
 
         <!-- Sans JS : envoi par la messagerie (mailto). Pour un envoi direct, remplacer action par l'URL d'un service de formulaire (ex. Formspree) : main.js l'enverra alors en arrière-plan. -->
-        <form class="form" action="mailto:contact@happyculteur.com" method="post" enctype="text/plain" novalidate>
+        <form class="form" action="mailto:contact@happyculteur.com" method="post" enctype="text/plain" novalidate data-current="1">
+          <!-- Mobile : formulaire par étapes (main.js, classe is-stepped) ; ailleurs ou sans JS, tout est visible -->
+          <div class="form__progress" hidden>
+            <p class="form__count" aria-live="polite">Étape <b>1</b> / 3 · <span>Vous</span></p>
+            <span class="form__bar" aria-hidden="true"><span></span></span>
+          </div>
+          <!-- Abeille au trait qui vole vers le champ actif (main.js) ; décorative -->
+          <span class="form__bee" aria-hidden="true"><span class="form__bee-in"><svg viewBox="0 0 48 40">
+            <defs><clipPath id="bee-body"><ellipse cx="27" cy="26" rx="13" ry="9"/></clipPath></defs>
+            <path class="bee__wing bee__wing--b" d="M25 19C17 15 15 4 21 3c5-1 7 8 4 16z"/>
+            <ellipse class="bee__body" cx="27" cy="26" rx="13" ry="9"/>
+            <g clip-path="url(#bee-body)" class="bee__band"><rect x="23" y="15" width="4" height="22"/><rect x="31" y="15" width="4" height="22"/></g>
+            <path class="bee__band" d="M39.5 24.5 46 26l-6.5 2z"/>
+            <circle class="bee__band" cx="13" cy="24" r="6.5"/>
+            <circle class="bee__eye" cx="11" cy="22.5" r="1.7"/>
+            <path class="bee__antenna" d="M12 18c-1-4-3-6-6-7"/>
+            <path class="bee__wing" d="M28 19c-2-8 3-17 9-15 5 2 0 12-9 15z"/>
+          </svg></span></span>
           <div class="form__grid">
-            <div class="field">
+            <div class="field" data-step="1">
               <label for="f-nom">Nom <span class="req" aria-hidden="true">*</span></label>
               <input id="f-nom" name="Nom" type="text" autocomplete="family-name" placeholder="Votre nom" required aria-describedby="f-nom-err">
               <p class="field__error" id="f-nom-err"></p>
             </div>
-            <div class="field">
+            <div class="field" data-step="1">
               <label for="f-prenom">Prénom <span class="req" aria-hidden="true">*</span></label>
               <input id="f-prenom" name="Prénom" type="text" autocomplete="given-name" placeholder="Votre prénom" required aria-describedby="f-prenom-err">
               <p class="field__error" id="f-prenom-err"></p>
             </div>
-            <div class="field">
+            <div class="field" data-step="1">
               <label for="f-entreprise">Entreprise <span class="req" aria-hidden="true">*</span></label>
-              <input id="f-entreprise" name="Entreprise" type="text" autocomplete="organization" placeholder="Nom de votre entreprise" required aria-describedby="f-entreprise-err">
+              <input id="f-entreprise" name="Entreprise" type="text" autocomplete="organization" placeholder="Votre entreprise" required aria-describedby="f-entreprise-err">
               <p class="field__error" id="f-entreprise-err"></p>
             </div>
-            <div class="field">
+            <div class="field field--half" data-step="2">
               <label for="f-email">Adresse e-mail <span class="req" aria-hidden="true">*</span></label>
               <input id="f-email" name="E-mail" type="email" autocomplete="email" inputmode="email" placeholder="votre@email.com" required aria-describedby="f-email-err">
               <p class="field__error" id="f-email-err"></p>
             </div>
-            <div class="field field--wide">
+            <div class="field field--half" data-step="2">
               <label for="f-tel">Numéro de téléphone</label>
               <input id="f-tel" name="Téléphone" type="tel" autocomplete="tel" placeholder="Votre numéro de téléphone">
             </div>
 
-            <fieldset class="field field--wide choices" aria-describedby="f-besoin-err">
+            <fieldset class="field field--wide choices" data-step="3" aria-describedby="f-besoin-err">
               <legend>Vous recherchez <span class="req" aria-hidden="true">*</span><span class="visually-hidden"> (au moins un choix, obligatoire)</span></legend>
               <label class="choice"><input type="checkbox" name="Prestations" value="Service client &amp; SAV"><span>Service client &amp; SAV</span></label>
               <label class="choice"><input type="checkbox" name="Prestations" value="Téléprospection &amp; prise de rendez-vous"><span>Téléprospection &amp; prise de <span class="nb">rendez-vous</span></span></label>
@@ -547,13 +558,17 @@
               <p class="field__error" id="f-besoin-err"></p>
             </fieldset>
 
-            <div class="field field--wide">
+            <div class="field field--wide" data-step="3">
               <label for="f-message">Parlez-nous de votre besoin <span class="req" aria-hidden="true">*</span></label>
-              <textarea id="f-message" name="Message" rows="5" placeholder="Décrivez-nous votre projet, vos besoins ou toute information utile…" required aria-describedby="f-message-err" data-lenis-prevent></textarea>
+              <textarea id="f-message" name="Message" rows="3" placeholder="Décrivez-nous votre projet, vos besoins ou toute information utile…" required aria-describedby="f-message-err" data-lenis-prevent></textarea>
               <p class="field__error" id="f-message-err"></p>
             </div>
           </div>
 
+          <div class="form__nav" hidden>
+            <button class="form__prev" type="button"><span aria-hidden="true">←</span> Retour</button>
+            <button class="btn form__next" type="button">Suivant <span aria-hidden="true">→</span></button>
+          </div>
           <button class="btn form__submit" type="submit">Envoyer ma demande <span aria-hidden="true">→</span></button>
           <p class="form__status" role="status" aria-live="polite"></p>
           <p class="form__note"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="5" y="10.5" width="14" height="10" rx="2"/><path d="M8 10.5V8a4 4 0 0 1 8 0v2.5"/></svg>Vos informations restent confidentielles et ne seront utilisées que pour répondre à votre demande.</p>
@@ -562,17 +577,43 @@
     </section>
 
     <div class="footer__bar">
-      <div class="container footer__inner">
-        <a class="footer__logo" href="#accueil" aria-label="Happy Culteur, retour à l'accueil"><img src="assets/img/logo-happy-culteur.svg" alt="" width="176" height="128" loading="lazy"></a>
-        <nav class="footer__nav" aria-label="Plan du site">
-          <ul>
-            <li><a href="#qui-sommes-nous">Qui <span class="nb">sommes-nous</span> ?</a></li>
-            <li><a href="#services">Nos services</a></li>
-            <li><a href="#equipe">Notre équipe</a></li>
-            <li><a href="#histoire">Notre histoire</a></li>
-          </ul>
-        </nav>
-        <p class="footer__legal">© 2026 Happy Culteur · Antananarivo, Madagascar</p>
+      <div class="container">
+        <div class="footer__grid">
+          <div class="footer__brand">
+            <a class="footer__logo" href="#accueil" aria-label="Happy Culteur, retour à l'accueil"><img src="assets/img/logo-happy-culteur.svg" alt="" width="176" height="128" loading="lazy"></a>
+            <p class="footer__motto">Cultiver des talents, <em>faire grandir</em> des projets.</p>
+          </div>
+          <nav class="footer__col" aria-label="Plan du site">
+            <p class="footer__head">Le site</p>
+            <ul>
+              <li><a href="#qui-sommes-nous">Qui <span class="nb">sommes-nous</span> ?</a></li>
+              <li><a href="#services">Nos services</a></li>
+              <li><a href="#equipe">Notre équipe</a></li>
+              <li><a href="#histoire">Notre histoire</a></li>
+            </ul>
+          </nav>
+          <div class="footer__col">
+            <p class="footer__head">Nos services</p>
+            <ul>
+              <li><a href="#services">Service client &amp; SAV</a></li>
+              <li><a href="#services">Téléprospection</a></li>
+              <li><a href="#services">Community management</a></li>
+              <li><a href="#services">Assistance virtuelle</a></li>
+            </ul>
+          </div>
+          <div class="footer__col">
+            <p class="footer__head">Nous joindre</p>
+            <ul>
+              <li><a href="mailto:contact@happyculteur.com">contact@happyculteur.com</a></li>
+              <li><a href="tel:+261341234567">+261 34 12 345 67</a></li>
+              <li>Antananarivo, Madagascar</li>
+            </ul>
+          </div>
+        </div>
+        <div class="footer__base">
+          <p class="footer__legal">© 2026 Happy Culteur. Tous droits réservés.</p>
+          <a class="footer__top" href="#accueil">Retour en haut <span aria-hidden="true">↑</span></a>
+        </div>
       </div>
     </div>
   </footer>

@@ -56,6 +56,34 @@
       const el = group.contains(e.target) ? group : e.target;
       if (fields.includes(el)) check(el);
     };
+    // Mobile : une étape à la fois ; « Suivant » vérifie les champs de l'étape en cours
+    const steps = { 1: 'Vous', 2: 'Vous joindre', 3: 'Votre besoin' };
+    const nav = form.querySelector('.form__nav');
+    const progress = form.querySelector('.form__progress');
+    const stepOf = (el) => +el.closest('[data-step]').dataset.step;
+    const show = (n, focus = true) => {
+      form.dataset.current = n;
+      form.style.setProperty('--step', n);
+      progress.querySelector('b').textContent = n;
+      progress.querySelector('span').textContent = steps[n];
+      const first = form.querySelector(`[data-step="${n}"] input, [data-step="${n}"] textarea`);
+      if (focus && form.classList.contains('is-stepped')) first.focus({ preventScroll: true });
+    };
+    const stepped = matchMedia('(max-width: 40rem)');
+    const setStepped = () => {
+      form.classList.toggle('is-stepped', stepped.matches);
+      nav.hidden = progress.hidden = !stepped.matches;
+      show(1, false);
+    };
+    setStepped();
+    stepped.addEventListener('change', setStepped);
+    form.querySelector('.form__next').addEventListener('click', () => {
+      const n = +form.dataset.current;
+      const bad = fields.filter((el) => stepOf(el) === n && !check(el));
+      if (bad.length) { tried = true; (bad[0] === group ? boxes[0] : bad[0]).focus(); return; }
+      show(n + 1);
+    });
+    form.querySelector('.form__prev').addEventListener('click', () => show(+form.dataset.current - 1));
     form.addEventListener('input', recheck);
     form.addEventListener('change', recheck);
     form.addEventListener('submit', async (e) => {
@@ -64,6 +92,7 @@
       const bad = fields.filter((el) => !check(el));
       if (bad.length) {
         say('Merci de compléter les champs indiqués.', 'is-error');
+        if (form.classList.contains('is-stepped')) show(stepOf(bad[0]), false);
         (bad[0] === group ? boxes[0] : bad[0]).focus();
         return;
       }
@@ -83,6 +112,7 @@
         if (!res.ok) throw new Error(res.status);
         form.reset();
         tried = false;
+        show(1, false);
         say('Merci ! Votre demande est bien partie, nous revenons vers vous très vite.', 'is-ok');
       } catch {
         say('L’envoi n’a pas abouti. Réessayez dans un instant ou écrivez-nous à contact@happyculteur.com.', 'is-error');
@@ -936,10 +966,9 @@
       ['.svc__ill .ill-bg, .reason__ill .ill-bg', 14],  // forme de fond des illustrations (unités du dessin SVG)
       ['.chap__num', 90],                               // grand numéro au trait derrière chaque chapitre
       ['.chap__pic', -40],                              // photo du chapitre, devant son numéro et son texte
-      ['.contact__pic img', 30],                        // photo du contact qui glisse dans son cadre en feuille
     ];
     layers.forEach(([sel, d]) => gsap.utils.toArray(sel).forEach((el) => gsap.fromTo(el, { y: -d }, { y: d, ease: 'none', immediateRender: false,
-      scrollTrigger: { trigger: el.closest('svg, .chap, .contact__pic') || el, start: 'top bottom', end: 'bottom top', scrub: true } })));
+      scrollTrigger: { trigger: el.closest('svg, .chap') || el, start: 'top bottom', end: 'bottom top', scrub: true } })));
 
     // Sortie de « Qui sommes-nous » vers « Pourquoi collaborer » : les plans défilent à des vitesses différentes — la feuille jaune
     // (la plus lointaine) puis la photo traînent, le texte (premier plan) part plus vite que la page, donc jamais coupé par le bord —,
@@ -979,18 +1008,76 @@
       .fromTo(way.querySelector('.way__icon'), { scale: 0, rotation: -30 }, { scale: 1, rotation: 0, duration: 0.7, ease: 'back.out(2.2)' }, 0)
       .fromTo(way.querySelector('div'), { opacity: 0, x: -16 }, { opacity: 1, x: 0, duration: 0.7 }, 0.12));
 
-    const pic = q('.contact__pic')[0];
-    gsap.timeline({ scrollTrigger: enter(pic), defaults: { ease: 'power3.out' } })
-      .fromTo(pic, { opacity: 0, y: 40 }, { opacity: 1, y: 0, duration: 0.9 }, 0)
-      .fromTo(pic.querySelector('img'), { scale: 1.25 }, { scale: 1, duration: 1.6, ease: 'power2.out' }, 0)
-      .fromTo(pic.querySelector('figcaption'), { opacity: 0, y: 20 }, { opacity: 1, y: 0, duration: 0.8 }, 0.5);
-
     const card = q('.form')[0];
     gsap.fromTo(card, { opacity: 0, y: 50 }, { opacity: 1, y: 0, duration: 0.9, ease: 'power3.out', scrollTrigger: enter(card) });
     card.querySelectorAll('.form__grid > *, .form__submit, .form__note').forEach((el) =>
       gsap.fromTo(el, { opacity: 0, y: 18 }, { opacity: 1, y: 0, duration: 0.6, delay: 0.15, ease: 'power3.out', clearProps: 'transform', scrollTrigger: enter(el) }));
 
     return () => split?.revert();
+  });
+
+  /* ---------- Nous contacter : abeille qui vole vers le champ actif (focus, clic, Tab, étape suivante) ---------- */
+  // Elle se pose au bout du libellé du champ (ou au-dessus du bouton), en arc, tournée dans le sens du vol ; transform et opacité seulement
+  gsap.matchMedia().add('(prefers-reduced-motion: no-preference)', () => {
+    const form = document.querySelector('.form');
+    const bee = form?.querySelector('.form__bee');
+    if (!bee) return;
+    const flip = bee.querySelector('svg');  // retournement : sur le dessin
+    const hover = bee.firstElementChild;     // petits 8 sur place : sur .form__bee-in ; le vol déplace .form__bee
+    let shown = false, flight;
+    const spot = (el) => { // position de pose, relative au formulaire (lue au focus, pas pendant le défilement)
+      const box = form.getBoundingClientRect();
+      const field = el.closest('.field');
+      const label = field?.querySelector('label, legend');
+      let r = el.getBoundingClientRect();
+      if (label) { const text = document.createRange(); text.selectNodeContents(label); r = text.getBoundingClientRect(); } // le texte, pas la boîte pleine largeur
+      const w = bee.offsetWidth;
+      return field
+        ? { x: Math.min(r.right + 10, box.right - w) - box.left, y: r.top - box.top - w * 0.6 }
+        : { x: r.right - box.left - w * 0.9, y: r.top - box.top - w * 0.75 };
+    };
+    // Sur place : un 8 couché (lemniscate de Gerono), lent, l'abeille penche dans le sens où elle va ; joué seulement formulaire à l'écran
+    const eight = { a: 0 };
+    const idle = gsap.to(eight, { a: Math.PI * 2, duration: 3.6, ease: 'none', repeat: -1, paused: true,
+      onUpdate: () => {
+        const s = Math.sin(eight.a), c = Math.cos(eight.a);
+        gsap.set(hover, { x: 9 * s, y: 5 * s * c, rotation: 8 * c });
+      } });
+    const io = new IntersectionObserver(([e]) => { if (shown) idle[e.isIntersecting ? 'play' : 'pause'](); });
+    io.observe(form);
+    const face = (vx) => { if (Math.abs(vx) > 0.4) gsap.set(flip, { scaleX: vx > 0 ? -1 : 1 }); }; // tête (dessinée à gauche) dans le sens du vol
+    const fly = (e) => {
+      if (!e.target.matches('input, textarea, button')) return;
+      const to = spot(e.target);
+      flight?.kill();
+      if (!shown) { // première fois : elle arrive d'en haut à droite
+        shown = true;
+        gsap.set(bee, { x: to.x + 140, y: to.y - 110, opacity: 0 });
+        idle.play();
+      }
+      const x0 = gsap.getProperty(bee, 'x'), y0 = gsap.getProperty(bee, 'y');
+      const dx = to.x - x0, dy = to.y - y0, dist = Math.hypot(dx, dy);
+      if (dist < 4) return;
+      // Trajet en S : la droite de départ à l'arrivée, déportée de part et d'autre (perpendiculaire) par une sinusoïde complète, plus un léger arc vers le haut
+      const nx = -dy / dist, ny = dx / dist, amp = Math.min(46, 14 + dist * 0.12) * (Math.random() < 0.5 ? -1 : 1);
+      const lift = 10 + dist * 0.04;
+      const p = { t: 0 };
+      let px = x0, py = y0, tilt = 0;
+      gsap.to(bee, { opacity: 1, duration: 0.4, ease: 'sine.out' });
+      flight = gsap.to(p, { t: 1, duration: gsap.utils.clamp(0.9, 1.7, dist / 380), ease: 'sine.inOut',
+        onUpdate: () => {
+          const w = Math.sin(2 * Math.PI * p.t) * Math.sin(Math.PI * p.t); // S qui s'éteint au départ et à l'arrivée
+          const x = x0 + dx * p.t + nx * amp * w;
+          const y = y0 + dy * p.t + ny * amp * w - lift * Math.sin(Math.PI * p.t);
+          const vx = x - px, vy = y - py;
+          face(vx);
+          tilt += (gsap.utils.clamp(-20, 20, (vy / (Math.abs(vx) + 1)) * 20) - tilt) * 0.2; // inclinaison lissée selon la pente du vol
+          gsap.set(bee, { x, y, rotation: p.t > 0.92 ? tilt * (1 - p.t) / 0.08 : tilt });
+          px = x; py = y;
+        } });
+    };
+    form.addEventListener('focusin', fly);
+    return () => { form.removeEventListener('focusin', fly); flight?.kill(); idle.kill(); io.disconnect(); gsap.set([bee, hover, flip], { clearProps: 'all' }); };
   });
 
   /* ---------- Bouton : attraction douce + lueur qui suit le curseur (souris précise, hors reduced-motion) ---------- */
