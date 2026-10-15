@@ -52,8 +52,7 @@
   const smooth = matchMedia('(prefers-reduced-motion: no-preference)').matches;
 
   /* ---------- Header « directionnel » : se cache quand on descend, revient dès qu'on remonte ---------- */
-  const slideHeader = gsap.quickTo(header, 'yPercent', { duration: smooth ? 0.4 : 0, ease: 'power3.out' });
-  const moveHeader = (v) => { header.classList.toggle('is-hidden', v < 0); slideHeader(v); }; // is-hidden : la frise de « Notre histoire » remonte avec
+  const moveHeader = gsap.quickTo(header, 'yPercent', { duration: smooth ? 0.4 : 0, ease: 'power3.out' });
   let lastY = window.scrollY;
   window.addEventListener('scroll', () => {
     const y = window.scrollY;
@@ -749,33 +748,72 @@
     return () => crew.classList.remove('is-driven');
   });
 
-  /* ---------- Notre histoire : récit en magazine ----------
-     Chaque élément part à l'instant où il entre à l'écran : le mot géant monte lettre par lettre de son masque, la photo s'ouvre
-     depuis le centre en se dézoomant puis glisse dans son cadre, le titre et le récit arrivent élément par élément. */
-  gsap.matchMedia().add('(prefers-reduced-motion: no-preference)', () => {
-    const story = document.querySelector('.story'), enter = (trigger) => ({ trigger, start: 'top bottom' });
-    story.querySelectorAll('.story__head > *, .chap__txt > *').forEach((el) => gsap.from(el, { y: 40, autoAlpha: 0, duration: 0.8, ease: 'power3.out', scrollTrigger: enter(el) }));
-    const words = [...story.querySelectorAll('.chap__word')].map((w) => window.SplitText ? SplitText.create(w, { type: 'chars', mask: 'chars' }) : { chars: [w], revert() {} });
-    words.forEach((s, i) => gsap.from(s.chars, { yPercent: 110, duration: 1, stagger: 0.05, ease: 'power4.out', scrollTrigger: enter(story.querySelectorAll('.chap__word')[i]) }));
-    story.querySelectorAll('.chap__pic').forEach((pic) => {
-      const img = pic.querySelector('img');
-      gsap.fromTo(pic, { clipPath: 'inset(0% 50% 0% 50%)' }, { clipPath: 'inset(0% 0% 0% 0%)', duration: 1.4, ease: 'power4.inOut', clearProps: 'clipPath', onStart: () => pic.classList.add('is-shown'), scrollTrigger: enter(pic) });
-      gsap.from(img, { scale: 1.35, duration: 1.8, ease: 'power3.out', scrollTrigger: enter(pic) });
-      gsap.fromTo(img, { yPercent: -6 }, { yPercent: 6, ease: 'none', scrollTrigger: { trigger: pic, start: 'top bottom', end: 'bottom top', scrub: true } });
-    });
-    return () => words.forEach((s) => s.revert());
-  });
-
-  /* ---------- Notre histoire : frise du temps ----------
-     Le trait jaune va d'une étape à la suivante pendant qu'on lit le chapitre correspondant ; l'étape en cours s'allume,
-     les passées restent jaunes. Suit la lecture (milieu de l'écran), pas l'entrée à l'écran : c'est un repère de progression. */
+  /* ---------- Notre histoire : lecture pilotée par le défilement ----------
+     Tout est en scrub, dès que le chapitre entre à l'écran : la photo arrive en pivotant, se dézoome et passe du noir et blanc à la couleur,
+     son ombre jaune se déploie, elle se penche avec la vitesse de la molette ; la date monte lettre par lettre, le titre arrive, un numéro
+     géant au trait défile derrière en parallaxe ; les mots du récit passent du pâle à l'encre en remontant, au rythme de la molette (SplitText), et
+     les mots clés se surlignent en jaune quand on les atteint. Ordinateur : le chapitre est collé pendant la lecture (CSS) puis s'estompe
+     en partant. Mobile : chaque bloc suit son propre passage à l'écran. */
   {
-    const time = document.querySelector('.story__time'), steps = [...time.children], chaps = [...document.querySelectorAll('.chap')], n = chaps.length - 1;
-    const mark = (i) => steps.forEach((s, j) => { s.classList.toggle('is-on', j === i); s.classList.toggle('is-past', j < i); });
-    chaps.forEach((c, i) => {
-      ScrollTrigger.create({ trigger: c, start: 'top center', end: 'bottom center', onToggle: (st) => st.isActive ? mark(i) : !i && st.direction < 0 && mark(-1) });
-      if (i < n) gsap.fromTo(time, { '--p': i / n }, { '--p': (i + 1) / n, ease: 'none', immediateRender: !i,
-        scrollTrigger: { trigger: c, start: 'top center', endTrigger: chaps[i + 1], end: 'top center', scrub: true } });
+    const story = document.querySelector('.story'), chaps = [...story.querySelectorAll('.chap')];
+    const split = (els) => window.SplitText ? SplitText.create(els, { type: 'words' }) : { words: [], revert() {} };
+    // allume les mots de `words` entre `at` et `at + span` dans la timeline ; chaque <mark> se surligne pendant que ses mots s'allument
+    const light = (tl, words, at, span) => {
+      tl.fromTo(words, { opacity: 0.12, yPercent: 35 }, { opacity: 1, yPercent: 0, ease: 'power2.out', duration: 0.05, stagger: { amount: span } }, at);
+      [...new Set(words.map((w) => w.closest('mark')).filter(Boolean))].forEach((m) => {
+        const own = words.filter((w) => m.contains(w));
+        tl.fromTo(m, { '--hl': '0%' }, { '--hl': '100%', ease: 'none', duration: span * own.length / words.length }, at + span * words.indexOf(own[0]) / words.length);
+      });
+    };
+    // la photo arrive en pivotant depuis son côté (side = 1 : vient de la droite, -1 : de la gauche), puis se pose
+    const photo = (tl, pic, reveal, side = 1) => tl
+      .fromTo(pic, { clipPath: 'inset(100% 0% 0% 0%)', rotation: 7 * side, xPercent: 12 * side }, { clipPath: 'inset(-10% -10% -10% -10%)', rotation: 0, xPercent: 0, ease: 'power3.out', duration: reveal }, 0)
+      .fromTo(pic, { '--s': 0 }, { '--s': 1, ease: 'power2.out', duration: 0.2 }, reveal * 0.8)
+      .fromTo(pic.querySelector('img'), { scale: 1.35, yPercent: -6, filter: 'grayscale(1)' }, { scale: 1, yPercent: 6, filter: 'grayscale(0)', ease: 'none', duration: 1 }, 0);
+    const chars = (el) => window.SplitText ? SplitText.create(el, { type: 'chars', mask: 'chars' }) : { chars: [el], revert() {} };
+    const mm = gsap.matchMedia();
+    mm.add('(prefers-reduced-motion: no-preference)', () => {
+      // les photos se penchent selon la vitesse de la molette, puis se redressent
+      const lean = [...story.querySelectorAll('.chap__pic img')].map((img) => gsap.quickTo(img, 'skewY', { duration: 0.5, ease: 'power3.out' }));
+      ScrollTrigger.create({ trigger: story, start: 'top bottom', end: 'bottom top', onUpdate: (self) => { const k = gsap.utils.clamp(-5, 5, self.getVelocity() / -400); lean.forEach((q) => q(k)); } });
+      const lead = story.querySelector('.story__lead'), s = split(lead);
+      gsap.from(story.querySelector('.story__title'), { y: 40, autoAlpha: 0, duration: 0.8, ease: 'power3.out', scrollTrigger: { trigger: story, start: 'top bottom' } });
+      light(gsap.timeline({ scrollTrigger: { trigger: lead, start: 'top bottom', end: 'bottom 60%', scrub: 0.6 } }), s.words, 0, 1);
+      return () => s.revert();
+    });
+    mm.add('(min-width: 62rem) and (prefers-reduced-motion: no-preference)', () => {
+      const splits = [];
+      chaps.forEach((c, i) => {
+        const s = split(c.querySelectorAll('.chap__txt p'));
+        const tl = gsap.timeline({ scrollTrigger: { trigger: c, start: 'top bottom', end: 'bottom bottom', scrub: 0.6 } }); // 0 → 0,43 : le chapitre monte ; ensuite il est collé
+        const when = chars(c.querySelector('.chap__when'));
+        photo(tl, c.querySelector('.chap__pic'), 0.4, i % 2 ? -1 : 1)
+          .from(when.chars, { yPercent: 110, rotation: 8, duration: 0.1, stagger: 0.02, ease: 'power3.out' }, 0.2)
+          .from(c.querySelector('.chap__title'), { y: 40, autoAlpha: 0, duration: 0.12 }, 0.28)
+          .fromTo(c.querySelector('.chap__in'), { '--py': '30vh' }, { '--py': '-25vh', ease: 'none', duration: 1 }, 0);
+        splits.push(when);
+        light(tl, s.words, 0.42, 0.5);
+        if (i < chaps.length - 1) gsap.fromTo(c.querySelector('.chap__in'), { autoAlpha: 1, scale: 1 }, { autoAlpha: 0.1, scale: 0.94, ease: 'power1.in', // s'estompe en laissant la place au suivant
+          scrollTrigger: { trigger: c, start: 'bottom bottom', end: 'bottom 30%', scrub: true } });
+        splits.push(s);
+      });
+      return () => splits.forEach((s) => s.revert());
+    });
+    mm.add('(max-width: 61.99rem) and (prefers-reduced-motion: no-preference)', () => {
+      const splits = chaps.map((c, i) => {
+        const pic = c.querySelector('.chap__pic');
+        const when = chars(c.querySelector('.chap__when'));
+        photo(gsap.timeline({ scrollTrigger: { trigger: pic, start: 'top bottom', end: 'bottom 40%', scrub: 0.6 } }), pic, 0.5, i % 2 ? -1 : 1);
+        gsap.from(when.chars, { yPercent: 110, rotation: 8, duration: 0.8, stagger: 0.05, ease: 'power3.out', scrollTrigger: { trigger: c.querySelector('.chap__when'), start: 'top bottom' } });
+        gsap.from(c.querySelector('.chap__title'), { y: 30, autoAlpha: 0, duration: 0.8, ease: 'power3.out', scrollTrigger: { trigger: c.querySelector('.chap__title'), start: 'top bottom' } });
+        gsap.fromTo(c.querySelector('.chap__in'), { '--py': '12vh' }, { '--py': '-12vh', ease: 'none', scrollTrigger: { trigger: c, start: 'top bottom', end: 'bottom top', scrub: true } });
+        return [when, ...[...c.querySelectorAll('.chap__txt p')].map((p) => {
+          const s = split(p);
+          light(gsap.timeline({ scrollTrigger: { trigger: p, start: 'top bottom', end: 'bottom 55%', scrub: 0.6 } }), s.words, 0, 1);
+          return s;
+        })];
+      }).flat();
+      return () => splits.forEach((s) => s.revert());
     });
   }
 
