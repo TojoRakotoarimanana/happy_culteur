@@ -120,6 +120,9 @@
   /* ---------- Header « directionnel » : se cache quand on descend, revient dès qu'on remonte ---------- */
   const moveHeader = gsap.quickTo(header, 'yPercent', { duration: smooth ? 0.4 : 0, ease: 'power3.out' });
   let lastY = window.scrollY;
+  // hauteur lue une fois (et au redimensionnement) : la lire dans le gestionnaire de scroll forçait une mise en page à chaque image
+  let headerH = header.offsetHeight;
+  window.addEventListener('resize', () => { headerH = header.offsetHeight; });
   window.addEventListener('scroll', () => {
     const y = window.scrollY;
     header.classList.toggle('is-scrolled', y > 10); // fond blanc dès qu'on a quitté le haut de page
@@ -127,7 +130,7 @@
     if (traveling) { lastY = y; moveHeader(0); return; } // trajet lancé depuis la navbar : elle reste visible
     if (document.documentElement.classList.contains('svc-lock')) { lastY = y; return; } // feuille de détail ouverte : le verrou / la barre d'adresse décalent le scroll, ce n'est pas l'utilisateur qui remonte
     if (y <= 10 || y < lastY || header.classList.contains('is-open')) moveHeader(0);
-    else if (y > header.offsetHeight) moveHeader(-100);
+    else if (y > headerH) moveHeader(-100);
     lastY = y;
   }, { passive: true });
   header.addEventListener('focusin', () => moveHeader(0)); // navigation clavier : le header ne reste jamais caché sur un lien focalisé
@@ -154,10 +157,12 @@
   };
   // Sous le voile, `done(true)` est appelé avant qu'il ne s'efface (retour vers un panneau : il s'affiche sans transition)
   let traveling = false;
+  let leaveStory = null; // posé par « Notre histoire » : un trajet libère l'arrêt sur chapitre
   const travel = (target, done) => {
     const at = () => (typeof target === 'number' ? target : target.getBoundingClientRect().top + window.scrollY); // relu à chaque étape : la page a pu bouger
     const dist = at() - window.scrollY, vh = window.innerHeight;
     const end = (veiled) => { traveling = false; if (done) done(veiled); };
+    leaveStory?.();
     traveling = true;
     if (target.id) setActiveLink(target.id); // lien actif tout de suite, sans défiler sur ceux des sections traversées
     if (!smooth) return glide(at(), 0, end);
@@ -815,72 +820,153 @@
     return () => crew.classList.remove('is-driven');
   });
 
-  /* ---------- Notre histoire : lecture pilotée par le défilement ----------
-     Tout est en scrub, dès que le chapitre entre à l'écran : la photo arrive en pivotant, se dézoome et passe du noir et blanc à la couleur,
-     son ombre jaune se déploie, elle se penche avec la vitesse de la molette ; la date monte lettre par lettre, le titre arrive, un numéro
-     géant au trait défile derrière en parallaxe ; les mots du récit passent du pâle à l'encre en remontant, au rythme de la molette (SplitText), et
-     les mots clés se surlignent en jaune quand on les atteint. Ordinateur : le chapitre est collé pendant la lecture (CSS) puis s'estompe
-     en partant. Mobile : chaque bloc suit son propre passage à l'écran. */
+  /* ---------- Notre histoire : un chapitre à la fois ----------
+     Le défilement s'arrête sur chaque chapitre, centré à l'écran (plus haut que l'écran, sur mobile : calé sous la navbar puis lu par
+     tranches), et son animation se joue alors d'un trait, en temps réel : pas de scrub, donc fluide, et pratique au doigt.
+     Molette, swipe et flèches avancent d'un arrêt ; avant le premier et après le dernier chapitre, le défilement redevient libre. */
   {
     const story = document.querySelector('.story'), chaps = [...story.querySelectorAll('.chap')];
     const split = (els) => window.SplitText ? SplitText.create(els, { type: 'words' }) : { words: [], revert() {} };
-    // allume les mots de `words` entre `at` et `at + span` dans la timeline ; chaque <mark> se surligne pendant que ses mots s'allument
+    const chars = (el) => window.SplitText ? SplitText.create(el, { type: 'chars', mask: 'chars' }) : { chars: [el], revert() {} };
+    // allume les mots de `words` entre `at` et `at + span` ; chaque <mark> se surligne pendant que ses mots s'allument
     const light = (tl, words, at, span) => {
-      tl.fromTo(words, { opacity: 0.12, yPercent: 35 }, { opacity: 1, yPercent: 0, ease: 'power2.out', duration: 0.05, stagger: { amount: span } }, at);
+      if (!words.length) return;
+      tl.fromTo(words, { opacity: 0.12, yPercent: 35 }, { opacity: 1, yPercent: 0, ease: 'power2.out', duration: 0.5, stagger: { amount: span } }, at);
       [...new Set(words.map((w) => w.closest('mark')).filter(Boolean))].forEach((m) => {
         const own = words.filter((w) => m.contains(w));
-        tl.fromTo(m, { '--hl': '0%' }, { '--hl': '100%', ease: 'none', duration: span * own.length / words.length }, at + span * words.indexOf(own[0]) / words.length);
+        tl.fromTo(m, { '--hl': '0%' }, { '--hl': '100%', ease: 'power1.inOut', duration: 0.5 + span * own.length / words.length }, at + span * words.indexOf(own[0]) / words.length);
       });
     };
-    // la photo arrive en pivotant depuis son côté (side = 1 : vient de la droite, -1 : de la gauche), puis se pose
-    const photo = (tl, pic, reveal, side = 1) => tl
-      .fromTo(pic, { clipPath: 'inset(100% 0% 0% 0%)', rotation: 7 * side, xPercent: 12 * side }, { clipPath: 'inset(-10% -10% -10% -10%)', rotation: 0, xPercent: 0, ease: 'power3.out', duration: reveal }, 0)
-      .fromTo(pic, { '--s': 0 }, { '--s': 1, ease: 'power2.out', duration: 0.2 }, reveal * 0.8)
-      .fromTo(pic.querySelector('img'), { scale: 1.35, yPercent: -6, filter: 'grayscale(1)' }, { scale: 1, yPercent: 6, filter: 'grayscale(0)', ease: 'none', duration: 1 }, 0);
-    const chars = (el) => window.SplitText ? SplitText.create(el, { type: 'chars', mask: 'chars' }) : { chars: [el], revert() {} };
-    const mm = gsap.matchMedia();
-    mm.add('(prefers-reduced-motion: no-preference)', () => {
-      // les photos se penchent selon la vitesse de la molette, puis se redressent
-      const lean = [...story.querySelectorAll('.chap__pic img')].map((img) => gsap.quickTo(img, 'skewY', { duration: 0.5, ease: 'power3.out' }));
-      ScrollTrigger.create({ trigger: story, start: 'top bottom', end: 'bottom top', onUpdate: (self) => { const k = gsap.utils.clamp(-5, 5, self.getVelocity() / -400); lean.forEach((q) => q(k)); } });
-      const lead = story.querySelector('.story__lead'), s = split(lead);
-      gsap.from(story.querySelector('.story__title'), { y: 40, autoAlpha: 0, duration: 0.8, ease: 'power3.out', scrollTrigger: { trigger: story, start: 'top bottom' } });
-      light(gsap.timeline({ scrollTrigger: { trigger: lead, start: 'top bottom', end: 'bottom 60%', scrub: 0.6 } }), s.words, 0, 1);
-      return () => s.revert();
-    });
-    mm.add('(min-width: 62rem) and (prefers-reduced-motion: no-preference)', () => {
+
+    gsap.matchMedia().add('(prefers-reduced-motion: no-preference)', () => {
+      if (!st) return;
+      story.classList.add('is-stepped');
       const splits = [];
-      chaps.forEach((c, i) => {
-        const s = split(c.querySelectorAll('.chap__txt p'));
-        const tl = gsap.timeline({ scrollTrigger: { trigger: c, start: 'top bottom', end: 'bottom bottom', scrub: 0.6 } }); // 0 → 0,43 : le chapitre monte ; ensuite il est collé
-        const when = chars(c.querySelector('.chap__when'));
-        photo(tl, c.querySelector('.chap__pic'), 0.4, i % 2 ? -1 : 1)
-          .from(when.chars, { yPercent: 110, rotation: 8, duration: 0.1, stagger: 0.02, ease: 'power3.out' }, 0.2)
-          .from(c.querySelector('.chap__title'), { y: 40, autoAlpha: 0, duration: 0.12 }, 0.28)
-          .fromTo(c.querySelector('.chap__in'), { '--py': '30vh' }, { '--py': '-25vh', ease: 'none', duration: 1 }, 0);
-        splits.push(when);
-        light(tl, s.words, 0.42, 0.5);
-        if (i < chaps.length - 1) gsap.fromTo(c.querySelector('.chap__in'), { autoAlpha: 1, scale: 1 }, { autoAlpha: 0.1, scale: 0.94, ease: 'power1.in', // s'estompe en laissant la place au suivant
-          scrollTrigger: { trigger: c, start: 'bottom bottom', end: 'bottom 30%', scrub: true } });
-        splits.push(s);
+
+      // en-tête : titre puis chapeau mot à mot, dès qu'il entre à l'écran
+      const lead = split(story.querySelector('.story__lead'));
+      splits.push(lead);
+      const head = gsap.timeline({ scrollTrigger: { trigger: story.querySelector('.story__head'), start: 'top bottom', once: true } })
+        .from(story.querySelector('.story__title'), { y: 40, autoAlpha: 0, duration: 0.8, ease: 'power3.out' }, 0);
+      light(head, lead.words, 0.3, 0.9);
+
+      // une animation par chapitre, jouée une seule fois, à l'arrivée : numéro géant, photo qui s'ouvre en se dézoomant et passe
+      // du noir et blanc à la couleur, ombre jaune, date lettre par lettre, titre, mots du récit qui s'allument
+      // Effets de la photo en transform / opacité seulement (gérés par la carte graphique, sans repeindre la photo à chaque image) :
+      // un rideau blanc se replie vers le haut pour l'ouvrir, une copie en noir et blanc s'efface pour la passer en couleur
+      const extras = [];
+      const plays = chaps.map((c, i) => {
+        const side = i % 2 ? -1 : 1, pic = c.querySelector('.chap__pic'), img = pic.querySelector('img');
+        const bw = Object.assign(img.cloneNode(), { className: 'chap__bw', alt: '' });
+        const curtain = Object.assign(document.createElement('span'), { className: 'chap__curtain' });
+        bw.setAttribute('aria-hidden', 'true'); curtain.setAttribute('aria-hidden', 'true');
+        pic.append(bw, curtain);
+        extras.push(bw, curtain);
+        const when = chars(c.querySelector('.chap__when')), words = split(c.querySelectorAll('.chap__txt p'));
+        splits.push(when, words);
+        const tl = gsap.timeline({ paused: true, defaults: { ease: 'power3.out' } })
+          .fromTo(c.querySelector('.chap__num'), { opacity: 0, yPercent: 60 }, { opacity: 1, yPercent: 0, duration: 1.8, ease: 'power2.out' }, 0)
+          .fromTo(pic, { xPercent: 6 * side, rotation: 3 * side }, { xPercent: 0, rotation: 0, duration: 1.1, ease: 'power4.out' }, 0)
+          .fromTo(curtain, { scaleY: 1 }, { scaleY: 0, duration: 1.1, ease: 'power4.inOut' }, 0)
+          .fromTo(pic, { '--s': 0 }, { '--s': 1, duration: 0.6 }, 0.8)
+          .fromTo([img, bw], { scale: 1.3 }, { scale: 1, duration: 1.8, ease: 'power2.out' }, 0)
+          .fromTo(bw, { opacity: 1 }, { opacity: 0, duration: 1.4, ease: 'power1.inOut' }, 0.5)
+          .add(() => { bw.hidden = true; curtain.hidden = true; }) // fini : plus aucun calque en trop au-dessus de la photo
+          .from(when.chars, { yPercent: 110, rotation: 8, duration: 0.8, stagger: 0.04 }, 0.2)
+          .from(c.querySelector('.chap__title'), { y: 30, autoAlpha: 0, duration: 0.7 }, 0.45);
+        light(tl, words.words, 0.7, 1.4);
+        return tl;
       });
-      return () => splits.forEach((s) => s.revert());
-    });
-    mm.add('(max-width: 61.99rem) and (prefers-reduced-motion: no-preference)', () => {
-      const splits = chaps.map((c, i) => {
-        const pic = c.querySelector('.chap__pic');
-        const when = chars(c.querySelector('.chap__when'));
-        photo(gsap.timeline({ scrollTrigger: { trigger: pic, start: 'top bottom', end: 'bottom 40%', scrub: 0.6 } }), pic, 0.5, i % 2 ? -1 : 1);
-        gsap.from(when.chars, { yPercent: 110, rotation: 8, duration: 0.8, stagger: 0.05, ease: 'power3.out', scrollTrigger: { trigger: c.querySelector('.chap__when'), start: 'top bottom' } });
-        gsap.from(c.querySelector('.chap__title'), { y: 30, autoAlpha: 0, duration: 0.8, ease: 'power3.out', scrollTrigger: { trigger: c.querySelector('.chap__title'), start: 'top bottom' } });
-        gsap.fromTo(c.querySelector('.chap__in'), { '--py': '12vh' }, { '--py': '-12vh', ease: 'none', scrollTrigger: { trigger: c, start: 'top bottom', end: 'bottom top', scrub: true } });
-        return [when, ...[...c.querySelectorAll('.chap__txt p')].map((p) => {
-          const s = split(p);
-          light(gsap.timeline({ scrollTrigger: { trigger: p, start: 'top bottom', end: 'bottom 55%', scrub: 0.6 } }), s.words, 0, 1);
-          return s;
-        })];
-      }).flat();
-      return () => splits.forEach((s) => s.revert());
+      const play = (i) => { if (!plays[i].progress() && !plays[i].isActive()) plays[i].play(); };
+      // filet de sécurité (barre de défilement, saut clavier…) : un chapitre atteint sans arrêt joue quand même son animation
+      chaps.forEach((c, i) => st.create({ trigger: c, start: 'top 30%', end: 'bottom 70%', onToggle: (self) => self.isActive && play(i) }));
+
+      // arrêts : position de défilement de chaque chapitre (ou de chacune de ses tranches)
+      let stops = [];
+      const measure = () => {
+        const vh = window.innerHeight, y0 = window.scrollY;
+        stops = chaps.flatMap((c, i) => {
+          const r = c.querySelector('.chap__in').getBoundingClientRect(), top = r.top + y0, H = r.height;
+          if (H <= vh - 2 * headerH) return [{ i, y: Math.round(top + H / 2 - vh / 2) }]; // centré, jamais sous la navbar
+          const ys = [top - headerH], last = top + H - vh + 16;
+          while (ys.at(-1) + vh * 0.7 < last) ys.push(ys.at(-1) + vh * 0.7);
+          if (last > ys.at(-1)) ys.push(last);
+          return ys.map((y) => ({ i, y: Math.round(y) }));
+        });
+      };
+      measure();
+      st.addEventListener('refresh', measure);
+
+      let at = -1;          // arrêt courant (-1 : défilement libre)
+      let busy = false;     // trajet en cours (+ un temps pour laisser retomber l'inertie du trackpad)
+      let touching = false, pending = -1, lastY = window.scrollY;
+      const hold = (e) => e.preventDefault();
+      const freeze = (on) => window[on ? 'addEventListener' : 'removeEventListener']('touchmove', hold, { passive: false });
+      const go = (k) => {
+        const s = stops[k], d = gsap.utils.clamp(0.6, 1.1, (Math.abs(s.y - window.scrollY) / window.innerHeight) * 1.1);
+        at = k; busy = true;
+        lenis?.stop(); observer.enable(); freeze(true);
+        glide(s.y, d, () => gsap.delayedCall(0.25, () => { busy = false; }));
+        gsap.delayedCall(d * 0.5, () => play(s.i)); // l'animation part quand le chapitre se pose
+      };
+      // rend la main au défilement libre ; `to` : petit élan pour sortir de la zone d'accroche
+      const release = (to) => {
+        at = -1; busy = false;
+        observer.disable(); freeze(false); lenis?.start();
+        if (to === undefined) return;
+        busy = true;
+        glide(to, 0.7, () => { busy = false; });
+      };
+      const step = (d) => {
+        if (busy || at < 0) return;
+        const k = at + d, vh = window.innerHeight;
+        if (k < 0) release(stops[0].y - vh * 0.6);
+        else if (k >= stops.length) release(stops.at(-1).y + vh * 0.6);
+        else go(k);
+      };
+      // une fois arrêté : molette et swipe avancent d'un arrêt (mêmes réglages que le slider du haut de page)
+      const observer = Observer.create({ type: 'wheel,touch', wheelSpeed: -1, tolerance: 12, dragMinimum: 10, preventDefault: true, ignore: 'a, button',
+        onUp: () => step(1), onDown: () => step(-1) });
+      observer.disable();
+
+      // accroche : en défilement libre, en arrivant sur un chapitre (dans le sens de la marche), on s'y arrête
+      const onScroll = () => {
+        const y = window.scrollY, dir = Math.sign(y - lastY), vh = window.innerHeight;
+        lastY = y;
+        if (at >= 0) { if (!busy && Math.abs(y - stops[at].y) > vh * 0.6) release(); return; } // déplacé à la barre de défilement
+        if (busy || traveling || pending >= 0 || !dir) return;
+        const k = dir > 0 ? stops.findIndex((s) => y > s.y - vh * 0.5 && y < s.y + vh * 0.3)
+          : stops.findLastIndex((s) => y < s.y + vh * 0.5 && y > s.y - vh * 0.3);
+        if (k < 0) return;
+        if (touching) { pending = k; freeze(true); } else go(k); // doigt posé : la page se fige, le trajet part quand il se lève
+      };
+      const onTouch = (e) => {
+        touching = e.type === 'touchstart';
+        if (!touching && pending >= 0) { const k = pending; pending = -1; go(k); }
+      };
+      const onKey = (e) => {
+        if (at < 0 || e.target.closest?.('input, textarea, select')) return;
+        const d = { ArrowDown: 1, PageDown: 1, ArrowUp: -1, PageUp: -1, ' ': e.shiftKey ? -1 : 1 }[e.key];
+        if (!d) return;
+        e.preventDefault();
+        step(d);
+      };
+      leaveStory = () => { pending = -1; if (at >= 0) release(); else freeze(false); };
+      window.addEventListener('scroll', onScroll, { passive: true });
+      ['touchstart', 'touchend', 'touchcancel'].forEach((t) => window.addEventListener(t, onTouch, { passive: true, capture: true }));
+      document.addEventListener('keydown', onKey);
+
+      return () => {
+        leaveStory(); leaveStory = null;
+        observer.kill();
+        st.removeEventListener('refresh', measure);
+        window.removeEventListener('scroll', onScroll);
+        ['touchstart', 'touchend', 'touchcancel'].forEach((t) => window.removeEventListener(t, onTouch, { capture: true }));
+        document.removeEventListener('keydown', onKey);
+        splits.forEach((s) => s.revert());
+        extras.forEach((el) => el.remove());
+        story.classList.remove('is-stepped');
+      };
     });
   }
 

@@ -321,35 +321,38 @@ html.lenis { scroll-behavior: auto !important; } /* Lenis gère seul la douceur 
 .team:has(.is-driven) .team__bar { display: block; position: absolute; inset: auto var(--gutter) 2rem; height: 2px; background: var(--c-line); }
 .team__bar span { display: block; height: 100%; background: var(--c-accent); transform: scaleX(var(--p, 0)); transform-origin: left; }
 @media (prefers-reduced-motion: reduce) { .team__hint span { animation: none; } }
-/* Notre histoire : lecture pilotée par le défilement. Les mots du récit passent du pâle à l'encre au rythme de la molette, la photo
-   monte, se dézoome et passe du noir et blanc à la couleur (le temps qui passe). Ordinateur : chaque chapitre reste à l'écran le temps
-   de sa lecture (.chap haut, .chap__in collant). Animé par main.js (scrub) ; sans JS ou mouvement réduit, tout est lisible tel quel. */
-.story { padding-block: calc(var(--header-h) + 2rem) 4rem; background: var(--c-bg); overflow: clip; } /* clip : laisse fonctionner le collant */
+/* Notre histoire : un chapitre à la fois. Le défilement s'arrête sur chaque chapitre, centré à l'écran (main.js, .story.is-stepped),
+   puis l'animation du chapitre se joue d'un trait : numéro géant, photo qui s'ouvre et passe du noir et blanc à la couleur (le temps
+   qui passe), date lettre par lettre, mots du récit qui s'allument, mots clés surlignés. Sans JS ou mouvement réduit : lecture libre. */
+.story { padding-block: calc(var(--header-h) + 2rem) 4rem; background: var(--c-bg); overflow: clip; }
 .story__head { max-width: 46rem; margin: 0 auto; text-align: center; }
 .story__title { margin: 0; font-size: clamp(2.3rem, 4.6vw, 4.4rem); line-height: 1.02; letter-spacing: -.015em; }
 .story__lead { max-width: 34rem; margin: 1.2rem auto 0; font: 500 clamp(1.1rem, 1.5vw, 1.4rem)/1.5 var(--f-display); color: var(--c-ink-soft); }
-.story__chapters { margin: 2rem 0 0; padding: 0; list-style: none; counter-reset: chap; }
-.chap { counter-increment: chap; }
+.story__chapters { margin: 2rem 0 0; padding: 0; list-style: none; }
+.story.is-stepped .chap { min-height: 100svh; display: grid; align-content: center; } /* un chapitre = un écran : centré, on ne voit pas ses voisins */
 .chap__in { position: relative; display: grid; gap: 1.5rem; padding-block: 2.5rem; isolation: isolate; }
-.chap__in::before { content: "0" counter(chap); position: absolute; z-index: -1; top: 0; right: -.04em; font: 600 clamp(9rem, 34vw, 26rem)/.8 var(--f-display); letter-spacing: -.05em; color: transparent; -webkit-text-stroke: 1.5px var(--c-line); transform: translateY(var(--py, 0)); pointer-events: none; } /* numéro géant au trait, en parallaxe (--py) */
+/* numéro géant au trait, derrière la photo (vrai élément : animé en transform, sans recalculer le chapitre) */
+.chap__num { position: absolute; z-index: -1; top: 0; right: -.04em; font: 600 clamp(9rem, 34vw, 26rem)/.8 var(--f-display); letter-spacing: -.05em; color: transparent; -webkit-text-stroke: 1.5px var(--c-line); pointer-events: none; }
 .chap p.chap__when { margin: 0; font: 600 clamp(2.8rem, 5.5vw, 5rem)/1 var(--f-display); letter-spacing: -.02em; color: var(--c-accent); }
 .chap__pic { position: relative; aspect-ratio: 4 / 3; margin: 0 .6rem .6rem 0; overflow: hidden; border-radius: 0 4rem 0 4rem; }
-.chap__pic img { position: absolute; inset: -8% 0; width: 100%; height: 116%; object-fit: cover; } /* marge pour le glissé */
+.chap__pic img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+/* ajoutés par main.js pour l'arrivée du chapitre : copie noir et blanc qui s'efface, rideau qui se replie */
+.chap__pic .chap__bw { filter: grayscale(1); }
+.chap__curtain { position: absolute; inset: -1px; background: var(--c-bg); transform-origin: 50% 0; }
 .chap__title { margin: 0; font: 600 clamp(1.6rem, 2.4vw, 2.3rem)/1.12 var(--f-display); }
 .chap p { max-width: 38rem; margin: 1rem 0 0; font: 500 clamp(1.08rem, 1.35vw, 1.3rem)/1.6 var(--f-body); color: var(--c-ink); }
 .chap p.chap__end { margin-top: 1.4rem; padding-left: 1rem; border-left: 3px solid var(--c-accent); font: 500 clamp(1.15rem, 1.5vw, 1.4rem)/1.5 var(--f-display); }
 .chap__end em { color: var(--c-accent-ink); }
 .chap mark { padding-inline: .1em; background: linear-gradient(transparent 62%, rgb(247 183 49 / .5) 62%) no-repeat 0 0 / var(--hl, 100%) 100%; color: inherit; -webkit-box-decoration-break: clone; box-decoration-break: clone; } /* surligneur tracé quand les mots s'allument (--hl) */
-.chap__pic { box-shadow: calc(.6rem * var(--s, 1)) calc(.6rem * var(--s, 1)) 0 var(--c-accent); } /* l'ombre jaune se déploie avec la lecture (--s) */
-/* ordinateur : chaque chapitre tient un écran, collé le temps de sa lecture ; photo et texte s'échangent les côtés d'un chapitre à l'autre */
+.chap__pic { box-shadow: calc(.6rem * var(--s, 1)) calc(.6rem * var(--s, 1)) 0 var(--c-accent); } /* l'ombre jaune se déploie à l'arrivée (--s) */
+/* ordinateur : photo et texte côte à côte, ils s'échangent les côtés d'un chapitre à l'autre */
 @media (min-width: 62rem) {
-  .chap { height: 230svh; } .chap + .chap { margin-top: -35svh; } /* le chapitre suivant arrive pendant que le précédent s’en va : pas d’écran vide */
-  .chap__in { position: sticky; top: 0; height: 100svh; padding: var(--header-h) 0 0; grid-template-columns: minmax(0, 6fr) minmax(0, 5fr); grid-template-rows: auto auto; column-gap: clamp(3rem, 6vw, 6rem); row-gap: 1.2rem; align-content: center; }
-  .chap__in::before { top: 50%; right: -3vw; margin-top: -.4em; } /* côté photo, à moitié derrière elle : ne passe jamais sur le texte */
-  .chap:nth-child(even) .chap__in::before { right: auto; left: -3vw; }
+  .chap__in { grid-template-columns: minmax(0, 6fr) minmax(0, 5fr); grid-template-rows: auto auto; column-gap: clamp(3rem, 6vw, 6rem); row-gap: 1.2rem; align-content: center; }
+  .chap__num { top: 50%; right: -3vw; margin-top: -.4em; } /* côté photo, à moitié derrière elle : ne passe jamais sur le texte */
+  .chap:nth-child(even) .chap__num { right: auto; left: -3vw; }
   .chap__when { grid-area: 1 / 1; }
   .chap__txt { grid-area: 2 / 1; }
-  .chap__pic { grid-area: 1 / 2 / 3 / 3; align-self: center; margin: 0; border-radius: 0 var(--leaf) 0 var(--leaf); box-shadow: calc(.9rem * var(--s, 1)) calc(.9rem * var(--s, 1)) 0 var(--c-accent); }
+  .chap__pic { grid-area: 1 / 2 / 3 / 3; align-self: center; margin: 0; max-height: 70svh; border-radius: 0 var(--leaf) 0 var(--leaf); box-shadow: calc(.9rem * var(--s, 1)) calc(.9rem * var(--s, 1)) 0 var(--c-accent); }
   .chap:nth-child(even) .chap__in { grid-template-columns: minmax(0, 5fr) minmax(0, 6fr); }
   .chap:nth-child(even) .chap__when, .chap:nth-child(even) .chap__txt { grid-column: 2; }
   .chap:nth-child(even) .chap__pic { grid-column: 1; border-radius: var(--leaf) 0 var(--leaf) 0; box-shadow: calc(-.9rem * var(--s, 1)) calc(.9rem * var(--s, 1)) 0 var(--c-accent); }
@@ -464,6 +467,11 @@ html.lenis { scroll-behavior: auto !important; } /* Lenis gère seul la douceur 
   /* Section À propos : surlignage et trait jaune se tracent quand la section devient courante */
   .is-slider .about__title::after { transform: scaleX(0); transform-origin: left; transition: transform .8s var(--ease) 1.2s; }
   .is-slider .about.is-current .about__title::after { transform: scaleX(1); }
+}
+
+/* Notre histoire : le numéro géant démarre invisible et décalé, GSAP le fait monter à l'arrivée du chapitre */
+@media (prefers-reduced-motion: no-preference) {
+  .js .chap__num { opacity: 0; transform: translateY(60%); }
 }
 
 /* Section libre : états de départ, GSAP (ScrollTrigger, main.js) les anime ; .is-in = repli sans ScrollTrigger */
