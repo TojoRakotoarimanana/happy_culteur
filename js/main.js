@@ -11,7 +11,12 @@
   const menu = document.getElementById('menu');
   const panels = [...document.querySelectorAll('.panel')];
   const free = document.getElementById('collaborer'); // 1re section hors slider : défilement libre
-  const freeZone = document.querySelector('.free-zone'); // toutes les sections hors slider
+  // toutes les sections hors slider : celles de <main> et le pied de page « Nous contacter » (deux .free-zone, vues comme une seule)
+  const freeZones = [...document.querySelectorAll('.free-zone')];
+  const freeZone = {
+    contains: (el) => freeZones.some((z) => z.contains(el)),
+    querySelectorAll: (sel) => freeZones.flatMap((z) => [...z.querySelectorAll(sel)]),
+  };
 
   const setActiveLink = (id) => document.querySelectorAll('.nav__link')
     .forEach((link) => link.classList.toggle('is-active', link.hash === `#${id}`));
@@ -25,6 +30,67 @@
   toggle.addEventListener('click', () => setMenu(toggle.getAttribute('aria-expanded') !== 'true'));
   menu.addEventListener('click', (e) => { if (e.target.closest('a')) setMenu(false); });
   document.addEventListener('keydown', (e) => { if (e.key === 'Escape') setMenu(false); });
+
+  /* ---------- Nous contacter : validation et envoi du formulaire (indépendant de GSAP) ---------- */
+  // action = mailto (par défaut) : la messagerie s'ouvre avec la demande pré-remplie ; action = URL d'un service (Formspree…) : envoi en arrière-plan
+  const form = document.querySelector('.form');
+  if (form) {
+    const status = form.querySelector('.form__status');
+    const group = form.querySelector('.choices');
+    const boxes = [...group.querySelectorAll('input')];
+    const fields = [...form.querySelectorAll('[required]'), group];
+    let tried = false; // les erreurs ne s'affichent qu'après une première tentative d'envoi, puis se corrigent en direct
+    const say = (msg, kind = '') => { status.textContent = msg; status.className = `form__status ${kind}`; };
+    const check = (el) => {
+      let msg = '';
+      if (el === group) msg = boxes.some((b) => b.checked) ? '' : 'Choisissez au moins une prestation.';
+      else if (el.validity.valueMissing) msg = 'Ce champ est obligatoire.';
+      else if (el.validity.typeMismatch) msg = 'Adresse e-mail invalide (ex. : nom@entreprise.com).';
+      if (el === group) group.classList.toggle('is-invalid', !!msg);
+      else el.setAttribute('aria-invalid', String(!!msg));
+      document.getElementById(el.getAttribute('aria-describedby')).textContent = msg;
+      return !msg;
+    };
+    const recheck = (e) => {
+      if (!tried) return;
+      const el = group.contains(e.target) ? group : e.target;
+      if (fields.includes(el)) check(el);
+    };
+    form.addEventListener('input', recheck);
+    form.addEventListener('change', recheck);
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      tried = true;
+      const bad = fields.filter((el) => !check(el));
+      if (bad.length) {
+        say('Merci de compléter les champs indiqués.', 'is-error');
+        (bad[0] === group ? boxes[0] : bad[0]).focus();
+        return;
+      }
+      const data = new FormData(form);
+      const action = form.getAttribute('action');
+      if (action.startsWith('mailto:')) {
+        const line = (k) => `${k} : ${data.getAll(k).join(', ') || '—'}`;
+        const body = ['Nom', 'Prénom', 'Entreprise', 'E-mail', 'Téléphone', 'Prestations'].map(line).join('\n') + `\n\n${data.get('Message')}`;
+        location.href = `${action}?subject=${encodeURIComponent(`Demande de contact – ${data.get('Entreprise')}`)}&body=${encodeURIComponent(body)}`;
+        say('Votre messagerie s’ouvre avec votre demande pré-remplie : il ne reste plus qu’à l’envoyer.', 'is-ok');
+        return;
+      }
+      form.classList.add('is-sending');
+      say('Envoi en cours…');
+      try {
+        const res = await fetch(action, { method: 'POST', body: data, headers: { Accept: 'application/json' } });
+        if (!res.ok) throw new Error(res.status);
+        form.reset();
+        tried = false;
+        say('Merci ! Votre demande est bien partie, nous revenons vers vous très vite.', 'is-ok');
+      } catch {
+        say('L’envoi n’a pas abouti. Réessayez dans un instant ou écrivez-nous à contact@happyculteur.com.', 'is-error');
+      } finally {
+        form.classList.remove('is-sending');
+      }
+    });
+  }
 
   /* ---------- Nos prestations (mobile / tablette) : points de progression, pilotés par la section épinglée ---------- */
 
@@ -81,6 +147,7 @@
   document.body.append(veil);
   const easeInOut = (t) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
   const glide = (to, duration, done) => {
+    lenis?.resize(); // Lenis garde la hauteur de page qu'il a mesurée en dernier (avant les sections épinglées) et bloquerait le trajet en deçà
     if (lenis) return lenis.scrollTo(to, { duration, immediate: !duration, easing: easeInOut, lock: true, force: true, onComplete: done });
     window.scrollTo({ top: to, behavior: duration ? 'smooth' : 'instant' });
     if (done) setTimeout(done, duration * 1000 + 50);
@@ -816,6 +883,41 @@
       return () => splits.forEach((s) => s.revert());
     });
   }
+
+  /* ---------- Nous contacter : arrivée, chaque élément au moment où il entre à l'écran ---------- */
+  // Filet jaune qui se trace, titre lettre par lettre dans son masque, coordonnées qui éclosent, photo qui se dézoome, formulaire champ par champ
+  gsap.matchMedia().add('(prefers-reduced-motion: no-preference)', () => {
+    const contact = document.querySelector('.contact');
+    if (!st) { contact.classList.add('is-in'); return; }
+    const q = gsap.utils.selector(contact);
+    const enter = (el) => ({ trigger: el, start: 'top bottom', once: true });
+    const title = q('.contact__title')[0];
+    const split = window.SplitText ? SplitText.create(title, { type: 'words, chars', mask: 'chars' }) : null; // words : un mot ne se coupe jamais en fin de ligne
+
+    gsap.timeline({ scrollTrigger: enter(q('.contact__head')[0]), defaults: { ease: 'power3.out' } })
+      .fromTo(q('.contact__eyebrow'), { opacity: 0, '--ln': 0 }, { opacity: 1, '--ln': 1, duration: 0.8, ease: 'power2.inOut' }, 0)
+      .set(title, { opacity: 1 }, 0)
+      .fromTo(split ? split.chars : title, { yPercent: 110 }, { yPercent: 0, duration: 0.9, stagger: 0.025, ease: 'power4.out', onComplete: () => split?.revert() }, 0.1) // revert : le masque ne coupe plus le jambage du « j »
+      .fromTo(q('.contact__lead'), { opacity: 0, y: 20 }, { opacity: 1, y: 0, duration: 0.8 }, 0.45);
+
+    q('.way').forEach((way) => gsap.timeline({ scrollTrigger: enter(way), defaults: { ease: 'power3.out' } })
+      .set(way, { opacity: 1 })
+      .fromTo(way.querySelector('.way__icon'), { scale: 0, rotation: -30 }, { scale: 1, rotation: 0, duration: 0.7, ease: 'back.out(2.2)' }, 0)
+      .fromTo(way.querySelector('div'), { opacity: 0, x: -16 }, { opacity: 1, x: 0, duration: 0.7 }, 0.12));
+
+    const pic = q('.contact__pic')[0];
+    gsap.timeline({ scrollTrigger: enter(pic), defaults: { ease: 'power3.out' } })
+      .fromTo(pic, { opacity: 0, y: 40 }, { opacity: 1, y: 0, duration: 0.9 }, 0)
+      .fromTo(pic.querySelector('img'), { scale: 1.25 }, { scale: 1, duration: 1.6, ease: 'power2.out' }, 0)
+      .fromTo(pic.querySelector('figcaption'), { opacity: 0, y: 20 }, { opacity: 1, y: 0, duration: 0.8 }, 0.5);
+
+    const card = q('.form')[0];
+    gsap.fromTo(card, { opacity: 0, y: 50 }, { opacity: 1, y: 0, duration: 0.9, ease: 'power3.out', scrollTrigger: enter(card) });
+    card.querySelectorAll('.form__grid > *, .form__submit, .form__note').forEach((el) =>
+      gsap.fromTo(el, { opacity: 0, y: 18 }, { opacity: 1, y: 0, duration: 0.6, delay: 0.15, ease: 'power3.out', clearProps: 'transform', scrollTrigger: enter(el) }));
+
+    return () => split?.revert();
+  });
 
   /* ---------- Bouton : attraction douce + lueur qui suit le curseur (souris précise, hors reduced-motion) ---------- */
   gsap.matchMedia().add('(hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference)', () => {
