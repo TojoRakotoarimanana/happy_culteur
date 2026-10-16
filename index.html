@@ -134,17 +134,19 @@
     </section>
 
     <section class="panel about" id="qui-sommes-nous" data-label="Qui sommes-nous ?" aria-labelledby="qui-titre">
+      <!-- Une seule grande photo en feuille, devant sa feuille jaune : les deux plans arrivent, repartent et suivent le pointeur à des
+           vitesses différentes (main.js, data-depth). Photo Unsplash provisoire (licence Unsplash), à remplacer par une vraie photo de l'équipe. -->
       <div class="container about__inner">
-        <div class="about__intro" data-slide-in>
-          <h2 class="about__title" id="qui-titre">Qui <span class="nb">sommes-nous</span>&nbsp;?</h2>
-          <p class="about__lead"><strong class="brand">Happy Culteur</strong>, c’est une équipe de jeunes talents, réunis par une même ambition&nbsp;: avancer ensemble et se tirer vers le haut, aussi bien professionnellement qu’humainement.</p>
-          <p class="about__closing">C’est cette façon de travailler que nous voulons partager avec chaque entreprise qui nous fait confiance.</p>
+        <div class="about__visual">
+          <div class="about__leaf" data-depth="3" aria-hidden="true"></div>
+          <div class="about__pic" data-depth="16"><img src="assets/img/equipe-ecran.jpg" width="900" height="1350" loading="lazy" decoding="async" alt="Une partie de l’équipe réunie autour d’un ordinateur"></div>
         </div>
 
-        <div class="about__side">
-          <figure class="about__photo" data-slide-in>
-            <img src="assets/img/collaboration.jpg" width="1400" height="788" loading="lazy" decoding="async" alt="Une équipe de collègues qui échangent devant un ordinateur dans un bureau lumineux">
-          </figure>
+        <div class="about__copy">
+          <div class="about__intro" data-slide-in>
+            <h2 class="about__title" id="qui-titre">Qui <span class="nb">sommes-nous</span>&nbsp;?</h2>
+            <p class="about__lead"><strong class="brand">Happy Culteur</strong>, c’est une équipe de jeunes talents, réunis par une même ambition&nbsp;: avancer ensemble et se tirer vers le haut, aussi bien professionnellement qu’humainement.</p>
+          </div>
           <ol class="about__points">
               <li data-slide-in>
                 <details>
@@ -174,11 +176,17 @@
                 </details>
               </li>
             </ol>
+        </div>
       </div>
+      <div class="about__fade" aria-hidden="true"></div>
     </section>
     </div>
 
     <div class="free-zone">
+    <!-- Transition « Qui sommes-nous » → « Pourquoi collaborer » : la phrase de conclusion du client, en grand, dont les mots s'allument au défilement (main.js) -->
+    <div class="bridge">
+      <p class="bridge__text">C’est cette façon de travailler que nous voulons partager avec <em>chaque entreprise qui nous fait confiance.</em></p>
+    </div>
     <section class="collab" id="collaborer" data-label="Pourquoi collaborer avec nous ?" aria-labelledby="collab-titre">
       <div class="container collab__inner">
 
@@ -346,42 +354,49 @@
       <div class="crew">
         <div class="crew__track">
           <header class="team__top">
-            <h2 class="team__title" id="equipe-titre">Venez rencontrer notre équipe</h2>
+            <h2 class="team__title" id="equipe-titre">Venez rencontrer <span class="accent">notre équipe.</span></h2>
             <p class="team__lead">Des profils différents, un même engagement&nbsp;: faire avancer vos projets au quotidien.</p>
             <p class="team__hint" aria-hidden="true">Faites défiler pour faire connaissance <span>→</span></p>
           </header>
+          <p class="crew__ghost" aria-hidden="true">Ensemble</p>
           <ul class="crew__list">
             <li class="mate">
+              <span class="mate__num" aria-hidden="true">01<small>&nbsp;/&nbsp;06</small></span>
               <div class="mate__photo"><img src="assets/img/equipe/koloina-r12m-4EAskw.jpg" alt="Koloina" width="720" height="900" loading="lazy" decoding="async"></div>
               <div class="mate__txt"><h3 class="mate__name">Koloina</h3>
                 <p class="mate__role">Service client &amp; SAV</p>
                 <blockquote class="mate__quote"><p>«&nbsp;J’aime être à l’écoute et trouver des solutions pour nos clients.&nbsp;»</p></blockquote></div>
             </li>
             <li class="mate">
+              <span class="mate__num" aria-hidden="true">02<small>&nbsp;/&nbsp;06</small></span>
               <div class="mate__photo"><img src="assets/img/equipe/steeven-JpYWVC_dnLw.jpg" alt="Steeven" width="720" height="900" loading="lazy" decoding="async"></div>
               <div class="mate__txt"><h3 class="mate__name">Steeven</h3>
                 <p class="mate__role">Téléprospection</p>
                 <blockquote class="mate__quote"><p>«&nbsp;Chaque échange est une opportunité de créer de nouvelles collaborations.&nbsp;»</p></blockquote></div>
             </li>
             <li class="mate">
+              <span class="mate__num" aria-hidden="true">03<small>&nbsp;/&nbsp;06</small></span>
               <div class="mate__photo"><img src="assets/img/equipe/tiffany-xEqFIzP0_3c.jpg" alt="Tiffany" width="720" height="900" loading="lazy" decoding="async"></div>
               <div class="mate__txt"><h3 class="mate__name">Tiffany</h3>
                 <p class="mate__role">Assistance virtuelle</p>
                 <blockquote class="mate__quote"><p>«&nbsp;J’aime organiser, structurer et faciliter le quotidien de l’équipe.&nbsp;»</p></blockquote></div>
             </li>
             <li class="mate">
+              <span class="mate__num" aria-hidden="true">04<small>&nbsp;/&nbsp;06</small></span>
               <div class="mate__photo"><img src="assets/img/equipe/muriel-N9zoS5-DzkY.jpg" alt="Muriel" width="720" height="900" loading="lazy" decoding="async"></div>
               <div class="mate__txt"><h3 class="mate__name">Muriel</h3>
                 <p class="mate__role">Community management</p>
                 <blockquote class="mate__quote"><p>«&nbsp;Je prends plaisir à créer du contenu et à faire vivre vos communautés.&nbsp;»</p></blockquote></div>
             </li>
             <li class="mate">
+              <span class="mate__num" aria-hidden="true">05<small>&nbsp;/&nbsp;06</small></span>
               <div class="mate__photo"><img src="assets/img/equipe/theau-Y59g5NEu3dU.jpg" alt="Théau" width="720" height="900" loading="lazy" decoding="async"></div>
               <div class="mate__txt"><h3 class="mate__name">Théau</h3>
                 <p class="mate__role">Supervision</p>
                 <blockquote class="mate__quote"><p>«&nbsp;Mon rôle est de soutenir l’équipe et de veiller à la qualité de notre travail.&nbsp;»</p></blockquote></div>
             </li>
             <li class="mate">
+              <span class="mate__num" aria-hidden="true">06<small>&nbsp;/&nbsp;06</small></span>
               <div class="mate__photo"><img src="assets/img/equipe/camille-epb8_oMFNzA.jpg" alt="Camille" width="720" height="900" loading="lazy" decoding="async"></div>
               <div class="mate__txt"><h3 class="mate__name">Camille</h3>
                 <p class="mate__role">Support opérationnel</p>
@@ -389,8 +404,16 @@
             </li>
           </ul>
           <div class="team__end">
-            <p class="team__end-title">Une équipe prête à rejoindre la vôtre.</p>
-            <a class="btn" href="#contact">Parlons de votre projet <span aria-hidden="true">→</span></a>
+            <div class="team__crowd">
+              <ul class="team__faces" aria-hidden="true"><li><img src="assets/img/equipe/koloina-r12m-4EAskw.jpg" alt="" width="720" height="900" loading="lazy" decoding="async"></li><li><img src="assets/img/equipe/steeven-JpYWVC_dnLw.jpg" alt="" width="720" height="900" loading="lazy" decoding="async"></li><li><img src="assets/img/equipe/tiffany-xEqFIzP0_3c.jpg" alt="" width="720" height="900" loading="lazy" decoding="async"></li><li><img src="assets/img/equipe/muriel-N9zoS5-DzkY.jpg" alt="" width="720" height="900" loading="lazy" decoding="async"></li><li><img src="assets/img/equipe/theau-Y59g5NEu3dU.jpg" alt="" width="720" height="900" loading="lazy" decoding="async"></li><li><img src="assets/img/equipe/camille-epb8_oMFNzA.jpg" alt="" width="720" height="900" loading="lazy" decoding="async"></li><li class="team__more">+24</li></ul>
+              <p>Une trentaine de talents<br>à vos côtés au quotidien</p>
+            </div>
+            <p class="team__end-title">Une équipe prête à rejoindre <em>la vôtre.</em></p>
+            <p class="team__end-lead">Des profils complémentaires, qui s’intègrent à votre fonctionnement dès le premier jour.</p>
+            <div class="team__cta">
+              <a class="btn" href="#contact">Parlons de votre projet <span aria-hidden="true">→</span></a>
+              <a class="team__trial" href="#collaborer">Essai gratuit de deux semaines</a>
+            </div>
           </div>
         </div>
       </div>
@@ -398,7 +421,7 @@
     </section>
 
     <section class="story" id="histoire" data-label="Notre histoire" aria-labelledby="histoire-titre">
-      <!-- Récit du client en quatre chapitres, une photo de groupe par chapitre : le défilement fait lire le texte mot à mot et colore la photo (main.js). Photos Unsplash provisoires, à remplacer par les vraies photos de l'équipe. -->
+      <!-- Récit du client en quatre chapitres, une photo de groupe par chapitre : le défilement s'arrête sur chaque chapitre, centré, puis son animation se joue (main.js). Photos Unsplash provisoires, à remplacer par les vraies photos de l'équipe. -->
       <div class="container">
         <header class="story__head">
           <h2 class="story__title" id="histoire-titre">Notre histoire</h2>
@@ -407,6 +430,7 @@
 
         <ol class="story__chapters">
             <li class="chap"><div class="chap__in">
+              <span class="chap__num" aria-hidden="true">01</span>
               <p class="chap__when" aria-hidden="true">2023</p>
               <figure class="chap__pic"><img src="assets/img/histoire/debuts-8-fvuZp32FE.jpg" alt="Les premiers membres de l’équipe réunis, en noir et blanc" width="1200" height="900" loading="lazy" decoding="async"></figure>
               <div class="chap__txt">
@@ -416,6 +440,7 @@
               </div>
             </div></li>
             <li class="chap"><div class="chap__in">
+              <span class="chap__num" aria-hidden="true">02</span>
               <p class="chap__when" aria-hidden="true">Depuis</p>
               <figure class="chap__pic"><img src="assets/img/histoire/locaux-cdGLbQ5u4c0.jpg" alt="Une partie de l’équipe réunie dans les locaux" width="1200" height="900" loading="lazy" decoding="async"></figure>
               <div class="chap__txt">
@@ -424,6 +449,7 @@
               </div>
             </div></li>
             <li class="chap"><div class="chap__in">
+              <span class="chap__num" aria-hidden="true">03</span>
               <p class="chap__when" aria-hidden="true">Ensemble</p>
               <figure class="chap__pic"><img src="assets/img/histoire/ensemble-2_rFy9TFRRc.jpg" alt="Des collègues rient ensemble" width="1200" height="900" loading="lazy" decoding="async"></figure>
               <div class="chap__txt">
@@ -433,6 +459,7 @@
               </div>
             </div></li>
             <li class="chap"><div class="chap__in">
+              <span class="chap__num" aria-hidden="true">04</span>
               <p class="chap__when" aria-hidden="true">Aujourd’hui</p>
               <figure class="chap__pic"><img src="assets/img/histoire/aujourdhui-eXe186bFR5Q.jpg" alt="L’équipe réunie, mains jointes au centre" width="1200" height="900" loading="lazy" decoding="async"></figure>
               <div class="chap__txt">
@@ -474,43 +501,55 @@
               <div><h3 class="way__title">Nos locaux</h3><address>Ambatomainty, Antananarivo<br>Madagascar</address></div>
             </li>
           </ul>
-
-          <!-- Photo provisoire (Unsplash, Jud Mackrill), à remplacer par une vraie photo de l'équipe -->
-          <figure class="contact__pic">
-            <img src="assets/img/equipe.jpg" alt="" width="1400" height="933" loading="lazy" decoding="async">
-            <figcaption class="contact__quote">Des collaborations durables</figcaption>
-          </figure>
         </div>
 
-        <!-- Sans JS : envoi par la messagerie (mailto). Pour un envoi direct, remplacer action par l'URL d'un service de formulaire (ex. Formspree) : main.js l'enverra alors en arrière-plan. -->
-        <form class="form" action="mailto:contact@happyculteur.com" method="post" enctype="text/plain" novalidate>
+        <!-- Envoi par Formspree (formulaire xoejyklp) : main.js l'envoie en arrière-plan (fetch) ; sans JS, envoi natif vers Formspree -->
+        <form class="form" action="https://formspree.io/f/xoejyklp" method="post" novalidate data-current="1">
+          <input type="text" name="_gotcha" tabindex="-1" autocomplete="off" hidden><!-- piège anti-spam : rempli seulement par les robots, ignoré par Formspree -->
+          <!-- Mobile : formulaire par étapes (main.js, classe is-stepped) ; ailleurs ou sans JS, tout est visible -->
+          <div class="form__progress" hidden>
+            <p class="form__count" aria-live="polite">Étape <b>1</b> / 3 · <span>Vous</span></p>
+            <span class="form__bar" aria-hidden="true"><span></span></span>
+          </div>
+          <!-- Abeille au trait qui vole vers le champ actif (main.js) ; décorative -->
+          <span class="form__bee" aria-hidden="true"><span class="form__bee-in"><svg viewBox="0 0 48 40">
+            <defs><clipPath id="bee-body"><ellipse cx="27" cy="26" rx="13" ry="9"/></clipPath></defs>
+            <path class="bee__wing bee__wing--b" d="M25 19C17 15 15 4 21 3c5-1 7 8 4 16z"/>
+            <ellipse class="bee__body" cx="27" cy="26" rx="13" ry="9"/>
+            <g clip-path="url(#bee-body)" class="bee__band"><rect x="23" y="15" width="4" height="22"/><rect x="31" y="15" width="4" height="22"/></g>
+            <path class="bee__band" d="M39.5 24.5 46 26l-6.5 2z"/>
+            <circle class="bee__band" cx="13" cy="24" r="6.5"/>
+            <circle class="bee__eye" cx="11" cy="22.5" r="1.7"/>
+            <path class="bee__antenna" d="M12 18c-1-4-3-6-6-7"/>
+            <path class="bee__wing" d="M28 19c-2-8 3-17 9-15 5 2 0 12-9 15z"/>
+          </svg></span><span class="form__say"></span></span>
           <div class="form__grid">
-            <div class="field">
+            <div class="field" data-step="1">
               <label for="f-nom">Nom <span class="req" aria-hidden="true">*</span></label>
               <input id="f-nom" name="Nom" type="text" autocomplete="family-name" placeholder="Votre nom" required aria-describedby="f-nom-err">
               <p class="field__error" id="f-nom-err"></p>
             </div>
-            <div class="field">
+            <div class="field" data-step="1">
               <label for="f-prenom">Prénom <span class="req" aria-hidden="true">*</span></label>
               <input id="f-prenom" name="Prénom" type="text" autocomplete="given-name" placeholder="Votre prénom" required aria-describedby="f-prenom-err">
               <p class="field__error" id="f-prenom-err"></p>
             </div>
-            <div class="field">
+            <div class="field" data-step="1">
               <label for="f-entreprise">Entreprise <span class="req" aria-hidden="true">*</span></label>
-              <input id="f-entreprise" name="Entreprise" type="text" autocomplete="organization" placeholder="Nom de votre entreprise" required aria-describedby="f-entreprise-err">
+              <input id="f-entreprise" name="Entreprise" type="text" autocomplete="organization" placeholder="Votre entreprise" required aria-describedby="f-entreprise-err">
               <p class="field__error" id="f-entreprise-err"></p>
             </div>
-            <div class="field">
+            <div class="field field--half" data-step="2">
               <label for="f-email">Adresse e-mail <span class="req" aria-hidden="true">*</span></label>
               <input id="f-email" name="E-mail" type="email" autocomplete="email" inputmode="email" placeholder="votre@email.com" required aria-describedby="f-email-err">
               <p class="field__error" id="f-email-err"></p>
             </div>
-            <div class="field field--wide">
+            <div class="field field--half" data-step="2">
               <label for="f-tel">Numéro de téléphone</label>
               <input id="f-tel" name="Téléphone" type="tel" autocomplete="tel" placeholder="Votre numéro de téléphone">
             </div>
 
-            <fieldset class="field field--wide choices" aria-describedby="f-besoin-err">
+            <fieldset class="field field--wide choices" data-step="3" aria-describedby="f-besoin-err">
               <legend>Vous recherchez <span class="req" aria-hidden="true">*</span><span class="visually-hidden"> (au moins un choix, obligatoire)</span></legend>
               <label class="choice"><input type="checkbox" name="Prestations" value="Service client &amp; SAV"><span>Service client &amp; SAV</span></label>
               <label class="choice"><input type="checkbox" name="Prestations" value="Téléprospection &amp; prise de rendez-vous"><span>Téléprospection &amp; prise de <span class="nb">rendez-vous</span></span></label>
@@ -520,32 +559,71 @@
               <p class="field__error" id="f-besoin-err"></p>
             </fieldset>
 
-            <div class="field field--wide">
+            <div class="field field--wide" data-step="3">
               <label for="f-message">Parlez-nous de votre besoin <span class="req" aria-hidden="true">*</span></label>
-              <textarea id="f-message" name="Message" rows="5" placeholder="Décrivez-nous votre projet, vos besoins ou toute information utile…" required aria-describedby="f-message-err" data-lenis-prevent></textarea>
+              <textarea id="f-message" name="Message" rows="3" placeholder="Décrivez-nous votre projet, vos besoins ou toute information utile…" required aria-describedby="f-message-err" data-lenis-prevent></textarea>
               <p class="field__error" id="f-message-err"></p>
             </div>
           </div>
 
+          <div class="form__nav" hidden>
+            <button class="form__prev" type="button"><span aria-hidden="true">←</span> Retour</button>
+            <button class="btn form__next" type="button">Suivant <span aria-hidden="true">→</span></button>
+          </div>
           <button class="btn form__submit" type="submit">Envoyer ma demande <span aria-hidden="true">→</span></button>
           <p class="form__status" role="status" aria-live="polite"></p>
           <p class="form__note"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="5" y="10.5" width="14" height="10" rx="2"/><path d="M8 10.5V8a4 4 0 0 1 8 0v2.5"/></svg>Vos informations restent confidentielles et ne seront utilisées que pour répondre à votre demande.</p>
         </form>
+        <!-- Résultat de l'envoi : popup « signée » par l'abeille (main.js : dessin cloné depuis .form__bee, texte selon le cas) -->
+        <dialog class="buzz" aria-labelledby="buzz-title" aria-describedby="buzz-text">
+          <div class="buzz__box">
+            <span class="buzz__bee" aria-hidden="true"></span>
+            <h3 class="buzz__title" id="buzz-title"></h3>
+            <p class="buzz__text" id="buzz-text"></p>
+            <form method="dialog"><button class="btn buzz__ok"></button></form>
+          </div>
+        </dialog>
       </div>
     </section>
 
     <div class="footer__bar">
-      <div class="container footer__inner">
-        <a class="footer__logo" href="#accueil" aria-label="Happy Culteur, retour à l'accueil"><img src="assets/img/logo-happy-culteur.svg" alt="" width="176" height="128" loading="lazy"></a>
-        <nav class="footer__nav" aria-label="Plan du site">
-          <ul>
-            <li><a href="#qui-sommes-nous">Qui <span class="nb">sommes-nous</span> ?</a></li>
-            <li><a href="#services">Nos services</a></li>
-            <li><a href="#equipe">Notre équipe</a></li>
-            <li><a href="#histoire">Notre histoire</a></li>
-          </ul>
-        </nav>
-        <p class="footer__legal">© 2026 Happy Culteur · Antananarivo, Madagascar</p>
+      <div class="container">
+        <div class="footer__grid">
+          <div class="footer__brand">
+            <a class="footer__logo" href="#accueil" aria-label="Happy Culteur, retour à l'accueil"><img src="assets/img/logo-happy-culteur.svg" alt="" width="176" height="128" loading="lazy"></a>
+            <p class="footer__motto">Cultiver des talents, <em>faire grandir</em> des projets.</p>
+          </div>
+          <nav class="footer__col" aria-label="Plan du site">
+            <p class="footer__head">Le site</p>
+            <ul>
+              <li><a href="#qui-sommes-nous">Qui <span class="nb">sommes-nous</span> ?</a></li>
+              <li><a href="#services">Nos services</a></li>
+              <li><a href="#equipe">Notre équipe</a></li>
+              <li><a href="#histoire">Notre histoire</a></li>
+            </ul>
+          </nav>
+          <div class="footer__col">
+            <p class="footer__head">Nos services</p>
+            <ul>
+              <li><a href="#services">Service client &amp; SAV</a></li>
+              <li><a href="#services">Téléprospection</a></li>
+              <li><a href="#services">Community management</a></li>
+              <li><a href="#services">Assistance virtuelle</a></li>
+            </ul>
+          </div>
+          <div class="footer__col">
+            <p class="footer__head">Nous joindre</p>
+            <ul>
+              <li><a href="mailto:contact@happyculteur.com">contact@happyculteur.com</a></li>
+              <li><a href="tel:+261341234567">+261 34 12 345 67</a></li>
+              <li>Antananarivo, Madagascar</li>
+            </ul>
+          </div>
+        </div>
+        <div class="footer__base">
+          <p class="footer__legal">© 2026 Happy Culteur. Tous droits réservés.</p>
+          <a class="footer__top" href="#accueil">Retour en haut <span aria-hidden="true">↑</span></a>
+        </div>
       </div>
     </div>
   </footer>

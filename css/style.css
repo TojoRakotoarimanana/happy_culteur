@@ -154,21 +154,25 @@ h3 { font-size: 1.25rem; font-weight: 600; }
 
 
 /* À propos : titre + chapeau à gauche, trois idées numérotées sur un fond crème à droite */
-.about { display: flex; align-items: center; padding-block: calc(var(--header-h) + .5rem) 2rem; }
-.about__inner { display: grid; grid-template-columns: 6fr 5fr; gap: 2rem clamp(2.5rem, 6vw, 6rem); align-items: center; }
+.about { position: relative; display: flex; align-items: center; padding-block: calc(var(--header-h) + .5rem) 2rem; }
+.is-slider .about { padding-top: 2.5rem; } /* la navbar se range dès ce panneau (main.js) : le contenu prend toute la hauteur */
+.about__inner { display: grid; grid-template-columns: 5fr 6fr; gap: 2rem clamp(2.5rem, 6vw, 6rem); align-items: center; }
 
 .about__title { font-size: clamp(2.4rem, 3.9vw, 3.25rem); } /* plafonné : la colonne de droite (≈ 508 px) doit contenir « Qui sommes-nous ? » sur une ligne */
 .about__title::after { content: ""; display: block; width: 3.5rem; height: 4px; margin-top: 1.1rem; border-radius: 2px; background: var(--c-accent); }
 .about__lead { margin-top: 1.75rem; font: 500 clamp(1.15rem, 1.6vw, 1.45rem)/1.5 var(--f-display); }
 .about__lead mark, .reason__text strong { padding-inline: .1em; background: linear-gradient(transparent 80%, rgb(247 183 49 / .45) 80%) no-repeat 0 0 / 100% 100%; color: inherit; -webkit-box-decoration-break: clone; box-decoration-break: clone; } /* trait fin sous le texte, pas un aplat */
 .brand { font-weight: 700; white-space: nowrap; background: linear-gradient(var(--c-accent), var(--c-accent)) 0 88% / 100% .35em no-repeat; } /* nom de l'entreprise surligné au feutre jaune */
-.about__closing { margin-top: 2rem; padding-left: 1.1rem; border-left: 3px solid var(--c-accent); color: var(--c-ink-soft); font-weight: 500; max-width: 38ch; }
 
-.about__intro { order: 2; } /* zigzag : texte à gauche sur l'accueil, à droite ici, puis à nouveau à gauche */
-.about__side { display: grid; gap: 1.75rem; }
-.about__photo { position: relative; margin: 0 1rem 1rem 0; }
-.about__photo::before { content: ""; position: absolute; inset: 1rem -1rem -1rem 1rem; border-radius: 0 var(--leaf) 0 var(--leaf); background: var(--c-accent); } /* feuille jaune décalée */
-.about__photo img { position: relative; display: block; width: 100%; height: clamp(9rem, 24svh, 14rem); object-fit: cover; object-position: 40% 35%; border-radius: 0 var(--leaf) 0 var(--leaf); }
+/* zigzag : texte à gauche sur l'accueil, à droite ici. Visuel = une grande photo en feuille devant sa feuille jaune décalée */
+.about__visual { position: relative; height: min(66svh, 38rem); margin: 0 1.5rem 1.5rem 0; }
+.about__leaf, .about__pic { position: absolute; inset: 0; border-radius: 0 var(--leaf) 0 var(--leaf); }
+.about__leaf { inset: 1.5rem -1.5rem -1.5rem 1.5rem; background: var(--c-accent); }
+.about__pic { overflow: hidden; background: var(--c-line); box-shadow: 0 2rem 3rem -1.75rem color-mix(in srgb, var(--c-ink) 50%, transparent); }
+.about__pic img { display: block; width: 100%; height: 100%; object-fit: cover; object-position: 50% 30%; }
+/* fondu blanc du bas, invisible au repos : en sortant vers « Pourquoi collaborer », ce qui recule s'y dissout au lieu d'être coupé net (main.js) */
+.about__fade { position: absolute; inset: auto 0 0; height: 45%; background: linear-gradient(transparent, var(--c-bg) 75%); opacity: 0; pointer-events: none; }
+.about__copy { display: grid; gap: clamp(1.5rem, 4svh, 2.5rem); }
 .about__points { display: grid; gap: .75rem; }
 .about__points li { border-radius: var(--radius); background: var(--c-tint); }
 .about__points details { padding: clamp(1rem, 2.4vh, 1.5rem) clamp(1.25rem, 2.5vw, 2rem); }
@@ -190,6 +194,12 @@ h3 { font-size: 1.25rem; font-weight: 600; }
 
 /* Pourquoi collaborer : section libre (hors slider) sur fond blanc, titre, accroche et trois arguments, sans visuel. */
 /* fond blanc, simple lueur jaune très légère (le rayon de miel est réservé au hero) */
+/* Passerelle entre « Qui sommes-nous » et « Pourquoi collaborer » : la phrase de conclusion du client, en grand, centrée sur blanc ;
+   ses mots s'allument au fil du défilement (main.js), la fin en jaune */
+.bridge { display: grid; place-items: center; min-height: 85svh; padding: 6rem 1.5rem 3rem; background: var(--c-bg); text-align: center; }
+.bridge__text { max-width: 24ch; margin: 0; font: 600 clamp(2rem, 4.4vw, 3.9rem)/1.12 var(--f-display); letter-spacing: -.015em; color: var(--c-ink); text-wrap: balance; }
+.bridge__text::before { content: ""; display: block; width: 3.5rem; height: 4px; margin: 0 auto 2rem; border-radius: 2px; background: var(--c-accent); }
+.bridge__text em { font-style: italic; color: var(--c-accent-ink); }
 .collab { position: relative; isolation: isolate; background: radial-gradient(50rem 26rem at 85% 30%, color-mix(in srgb, var(--c-accent) 9%, transparent), transparent 70%), var(--c-bg); min-height: 100svh; display: flex; align-items: center; padding-block: calc(var(--header-h) + 2rem) 5rem; }
 
 /* Titre à gauche, tige à droite : chaque argument est une feuille accrochée à la tige, qui se dessine au scroll */
@@ -282,14 +292,26 @@ html.lenis { scroll-behavior: auto !important; } /* Lenis gère seul la douceur 
   background: linear-gradient(var(--c-bg), var(--c-tint) min(14rem, 30%), var(--c-tint) max(calc(100% - 14rem), 70%), var(--c-bg)); }
 .team__top, .team__end { padding-inline: var(--gutter); }
 .team__title { margin: 0; font-size: clamp(2.3rem, 4.6vw, 4.4rem); line-height: 1.02; letter-spacing: -.015em; text-wrap: balance; }
+.team__title .accent { display: block; color: var(--c-accent); } /* même jaune que « faire grandir » et « projet. » (choix client) */
 .team__lead { max-width: 26rem; margin: 1.4rem 0 0; font: 500 clamp(1.05rem, 1.3vw, 1.25rem)/1.5 var(--f-display); color: var(--c-ink-soft); }
 .team__hint { display: none; margin: 2.5rem 0 0; font-size: .9rem; font-weight: 600; color: var(--c-ink-soft); }
 .team__hint span { display: inline-block; margin-left: .4rem; color: var(--c-ink); animation: hint 1.8s ease-in-out infinite; }
 @keyframes hint { 50% { translate: .4rem 0; } }
-.crew__list { display: flex; gap: clamp(1.25rem, 2.5vw, 2.75rem); margin: 2.5rem 0 0; padding: 0 var(--gutter) .5rem; list-style: none;
+.crew__list { display: flex; gap: clamp(2.25rem, 2.8vw, 3rem); margin: 2.5rem 0 0; padding: 1rem var(--gutter) 2.5rem; list-style: none;
   overflow-x: auto; scroll-snap-type: x mandatory; scroll-padding-inline: var(--gutter); scrollbar-width: none; }
-.mate { position: relative; flex: none; width: min(80vw, 22rem); overflow: hidden; border-radius: .9rem; scroll-snap-align: start; }
-.mate__photo { aspect-ratio: 4 / 5; overflow: hidden; background: var(--c-line); }
+/* portraits en feuille (motif d'identité) doublée d'une feuille jaune ; la feuille s'inverse d'un portrait à l'autre, rythme le long de la rangée */
+/* la feuille posée sur une ombre douce d'encre, sans cadre */
+.mate { --l: calc(var(--leaf) * .75); position: relative; flex: none; width: min(80vw, 22rem); overflow: hidden; border-radius: 0 var(--l) 0 var(--l);
+  box-shadow: 0 1.75rem 3rem -1.5rem color-mix(in srgb, var(--c-ink) 45%, transparent);
+  scroll-snap-align: start; transition: transform .6s var(--ease); }
+.mate:nth-child(even) { border-radius: var(--l) 0 var(--l) 0; }
+.mate__photo::after { content: ""; position: absolute; inset: 0; border-radius: inherit; box-shadow: inset 0 0 0 1px rgb(255 255 255 / .14); pointer-events: none; } /* liseré clair : bord net sur fond crème */
+.mate:hover { transform: translateY(-.5rem); }
+/* numéro posé dans l'angle droit de la feuille (à gauche, puis à droite) */
+.mate__num { position: absolute; z-index: 1; top: 1.1rem; left: 1.3rem; font: 600 1.05rem/1 var(--f-display); color: var(--c-bg); text-shadow: 0 1px 12px rgb(0 0 0 / .35); }
+.mate__num small { font-size: .75em; opacity: .7; }
+.mate:nth-child(even) .mate__num { left: auto; right: 1.3rem; }
+.mate__photo { position: relative; aspect-ratio: 4 / 5; overflow: hidden; background: var(--c-line); }
 .mate__photo img { display: block; width: 100%; height: 100%; object-fit: cover; filter: saturate(.86) contrast(1.03); transition: filter .6s; } /* même étalonnage pour des photos d'origines différentes */
 .mate:hover .mate__photo img { filter: none; }
 /* texte posé sur la photo, sur un voile d'encre qui monte du bas */
@@ -301,55 +323,75 @@ html.lenis { scroll-behavior: auto !important; } /* Lenis gère seul la douceur 
 .mate__quote { max-width: 32ch; margin: .8rem 0 0; font: italic 500 clamp(.98rem, 1.15vw, 1.1rem)/1.5 var(--f-display); color: inherit; opacity: .92; }
 .mate__quote p { margin: 0; }
 .team__end { margin-top: 3rem; }
-.team__end-title { max-width: 16ch; margin: 0 0 1.5rem; font: 600 clamp(1.6rem, 2.4vw, 2.2rem)/1.15 var(--f-display); color: var(--c-ink); text-wrap: balance; }
-.team__bar { display: none; }
+/* fin : pile des six visages + « +24 », titre, chapeau, bouton et lien d'essai (comme le hero) */
+.team__crowd { display: flex; align-items: center; gap: 1rem; margin-bottom: 1.75rem; }
+.team__crowd p { margin: 0; font-size: .88rem; font-weight: 600; line-height: 1.35; color: var(--c-ink-soft); }
+.team__faces { display: flex; margin: 0; padding: 0; list-style: none; }
+.team__faces li { width: 2.75rem; height: 2.75rem; margin-left: -.7rem; overflow: hidden; border: 2px solid var(--c-bg); border-radius: 50%; background: var(--c-line); }
+.team__faces li:first-child { margin-left: 0; }
+.team__faces img { display: block; width: 100%; height: 100%; object-fit: cover; object-position: 50% 25%; }
+.team__faces .team__more { display: grid; place-items: center; font: 700 .78rem/1 var(--f-body); color: var(--c-ink); background: var(--c-accent); }
+.team__end-title em { font-style: italic; color: var(--c-accent-ink); }
+.team__cta { display: flex; flex-wrap: wrap; align-items: center; gap: 1rem 1.5rem; }
+.team__trial { font-size: .92rem; font-weight: 600; color: var(--c-ink); text-decoration: underline; text-decoration-color: var(--c-accent); text-decoration-thickness: 2px; text-underline-offset: .35em; }
+.team__trial:hover { color: var(--c-accent-ink); }
+.team__end-title { max-width: 16ch; margin: 0; font: 600 clamp(1.6rem, 2.4vw, 2.2rem)/1.15 var(--f-display); color: var(--c-ink); text-wrap: balance; }
+.team__end-lead { max-width: 22rem; margin: 1rem 0 1.75rem; font: 500 1.05rem/1.5 var(--f-display); color: var(--c-ink-soft); }
+.team__bar, .crew__ghost { display: none; }
 
 /* galerie pilotée par la molette : un écran, une seule rangée qui glisse */
 .team:has(.is-driven) { height: 100svh; padding-block: var(--header-h) 0; }
-.crew.is-driven { height: 100%; }
-.crew.is-driven .crew__track { display: flex; align-items: center; gap: clamp(3rem, 6vw, 6rem); width: max-content; height: 100%; padding-inline: var(--gutter); }
+/* --h : hauteur d'un portrait = l'écran moins la navbar, la bande de la jauge et deux marges égales ; la rangée est centrée dans cet espace */
+.crew.is-driven { --h: min(calc(100svh - var(--header-h) - 9rem), 44rem); height: 100%; padding-bottom: 4.5rem; }
+.crew.is-driven .crew__track { position: relative; display: flex; align-items: center; gap: clamp(3rem, 6vw, 6rem); width: max-content; height: 100%; padding-inline: var(--gutter); }
 .crew.is-driven .team__top, .crew.is-driven .team__end { flex: none; padding: 0; }
 .crew.is-driven .team__top { width: min(34rem, 36vw); }
 .crew.is-driven .team__hint { display: block; }
-.crew.is-driven .crew__list { margin: 0; padding: 0; overflow: visible; }
-.crew.is-driven .mate { width: min(84vw, calc(min(72svh, 48rem) * .8)); }
+.crew.is-driven .crew__list { position: relative; z-index: 1; margin: 0; padding: 0; overflow: visible; }
+/* mot géant au trait derrière les portraits, qui glisse moins vite qu'eux (parallaxe, main.js) */
+.crew.is-driven .crew__ghost { display: block; position: absolute; top: 50%; left: 30vw; margin: 0; translate: 0 -50%; pointer-events: none; white-space: nowrap;
+  font: 600 clamp(9rem, 26vw, 26rem)/1 var(--f-display); letter-spacing: -.03em; color: transparent; -webkit-text-stroke: 1.5px color-mix(in srgb, var(--c-accent) 60%, transparent); will-change: transform; }
+.crew.is-driven .mate { width: min(84vw, calc(var(--h) * .8)); }
 .crew.is-driven .mate__photo img { width: 116%; max-width: none; }
-.crew.is-driven .team__end { width: 22rem; margin: 0; }
+.crew.is-driven .team__end { width: 24rem; margin: 0; }
 /* téléphone debout : la largeur bride la hauteur d'un portrait 4:5, il restait un grand vide au-dessus et en dessous ; le portrait prend toute la hauteur */
-@media (max-width: 62rem) and (orientation: portrait) { .crew.is-driven .mate__photo { aspect-ratio: auto; height: calc(100svh - var(--header-h) - 6rem); } }
-@media (max-width: 62rem) { .crew.is-driven .team__top { width: 82vw; } .crew.is-driven .team__end { width: 78vw; } .crew.is-driven .crew__track { gap: 1.25rem; } .crew.is-driven .crew__list { gap: 1rem; } }
+@media (max-width: 62rem) and (orientation: portrait) { .crew.is-driven .mate__photo { aspect-ratio: auto; height: calc(100svh - var(--header-h) - 7.5rem); } }
+@media (max-width: 62rem) { .crew.is-driven .team__top { width: 82vw; } .crew.is-driven .team__end { width: 78vw; } .crew.is-driven .crew__track { gap: 1.25rem; } .crew.is-driven .crew__list { gap: 1.75rem; } }
 .team:has(.is-driven) .team__bar { display: block; position: absolute; inset: auto var(--gutter) 2rem; height: 2px; background: var(--c-line); }
 .team__bar span { display: block; height: 100%; background: var(--c-accent); transform: scaleX(var(--p, 0)); transform-origin: left; }
-@media (prefers-reduced-motion: reduce) { .team__hint span { animation: none; } }
-/* Notre histoire : lecture pilotée par le défilement. Les mots du récit passent du pâle à l'encre au rythme de la molette, la photo
-   monte, se dézoome et passe du noir et blanc à la couleur (le temps qui passe). Ordinateur : chaque chapitre reste à l'écran le temps
-   de sa lecture (.chap haut, .chap__in collant). Animé par main.js (scrub) ; sans JS ou mouvement réduit, tout est lisible tel quel. */
-.story { padding-block: calc(var(--header-h) + 2rem) 4rem; background: var(--c-bg); overflow: clip; } /* clip : laisse fonctionner le collant */
+@media (prefers-reduced-motion: reduce) { .team__hint span { animation: none; } .mate { transition: none; } .mate:hover { transform: none; } }
+/* Notre histoire : un chapitre par écran, contenu centré (main.js, .story.is-stepped), défilement libre ; à son entrée à l'écran,
+   l'animation du chapitre se joue d'un trait : numéro géant, photo qui s'ouvre et passe du noir et blanc à la couleur (le temps
+   qui passe), date lettre par lettre, mots du récit qui s'allument, mots clés surlignés. Sans JS ou mouvement réduit : lecture libre. */
+.story { padding-block: calc(var(--header-h) + 2rem) 4rem; background: var(--c-bg); overflow: clip; }
 .story__head { max-width: 46rem; margin: 0 auto; text-align: center; }
 .story__title { margin: 0; font-size: clamp(2.3rem, 4.6vw, 4.4rem); line-height: 1.02; letter-spacing: -.015em; }
 .story__lead { max-width: 34rem; margin: 1.2rem auto 0; font: 500 clamp(1.1rem, 1.5vw, 1.4rem)/1.5 var(--f-display); color: var(--c-ink-soft); }
-.story__chapters { margin: 2rem 0 0; padding: 0; list-style: none; counter-reset: chap; }
-.chap { counter-increment: chap; }
+.story__chapters { margin: 2rem 0 0; padding: 0; list-style: none; }
+.story.is-stepped .chap { min-height: 100svh; display: grid; align-content: center; } /* un chapitre = un écran : centré, on ne voit pas ses voisins */
 .chap__in { position: relative; display: grid; gap: 1.5rem; padding-block: 2.5rem; isolation: isolate; }
-.chap__in::before { content: "0" counter(chap); position: absolute; z-index: -1; top: 0; right: -.04em; font: 600 clamp(9rem, 34vw, 26rem)/.8 var(--f-display); letter-spacing: -.05em; color: transparent; -webkit-text-stroke: 1.5px var(--c-line); transform: translateY(var(--py, 0)); pointer-events: none; } /* numéro géant au trait, en parallaxe (--py) */
+/* numéro géant au trait, derrière la photo (vrai élément : animé en transform, sans recalculer le chapitre) */
+.chap__num { position: absolute; z-index: -1; top: 0; right: -.04em; font: 600 clamp(13rem, 52vw, 42rem)/.8 var(--f-display); letter-spacing: -.05em; color: transparent; -webkit-text-stroke: 2px var(--c-line); pointer-events: none; will-change: transform; }
 .chap p.chap__when { margin: 0; font: 600 clamp(2.8rem, 5.5vw, 5rem)/1 var(--f-display); letter-spacing: -.02em; color: var(--c-accent); }
 .chap__pic { position: relative; aspect-ratio: 4 / 3; margin: 0 .6rem .6rem 0; overflow: hidden; border-radius: 0 4rem 0 4rem; }
-.chap__pic img { position: absolute; inset: -8% 0; width: 100%; height: 116%; object-fit: cover; } /* marge pour le glissé */
+.chap__pic img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+/* ajoutés par main.js pour l'arrivée du chapitre : copie noir et blanc qui s'efface, rideau qui se replie */
+.chap__pic .chap__bw { filter: grayscale(1); }
+.chap__curtain { position: absolute; inset: -1px; background: var(--c-bg); transform-origin: 50% 0; }
 .chap__title { margin: 0; font: 600 clamp(1.6rem, 2.4vw, 2.3rem)/1.12 var(--f-display); }
 .chap p { max-width: 38rem; margin: 1rem 0 0; font: 500 clamp(1.08rem, 1.35vw, 1.3rem)/1.6 var(--f-body); color: var(--c-ink); }
 .chap p.chap__end { margin-top: 1.4rem; padding-left: 1rem; border-left: 3px solid var(--c-accent); font: 500 clamp(1.15rem, 1.5vw, 1.4rem)/1.5 var(--f-display); }
 .chap__end em { color: var(--c-accent-ink); }
 .chap mark { padding-inline: .1em; background: linear-gradient(transparent 62%, rgb(247 183 49 / .5) 62%) no-repeat 0 0 / var(--hl, 100%) 100%; color: inherit; -webkit-box-decoration-break: clone; box-decoration-break: clone; } /* surligneur tracé quand les mots s'allument (--hl) */
-.chap__pic { box-shadow: calc(.6rem * var(--s, 1)) calc(.6rem * var(--s, 1)) 0 var(--c-accent); } /* l'ombre jaune se déploie avec la lecture (--s) */
-/* ordinateur : chaque chapitre tient un écran, collé le temps de sa lecture ; photo et texte s'échangent les côtés d'un chapitre à l'autre */
+.chap__pic { box-shadow: calc(.6rem * var(--s, 1)) calc(.6rem * var(--s, 1)) 0 var(--c-accent); } /* l'ombre jaune se déploie à l'arrivée (--s) */
+/* ordinateur : photo et texte côte à côte, ils s'échangent les côtés d'un chapitre à l'autre */
 @media (min-width: 62rem) {
-  .chap { height: 230svh; } .chap + .chap { margin-top: -35svh; } /* le chapitre suivant arrive pendant que le précédent s’en va : pas d’écran vide */
-  .chap__in { position: sticky; top: 0; height: 100svh; padding: var(--header-h) 0 0; grid-template-columns: minmax(0, 6fr) minmax(0, 5fr); grid-template-rows: auto auto; column-gap: clamp(3rem, 6vw, 6rem); row-gap: 1.2rem; align-content: center; }
-  .chap__in::before { top: 50%; right: -3vw; margin-top: -.4em; } /* côté photo, à moitié derrière elle : ne passe jamais sur le texte */
-  .chap:nth-child(even) .chap__in::before { right: auto; left: -3vw; }
+  .chap__in { grid-template-columns: minmax(0, 6fr) minmax(0, 5fr); grid-template-rows: auto auto; column-gap: clamp(3rem, 6vw, 6rem); row-gap: 1.2rem; align-content: center; }
+  .chap__num { top: 50%; right: -6vw; margin-top: -.4em; } /* côté photo, à moitié derrière elle : ne passe jamais sur le texte */
+  .chap:nth-child(even) .chap__num { right: auto; left: -6vw; }
   .chap__when { grid-area: 1 / 1; }
   .chap__txt { grid-area: 2 / 1; }
-  .chap__pic { grid-area: 1 / 2 / 3 / 3; align-self: center; margin: 0; border-radius: 0 var(--leaf) 0 var(--leaf); box-shadow: calc(.9rem * var(--s, 1)) calc(.9rem * var(--s, 1)) 0 var(--c-accent); }
+  .chap__pic { grid-area: 1 / 2 / 3 / 3; align-self: center; margin: 0; max-height: 70svh; border-radius: 0 var(--leaf) 0 var(--leaf); box-shadow: calc(.9rem * var(--s, 1)) calc(.9rem * var(--s, 1)) 0 var(--c-accent); }
   .chap:nth-child(even) .chap__in { grid-template-columns: minmax(0, 5fr) minmax(0, 6fr); }
   .chap:nth-child(even) .chap__when, .chap:nth-child(even) .chap__txt { grid-column: 2; }
   .chap:nth-child(even) .chap__pic { grid-column: 1; border-radius: var(--leaf) 0 var(--leaf) 0; box-shadow: calc(-.9rem * var(--s, 1)) calc(.9rem * var(--s, 1)) 0 var(--c-accent); }
@@ -436,7 +478,7 @@ html.lenis { scroll-behavior: auto !important; } /* Lenis gère seul la douceur 
 
 @media (max-width: 62rem) {
   .about__inner { grid-template-columns: minmax(0, 1fr); } /* minmax(0,…) : sans lui, un long mot (« professionnellement ») élargit la colonne et fait déborder la page à 320 px */
-  .about__intro { order: 0; }
+  .about__visual { order: 2; height: 22rem; }
   .hero__title { font-size: clamp(2.1rem, 9.5vw, 4rem); }
   /* mobile : comme sur ordinateur, le rayon en décor coupé par le bord droit (haut de l'écran, bords fondus),
      le texte et le bouton calés en bas de l'écran, sous le pouce */
@@ -466,6 +508,11 @@ html.lenis { scroll-behavior: auto !important; } /* Lenis gère seul la douceur 
   .is-slider .about.is-current .about__title::after { transform: scaleX(1); }
 }
 
+/* Notre histoire : le numéro géant démarre invisible et décalé, GSAP le fait monter à l'arrivée du chapitre */
+@media (prefers-reduced-motion: no-preference) {
+  .js .chap__num { opacity: 0; transform: translateY(60%); }
+}
+
 /* Section libre : états de départ, GSAP (ScrollTrigger, main.js) les anime ; .is-in = repli sans ScrollTrigger */
 @media (prefers-reduced-motion: no-preference) {
   .js .collab:not(.is-in) [data-reveal] { opacity: 0; }
@@ -486,9 +533,8 @@ html.lenis { scroll-behavior: auto !important; } /* Lenis gère seul la douceur 
   .is-slider .about__title { font-size: clamp(1.9rem, 8vw, 2.6rem); }
   .is-slider .about__title::after { margin-top: .6rem; }
   .is-slider .about__lead { margin-top: 1rem; font-size: clamp(1rem, 4vw, 1.2rem); line-height: 1.45; }
-  .is-slider .about__closing { margin-top: 1rem; font-size: .92rem; line-height: 1.5; }
-  .is-slider .about__photo { display: none; } /* la photo cède la place : les trois idées doivent tenir dans l'écran */
-  .is-slider .about__side { gap: 0; }
+  .is-slider .about__visual { display: none; } /* la photo cède la place : les trois idées doivent tenir dans l'écran */
+  .is-slider .about__copy { gap: 1rem; }
   .is-slider .about__points details { padding: .85rem 1.1rem; }
   .is-slider .about__points summary { grid-template-columns: 2.25rem 1fr 1.5rem; gap: .75rem; }
   .is-slider .about__points details p { margin-left: 0; }
@@ -498,15 +544,12 @@ html.lenis { scroll-behavior: auto !important; } /* Lenis gère seul la douceur 
 /* Téléphones courts (≤ 45rem de haut) : sous-titres des idées masqués, textes resserrés */
 @media (max-width: 62rem) and (max-height: 45rem) {
   .is-slider .about__lead { font-size: .98rem; margin-top: .75rem; }
-  .is-slider .about__closing { margin-top: .75rem; font-size: .88rem; }
   .is-slider .about__head span { display: none; }
   .is-slider .about__points details { padding: .7rem 1rem; }
   .is-slider .about__points details p { margin-top: .6rem; font-size: .88rem; line-height: 1.5; }
 }
 
 /* Une idée ouverte doit rester dans l'écran : on libère de la place pendant qu'elle est lue */
-.is-slider .about__inner:has(details[open]) .about__photo img { height: clamp(6rem, 13svh, 9rem); }
-@media (max-width: 62rem) { .is-slider .about__inner:has(details[open]) .about__closing { display: none; } }
 @media (max-width: 62rem) { .is-slider .about__inner:has(details[open]) .about__lead { font-size: .9rem; line-height: 1.4; margin-top: .5rem; } }
 @media (max-width: 62rem) { .is-slider .about__inner:has(details[open]) .about__head span { display: none; } }
 
@@ -540,7 +583,6 @@ html.lenis { scroll-behavior: auto !important; } /* Lenis gère seul la douceur 
 }
 
 /* Téléphones courts : la phrase de conclusion de « Qui sommes-nous » cède sa place, sinon le titre passe sous la navbar */
-@media (max-width: 62rem) and (max-height: 45rem) { .is-slider .about__closing { display: none; } }
 
 /* Mobile, sections denses : listes compactes au lieu de grandes cartes */
 @media (max-width: 39.99rem) {
@@ -614,6 +656,8 @@ html.lenis { scroll-behavior: auto !important; } /* Lenis gère seul la douceur 
 /* 7. Contact & pied de page ------------------------------------------------ */
 /* « Nous contacter » termine la page : coordonnées et photo en feuille à gauche, formulaire dans un cadre gris clair à droite,
    puis un bandeau final (logo, liens, mentions). Animé à l'entrée à l'écran par main.js. */
+/* la section prévoit déjà la place de la navbar : on annule le scroll-padding du saut d'ancre natif (sinon 88px de vide au-dessus) */
+#contact { scroll-margin-top: calc(var(--header-h) * -1); }
 .contact { padding-block: calc(var(--header-h) + 2rem) clamp(3rem, 7svh, 5rem); background: radial-gradient(46rem 26rem at 8% 20%, color-mix(in srgb, var(--c-accent) 8%, transparent), transparent 70%), var(--c-bg); }
 .contact__inner { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 6fr); gap: 2.5rem clamp(2.5rem, 5vw, 5rem); align-items: stretch; }
 .contact__info { display: flex; flex-direction: column; gap: clamp(1.75rem, 4svh, 2.5rem); }
@@ -635,80 +679,161 @@ html.lenis { scroll-behavior: auto !important; } /* Lenis gère seul la douceur 
 .way p.way__note { font-size: .82rem; }
 
 /* photo en feuille (motif d'identité), ombre jaune décalée, phrase posée sur un voile d'encre */
-.contact__pic { position: relative; flex: 1; min-height: 15rem; margin: 0 .9rem .9rem 0; overflow: hidden; border-radius: 0 var(--leaf) 0 var(--leaf); box-shadow: .9rem .9rem 0 var(--c-accent); }
-.contact__pic img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: 50% 62%; filter: saturate(.86) contrast(1.03); }
-.contact__quote { position: absolute; inset: auto 0 0; padding: 5rem clamp(1.25rem, 2.5vw, 2rem) clamp(1.25rem, 2.5vw, 1.75rem) clamp(1.5rem, 3vw, 2.5rem); color: var(--c-bg);
-  font: italic 600 clamp(1.4rem, 2vw, 1.9rem)/1.15 var(--f-display);
-  background: linear-gradient(transparent, color-mix(in srgb, var(--c-ink) 55%, transparent) 45%, color-mix(in srgb, var(--c-ink) 85%, transparent)); }
-.contact__quote::after { content: ""; display: block; width: 2.5rem; height: 3px; margin-top: .7rem; border-radius: 2px; background: var(--c-accent); }
 
-/* Formulaire */
-.form { align-self: start; padding: clamp(1.5rem, 3.5vw, 3rem); border-radius: 0 3rem 0 3rem; background: var(--c-mist); }
-.form__grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1.4rem 1.25rem; }
-.field { display: grid; align-content: start; gap: .5rem; min-width: 0; }
-.field--wide { grid-column: 1 / -1; }
-.field > label, .choices legend { font-size: .95rem; font-weight: 700; color: var(--c-ink); }
+/* Formulaire sobre et aéré : pas de cadre, champs réduits à un trait fin posé sur le fond blanc (il s'épaissit en jaune au focus),
+   prestations en pastilles à cocher, grand bouton jaune */
+.form { position: relative; align-self: center; }
+/* Abeille au trait (géométrique, couleurs de la marque) qui vole vers le champ actif ; GSAP déplace .form__bee, la CSS fait battre les ailes et flotter .form__bee-in */
+.form__bee { position: absolute; top: 0; left: 0; z-index: 2; width: 2.1rem; pointer-events: none; opacity: 0; }
+.form__bee-in, .form__bee svg { display: block; }
+.form__bee svg { width: 100%; overflow: visible; }
+.bee__body { fill: var(--c-accent); }
+.bee__band { fill: var(--c-ink); }
+.bee__eye { fill: var(--c-bg); }
+.bee__antenna { fill: none; stroke: var(--c-ink); stroke-width: 1.6; stroke-linecap: round; }
+.bee__wing { fill: color-mix(in srgb, var(--c-bg) 75%, transparent); stroke: color-mix(in srgb, var(--c-ink) 35%, transparent); stroke-width: 1;
+  transform-box: fill-box; transform-origin: 0% 100%; animation: bee-wing .1s ease-in-out infinite alternate; }
+.bee__wing--b { animation-delay: -.05s; }
+@keyframes bee-wing { to { transform: rotate(-22deg) scaleY(.7); } }
+@media (prefers-reduced-motion: reduce) { .form__bee { display: none; } }
+.form__grid { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 1.1rem 1.75rem; }
+.form__grid > .field { grid-column: span 2; } /* Nom, Prénom, Entreprise sur une ligne */
+.form__grid > .field--half { grid-column: span 3; } /* E-mail, Téléphone */
+.field { position: relative; display: grid; align-content: start; gap: .2rem; min-width: 0; }
+.form__grid > .field--wide { grid-column: 1 / -1; }
+.field > label, .choices legend { font-size: .75rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--c-ink); }
 .req { color: var(--c-accent-ink); }
 .field :is(input:not([type="checkbox"]), textarea) {
-  width: 100%; padding: .9rem 1.1rem; border: 1px solid var(--c-line); border-radius: .75rem;
-  background: var(--c-bg); color: var(--c-ink); font: 500 1rem/1.4 var(--f-body);
-  transition: border-color .25s var(--ease), box-shadow .25s var(--ease);
+  width: 100%; padding: .4rem 0 .5rem; border: 0; border-radius: 0; background: transparent;
+  box-shadow: inset 0 -1px 0 color-mix(in srgb, var(--c-ink) 22%, transparent); color: var(--c-ink); font: 500 1rem/1.4 var(--f-body);
+  transition: box-shadow .3s var(--ease);
 }
-.field textarea { min-height: 8.5rem; resize: vertical; }
-.field ::placeholder { color: var(--c-ink-soft); opacity: .7; }
-.field :is(input:not([type="checkbox"]), textarea):hover { border-color: color-mix(in srgb, var(--c-ink) 25%, transparent); }
-.field :is(input:not([type="checkbox"]), textarea):focus { outline: none; border-color: var(--c-accent-dark); box-shadow: 0 0 0 4px color-mix(in srgb, var(--c-accent) 30%, transparent); }
-.field [aria-invalid="true"] { border-color: var(--c-error); }
+.field textarea { min-height: 3.75rem; resize: vertical; }
+.field ::placeholder { color: var(--c-ink-soft); opacity: .5; }
+.field :is(input:not([type="checkbox"]), textarea):hover { box-shadow: inset 0 -1px 0 color-mix(in srgb, var(--c-ink) 45%, transparent); }
+.field :is(input:not([type="checkbox"]), textarea):focus { outline: none; box-shadow: inset 0 -3px 0 var(--c-accent); }
+.field :is(input, textarea)[aria-invalid="true"]:not(:focus) { box-shadow: inset 0 -2px 0 var(--c-error); } /* plus spécifique que le trait (sinon jamais rouge) */
 .field__error { font-size: .85rem; font-weight: 600; color: var(--c-error); }
 .field__error:empty { display: none; }
 
-.choices { margin: 0; padding: 0; border: 0; display: grid; gap: .7rem; }
-.choices legend { margin-bottom: .9rem; padding: 0; }
-.choice { display: flex; align-items: center; gap: .8rem; width: fit-content; font-size: .98rem; color: var(--c-ink); cursor: pointer; }
-.choice input { appearance: none; flex: none; display: grid; place-items: center; width: 1.35rem; height: 1.35rem; margin: 0;
-  border: 1.5px solid color-mix(in srgb, var(--c-ink) 30%, transparent); border-radius: .4rem; background: var(--c-bg); cursor: pointer;
-  transition: background-color .2s var(--ease), border-color .2s var(--ease); }
-.choice input::after { content: ""; width: .32rem; height: .65rem; margin-top: -.15rem; border: solid var(--c-ink); border-width: 0 2px 2px 0; transform: rotate(45deg) scale(0); transition: transform .25s cubic-bezier(.34, 1.56, .64, 1); }
-.choice:hover input { border-color: var(--c-accent-dark); }
-.choice input:checked { border-color: var(--c-accent); background: var(--c-accent); }
+/* prestations : pastilles (la case reste un vrai input, devenue une petite pastille ronde) */
+.choices { display: flex; flex-wrap: wrap; gap: .45rem; margin: 0; padding: 0; border: 0; }
+.choices legend { margin-bottom: .6rem; padding: 0; }
+.choices .field__error { flex-basis: 100%; }
+.choice { display: inline-flex; align-items: center; gap: .5rem; padding: .4rem .9rem .4rem .5rem; border: 1.5px solid var(--c-line); border-radius: 999px;
+  font-size: .88rem; font-weight: 600; color: var(--c-ink); cursor: pointer; transition: border-color .2s var(--ease), background-color .2s var(--ease); }
+.choice:hover { border-color: var(--c-accent-dark); }
+.choice:has(input:checked) { border-color: var(--c-accent); background: var(--c-accent); }
+.choice input { appearance: none; flex: none; display: grid; place-items: center; width: 1.1rem; height: 1.1rem; margin: 0;
+  border: 1.5px solid color-mix(in srgb, var(--c-ink) 30%, transparent); border-radius: 50%; background: var(--c-bg); cursor: pointer; }
+.choice input::after { content: ""; width: .28rem; height: .55rem; margin-top: -.12rem; border: solid var(--c-ink); border-width: 0 2px 2px 0; transform: rotate(45deg) scale(0); transition: transform .25s cubic-bezier(.34, 1.56, .64, 1); }
+.choice input:checked { border-color: var(--c-bg); }
 .choice input:checked::after { transform: rotate(45deg) scale(1); }
-.choice input:focus-visible { outline: none; box-shadow: 0 0 0 4px color-mix(in srgb, var(--c-accent) 35%, transparent); }
-.choices.is-invalid .choice input { border-color: var(--c-error); }
+.choice:has(input:focus-visible) { box-shadow: 0 0 0 4px color-mix(in srgb, var(--c-accent) 35%, transparent); }
+.choices.is-invalid .choice { border-color: var(--c-error); }
 
-.form__submit { width: 100%; justify-content: center; margin-top: 2rem; }
+.form__submit { width: 100%; justify-content: center; margin-top: 1.5rem; }
+
+/* Mobile : une étape à la fois (main.js pose .is-stepped et data-current) */
+.form.is-stepped [data-step] { display: none; }
+.form.is-stepped[data-current="1"] [data-step="1"], .form.is-stepped[data-current="2"] [data-step="2"] { display: grid; }
+.form.is-stepped[data-current="3"] [data-step="3"] { display: grid; }
+.form.is-stepped[data-current="3"] .choices[data-step="3"] { display: flex; }
+.form.is-stepped:not([data-current="3"]) .form__submit { display: none; }
+.form.is-stepped[data-current="3"] .form__next { display: none; }
+.form.is-stepped[data-current="1"] .form__prev { visibility: hidden; }
+.form__progress { margin-bottom: 1.5rem; }
+.form__count { margin-bottom: .6rem; font-size: .8rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--c-ink-soft); }
+.form__count b { color: var(--c-accent-ink); }
+.form__count span { color: var(--c-ink); }
+.form__bar { display: block; height: 3px; border-radius: 3px; background: var(--c-line); overflow: hidden; }
+.form__bar span { display: block; height: 100%; background: var(--c-accent); transform: scaleX(calc(var(--step, 1) / 3)); transform-origin: left; transition: transform .45s var(--ease); }
+.form__nav { display: flex; justify-content: space-between; align-items: center; gap: 1rem; margin-top: 1.75rem; }
+.form__nav[hidden], .form__progress[hidden] { display: none; }
+.form__prev { min-height: 44px; padding: 0 .25rem; border: 0; background: none; font: 600 .95rem var(--f-body); color: var(--c-ink); cursor: pointer; }
+/* dernière étape : « Retour » et « Envoyer » sur la même ligne */
+.form.is-stepped[data-current="3"] { display: flex; flex-wrap: wrap; align-items: center; column-gap: 1rem; }
+.form.is-stepped[data-current="3"] > * { flex-basis: 100%; }
+.form.is-stepped[data-current="3"] > .form__nav { flex-basis: auto; margin-top: 1.5rem; }
+.form.is-stepped[data-current="3"] > .form__submit { flex: 1; width: auto; margin-top: 1.5rem; padding-inline: 1rem; white-space: nowrap; }
 .form.is-sending .form__submit { opacity: .65; pointer-events: none; }
 .form__status { margin-top: 1rem; padding: .85rem 1.1rem; border-radius: .75rem; font-size: .95rem; font-weight: 600; text-align: center; }
 .form__status:empty { display: none; }
 .form__status.is-ok { background: var(--c-tint); color: var(--c-ink); }
 .form__status.is-error { color: var(--c-error); }
-.form__note { display: flex; align-items: center; justify-content: center; gap: .5rem; margin-top: 1.25rem; font-size: .8rem; line-height: 1.4; color: var(--c-ink-soft); text-align: center; }
+/* Bulle au-dessus de la tête de l'abeille : c'est elle qui annonce l'erreur ou l'envoi (main.js, .form__say, voyage avec elle) ;
+   le message reste dans .form__status pour les lecteurs d'écran, masqué à l'œil tant que l'abeille est là (.has-bee) */
+.form__say { position: absolute; bottom: calc(100% + .45rem); right: -.4rem; width: max-content; max-width: min(17rem, 75vw); padding: .6rem .85rem;
+  border: 1.5px solid var(--c-ink); border-radius: 1rem 1rem .25rem 1rem; background: var(--c-bg); box-shadow: .3rem .3rem 0 var(--c-accent);
+  font: 600 .9rem/1.35 var(--f-body); color: var(--c-ink); text-align: left;
+  opacity: 0; transform: translateY(.4rem) scale(.6); transform-origin: 90% 100%; transition: opacity .2s, transform .3s cubic-bezier(.3, 1.6, .5, 1); }
+.form__say::after { content: ""; position: absolute; top: 100%; right: .9rem; border: .45rem solid transparent; border-top-color: var(--c-ink); border-bottom: 0; } /* pointe vers la tête */
+.form__say.is-left { right: auto; left: -.4rem; border-radius: 1rem 1rem 1rem .25rem; transform-origin: 10% 100%; }
+.form__say.is-left::after { right: auto; left: .9rem; }
+.form__say.is-on { opacity: 1; transform: none; }
+.form__say.is-error { border-color: var(--c-error); }
+.form__say.is-error::after { border-top-color: var(--c-error); }
+.form.has-bee .form__status { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+/* Popup du résultat de l'envoi (dialog natif) : carte blanche en feuille sur son ombre jaune, l'abeille posée sur le bord haut ;
+   envoyé = elle sautille, erreur = elle secoue la tête */
+.buzz { width: min(100% - 2rem, 26rem); padding: 0; border: 0; background: none; overflow: visible; color: var(--c-ink); }
+.buzz::backdrop { background: color-mix(in srgb, var(--c-ink) 45%, transparent); backdrop-filter: blur(3px); }
+.buzz__box { position: relative; padding: 3rem 1.75rem 1.75rem; border-radius: 0 2.5rem 0 2.5rem; background: var(--c-bg); box-shadow: .6rem .6rem 0 var(--c-accent); text-align: center; }
+.buzz__bee { position: absolute; top: 0; left: 50%; width: 4.5rem; margin: -2.4rem 0 0 -2.25rem; }
+.buzz__bee svg { display: block; width: 100%; overflow: visible; }
+.buzz__title { margin: 0; font: 600 1.6rem/1.15 var(--f-display); }
+.buzz.is-error .buzz__title { color: var(--c-error); }
+.buzz__text { margin: .7rem 0 1.5rem; color: var(--c-ink-soft); line-height: 1.55; }
+.buzz__ok { width: 100%; justify-content: center; }
+@media (prefers-reduced-motion: no-preference) {
+  .buzz[open] .buzz__box { animation: buzz-in .45s cubic-bezier(.3, 1.5, .5, 1); }
+  .buzz.is-ok .buzz__bee svg { animation: buzz-yes 1.1s ease-in-out .3s infinite; }
+  .buzz.is-error .buzz__bee svg { animation: buzz-no .7s ease-in-out .3s 2; }
+}
+@media (prefers-reduced-motion: reduce) { .buzz .bee__wing { animation: none; } }
+@keyframes buzz-in { from { opacity: 0; transform: translateY(1.5rem) scale(.92); } }
+@keyframes buzz-yes { 50% { transform: translateY(-.5rem) rotate(-6deg); } }
+@keyframes buzz-no { 20%, 60% { transform: rotate(-12deg); } 40%, 80% { transform: rotate(12deg); } }
+.form__note { display: flex; align-items: center; justify-content: center; gap: .5rem; margin-top: .9rem; font-size: .8rem; line-height: 1.4; color: var(--c-ink-soft); text-align: center; }
 .form__note svg { flex: none; width: 1rem; height: 1rem; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; }
 
 /* Bandeau final */
-.footer__bar { border-top: 1px solid var(--c-line); padding-block: 1.75rem calc(1.75rem + env(safe-area-inset-bottom)); }
-.footer__inner { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 1rem 2.5rem; }
-.footer__logo img { width: auto; height: 2.75rem; }
-.footer__nav ul { display: flex; flex-wrap: wrap; gap: .25rem 1.75rem; }
-.footer__nav a { font-size: .9rem; font-weight: 600; text-decoration: underline 2px transparent; text-underline-offset: .4em; opacity: .85; transition: text-decoration-color .3s var(--ease), opacity .3s var(--ease); }
-.footer__nav a:hover { opacity: 1; text-decoration-color: var(--c-accent); }
+/* Pied de page : bandeau crème aux grands angles arrondis, logo + devise, trois colonnes de liens, ligne de base */
+.footer__bar { padding-block: clamp(3rem, 6vw, 4.5rem) calc(1.5rem + env(safe-area-inset-bottom)); background: var(--c-tint); border-radius: 3rem 3rem 0 0; }
+.footer__grid { display: grid; grid-template-columns: 1.4fr repeat(3, minmax(0, 1fr)); gap: 2.5rem; }
+.footer__logo img { width: auto; height: 3.75rem; }
+.footer__motto { max-width: 20rem; margin-top: 1rem; font: 600 1.35rem/1.25 var(--f-display); color: var(--c-ink); }
+.footer__motto em { font-style: normal; color: var(--c-accent-ink); white-space: nowrap; }
+.footer__head { margin-bottom: 1rem; font-size: .75rem; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--c-accent-ink); }
+.footer__col ul { display: grid; gap: .65rem; }
+.footer__col li { font-size: .92rem; color: var(--c-ink-soft); }
+.footer__col a, .footer__top { color: var(--c-ink); font-weight: 600; text-decoration: underline 2px transparent; text-underline-offset: .35em; transition: text-decoration-color .3s var(--ease); }
+.footer__col a:hover, .footer__top:hover { text-decoration-color: var(--c-accent); }
+.footer__base { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 1rem; margin-top: clamp(2.5rem, 5vw, 3.5rem); padding-top: 1.5rem; border-top: 1px solid var(--c-line); }
 .footer__legal { font-size: .85rem; color: var(--c-ink-soft); }
+.footer__top { font-size: .9rem; }
+.footer__top span { display: inline-block; margin-left: .25rem; transition: transform .35s var(--ease); }
+.footer__top:hover span { transform: translateY(-3px); }
 
 @media (max-width: 62rem) {
   .contact__inner { grid-template-columns: minmax(0, 1fr); }
-  .contact__pic { display: none; } /* mobile : le formulaire suit directement les coordonnées */
-  .footer__inner { flex-direction: column; align-items: flex-start; }
+  .footer__grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .footer__brand { grid-column: 1 / -1; }
 }
 @media (max-width: 40rem) {
   .contact { padding-top: calc(var(--header-h) + 1rem); }
-  .form { margin-inline: -.5rem; padding: 1.75rem 1.25rem; border-radius: 0 2rem 0 2rem; }
-  .form__grid { grid-template-columns: minmax(0, 1fr); gap: 1.2rem; }
+  .form__grid { grid-template-columns: minmax(0, 1fr); gap: 1.1rem; }
+  .form__grid > .field { grid-column: 1 / -1; }
   .field input, .field textarea { font-size: 1rem; } /* 16 px : iOS ne zoome pas sur le champ */
   .choice { min-height: 44px; } /* zone tactile */
-  .choices { gap: 0; }
+  .footer__bar { border-radius: 2rem 2rem 0 0; }
+  .footer__grid { gap: 2rem 1.25rem; }
+  .footer__col:last-child { grid-column: 1 / -1; }
+  .footer__col a { display: inline-block; padding-block: .3rem; } /* zone tactile */
 }
 
 /* États de départ des animations d'entrée (main.js) ; .is-in = repli sans ScrollTrigger */
 @media (prefers-reduced-motion: no-preference) {
-  .js .contact:not(.is-in) :is(.contact__eyebrow, .contact__title, .contact__lead, .way, .contact__pic, .form) { opacity: 0; }
+  .js .contact:not(.is-in) :is(.contact__eyebrow, .contact__title, .contact__lead, .way, .form) { opacity: 0; }
 }
-@media (prefers-reduced-motion: reduce) { .choice input, .choice input::after, .field input, .field textarea { transition: none; } }
+@media (prefers-reduced-motion: reduce) { .choice, .choice input::after, .field input, .field textarea { transition: none; } }
