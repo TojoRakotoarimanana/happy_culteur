@@ -503,8 +503,9 @@
           </ul>
         </div>
 
-        <!-- Sans JS : envoi par la messagerie (mailto). Pour un envoi direct, remplacer action par l'URL d'un service de formulaire (ex. Formspree) : main.js l'enverra alors en arrière-plan. -->
-        <form class="form" action="mailto:contact@happyculteur.com" method="post" enctype="text/plain" novalidate data-current="1">
+        <!-- Envoi par Formspree (formulaire xoejyklp) : main.js l'envoie en arrière-plan (fetch) ; sans JS, envoi natif vers Formspree -->
+        <form class="form" action="https://formspree.io/f/xoejyklp" method="post" novalidate data-current="1">
+          <input type="text" name="_gotcha" tabindex="-1" autocomplete="off" hidden><!-- piège anti-spam : rempli seulement par les robots, ignoré par Formspree -->
           <!-- Mobile : formulaire par étapes (main.js, classe is-stepped) ; ailleurs ou sans JS, tout est visible -->
           <div class="form__progress" hidden>
             <p class="form__count" aria-live="polite">Étape <b>1</b> / 3 · <span>Vous</span></p>
@@ -521,7 +522,7 @@
             <circle class="bee__eye" cx="11" cy="22.5" r="1.7"/>
             <path class="bee__antenna" d="M12 18c-1-4-3-6-6-7"/>
             <path class="bee__wing" d="M28 19c-2-8 3-17 9-15 5 2 0 12-9 15z"/>
-          </svg></span></span>
+          </svg></span><span class="form__say"></span></span>
           <div class="form__grid">
             <div class="field" data-step="1">
               <label for="f-nom">Nom <span class="req" aria-hidden="true">*</span></label>
@@ -573,6 +574,15 @@
           <p class="form__status" role="status" aria-live="polite"></p>
           <p class="form__note"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="5" y="10.5" width="14" height="10" rx="2"/><path d="M8 10.5V8a4 4 0 0 1 8 0v2.5"/></svg>Vos informations restent confidentielles et ne seront utilisées que pour répondre à votre demande.</p>
         </form>
+        <!-- Résultat de l'envoi : popup « signée » par l'abeille (main.js : dessin cloné depuis .form__bee, texte selon le cas) -->
+        <dialog class="buzz" aria-labelledby="buzz-title" aria-describedby="buzz-text">
+          <div class="buzz__box">
+            <span class="buzz__bee" aria-hidden="true"></span>
+            <h3 class="buzz__title" id="buzz-title"></h3>
+            <p class="buzz__text" id="buzz-text"></p>
+            <form method="dialog"><button class="btn buzz__ok"></button></form>
+          </div>
+        </dialog>
       </div>
     </section>
 

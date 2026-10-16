@@ -32,7 +32,7 @@
   document.addEventListener('keydown', (e) => { if (e.key === 'Escape') setMenu(false); });
 
   /* ---------- Nous contacter : validation et envoi du formulaire (indépendant de GSAP) ---------- */
-  // action = mailto (par défaut) : la messagerie s'ouvre avec la demande pré-remplie ; action = URL d'un service (Formspree…) : envoi en arrière-plan
+  // action = URL Formspree : envoi en arrière-plan (fetch) ; action = mailto (repli) : la messagerie s'ouvre avec la demande pré-remplie
   const form = document.querySelector('.form');
   if (form) {
     const status = form.querySelector('.form__status');
@@ -40,7 +40,22 @@
     const boxes = [...group.querySelectorAll('input')];
     const fields = [...form.querySelectorAll('[required]'), group];
     let tried = false; // les erreurs ne s'affichent qu'après une première tentative d'envoi, puis se corrigent en direct
-    const say = (msg, kind = '') => { status.textContent = msg; status.className = `form__status ${kind}`; };
+    // champs manquants : le message va dans .form__status (lecteurs d'écran, mouvement réduit) et l'abeille le dit dans sa bulle (événement bee:say)
+    const say = (msg, kind = '') => { status.textContent = msg; status.className = `form__status ${kind}`; form.dispatchEvent(new CustomEvent('bee:say', { detail: { msg, kind } })); };
+    // Résultat de l'envoi : popup de l'abeille (Échap, bouton ou clic sur le fond la ferment ; la page ne défile pas dessous)
+    const popup = document.querySelector('.buzz');
+    popup.querySelector('.buzz__bee').append(form.querySelector('.form__bee svg').cloneNode(true));
+    popup.addEventListener('click', (e) => { if (e.target === popup) popup.close(); });
+    popup.addEventListener('close', () => lenis?.start());
+    const buzz = (kind, title, text, ok) => {
+      say('');
+      popup.className = `buzz ${kind}`;
+      popup.querySelector('.buzz__title').textContent = title;
+      popup.querySelector('.buzz__text').textContent = text;
+      popup.querySelector('.buzz__ok').textContent = ok;
+      lenis?.stop();
+      popup.showModal();
+    };
     const check = (el) => {
       let msg = '';
       if (el === group) msg = boxes.some((b) => b.checked) ? '' : 'Choisissez au moins une prestation.';
@@ -80,7 +95,8 @@
     form.querySelector('.form__next').addEventListener('click', () => {
       const n = +form.dataset.current;
       const bad = fields.filter((el) => stepOf(el) === n && !check(el));
-      if (bad.length) { tried = true; (bad[0] === group ? boxes[0] : bad[0]).focus(); return; }
+      if (bad.length) { tried = true; say('Bzz… il me manque une réponse ici !', 'is-error'); (bad[0] === group ? boxes[0] : bad[0]).focus(); return; }
+      say('');
       show(n + 1);
     });
     form.querySelector('.form__prev').addEventListener('click', () => show(+form.dataset.current - 1));
@@ -91,9 +107,9 @@
       tried = true;
       const bad = fields.filter((el) => !check(el));
       if (bad.length) {
-        say('Merci de compléter les champs indiqués.', 'is-error');
+        say(bad.length > 1 ? `Bzz… il me manque ${bad.length} réponses, je vous montre !` : 'Bzz… il me manque une réponse, je vous montre !', 'is-error');
         if (form.classList.contains('is-stepped')) show(stepOf(bad[0]), false);
-        (bad[0] === group ? boxes[0] : bad[0]).focus();
+        (bad[0] === group ? boxes[0] : bad[0]).focus(); // l'abeille y vole avec sa bulle
         return;
       }
       const data = new FormData(form);
@@ -102,10 +118,14 @@
         const line = (k) => `${k} : ${data.getAll(k).join(', ') || '—'}`;
         const body = ['Nom', 'Prénom', 'Entreprise', 'E-mail', 'Téléphone', 'Prestations'].map(line).join('\n') + `\n\n${data.get('Message')}`;
         location.href = `${action}?subject=${encodeURIComponent(`Demande de contact – ${data.get('Entreprise')}`)}&body=${encodeURIComponent(body)}`;
-        say('Votre messagerie s’ouvre avec votre demande pré-remplie : il ne reste plus qu’à l’envoyer.', 'is-ok');
+        buzz('is-ok', 'C’est presque parti !', 'Votre messagerie s’ouvre avec la demande pré-remplie : il ne reste plus qu’à l’envoyer.', 'Compris');
         return;
       }
       form.classList.add('is-sending');
+      data.set('_subject', `Demande de contact – ${data.get('Entreprise')}`); // objet de l'e-mail reçu (Formspree)
+      data.set('_replyto', data.get('E-mail'));                              // « Répondre » écrit directement au client
+      data.set('Prestations', data.getAll('Prestations').join(', '));        // une seule ligne « a, b » au lieu d'une valeur par case cochée
+      if (!data.get('Téléphone')) data.set('Téléphone', 'Non renseigné');   // pas de ligne vide dans l'e-mail
       say('Envoi en cours…');
       try {
         const res = await fetch(action, { method: 'POST', body: data, headers: { Accept: 'application/json' } });
@@ -113,9 +133,9 @@
         form.reset();
         tried = false;
         show(1, false);
-        say('Merci ! Votre demande est bien partie, nous revenons vers vous très vite.', 'is-ok');
+        buzz('is-ok', 'Demande bien reçue !', 'Merci pour votre message. Notre équipe revient vers vous très vite.', 'Parfait');
       } catch {
-        say('L’envoi n’a pas abouti. Réessayez dans un instant ou écrivez-nous à contact@happyculteur.com.', 'is-error');
+        buzz('is-error', 'Oups, l’envoi n’a pas abouti.', 'Réessayez dans un instant ou écrivez-nous directement à contact@happyculteur.com.', 'Fermer');
       } finally {
         form.classList.remove('is-sending');
       }
@@ -962,12 +982,12 @@
      `d` < 0 : premier plan (devance la page, paraît proche). Transform seulement, scrub, de son entrée à sa sortie de l'écran. */
   gsap.matchMedia().add('(prefers-reduced-motion: no-preference)', () => {
     if (!st) return;
-    const layers = [
+    const layers = [ // [sélecteur, d, échelle de départ (facultative, finit à 2 − s)]
       ['.svc__ill .ill-bg, .reason__ill .ill-bg', 14],  // forme de fond des illustrations (unités du dessin SVG)
-      ['.chap__num', 90],                               // grand numéro au trait derrière chaque chapitre
+      ['.chap__num', 260, 0.8],                         // grand numéro au trait, très loin : glisse lentement et grandit en approchant
       ['.chap__pic', -40],                              // photo du chapitre, devant son numéro et son texte
     ];
-    layers.forEach(([sel, d]) => gsap.utils.toArray(sel).forEach((el) => gsap.fromTo(el, { y: -d }, { y: d, ease: 'none', immediateRender: false,
+    layers.forEach(([sel, d, s = 1]) => gsap.utils.toArray(sel).forEach((el) => gsap.fromTo(el, { y: -d, scale: s }, { y: d, scale: 2 - s, ease: 'none', immediateRender: false,
       scrollTrigger: { trigger: el.closest('svg, .chap') || el, start: 'top bottom', end: 'bottom top', scrub: true } })));
 
     // Sortie de « Qui sommes-nous » vers « Pourquoi collaborer » : les plans défilent à des vitesses différentes — la feuille jaune
@@ -1025,6 +1045,7 @@
     const flip = bee.querySelector('svg');  // retournement : sur le dessin
     const hover = bee.firstElementChild;     // petits 8 sur place : sur .form__bee-in ; le vol déplace .form__bee
     let shown = false, flight;
+    const bubble = bee.querySelector('.form__say');
     const spot = (el) => { // position de pose, relative au formulaire (lue au focus, pas pendant le défilement)
       const box = form.getBoundingClientRect();
       const field = el.closest('.field');
@@ -1049,6 +1070,7 @@
     const fly = (e) => {
       if (!e.target.matches('input, textarea, button')) return;
       const to = spot(e.target);
+      bubble.classList.toggle('is-left', to.x < form.offsetWidth / 2); // posée à gauche : la bulle s'ouvre vers la droite, jamais hors de l'écran
       flight?.kill();
       if (!shown) { // première fois : elle arrive d'en haut à droite
         shown = true;
@@ -1077,7 +1099,21 @@
         } });
     };
     form.addEventListener('focusin', fly);
-    return () => { form.removeEventListener('focusin', fly); flight?.kill(); idle.kill(); io.disconnect(); gsap.set([bee, hover, flip], { clearProps: 'all' }); };
+    // Bulle : l'abeille dit ce qui manque (le focus l'emmène au champ) ; la bulle s'efface dès qu'on écrit, ou après 7 s
+    let mute;
+    const hush = () => { bubble.classList.remove('is-on'); };
+    const speak = ({ detail: { msg, kind } }) => {
+      clearTimeout(mute);
+      if (!msg) return hush();
+      bubble.textContent = msg;
+      bubble.className = `form__say ${kind} is-on`;
+      mute = setTimeout(hush, 7000);
+    };
+    form.classList.add('has-bee');
+    form.addEventListener('bee:say', speak);
+    form.addEventListener('input', hush);
+    return () => { clearTimeout(mute); hush(); form.classList.remove('has-bee'); form.removeEventListener('bee:say', speak); form.removeEventListener('input', hush);
+      form.removeEventListener('focusin', fly); flight?.kill(); idle.kill(); io.disconnect(); gsap.set([bee, hover, flip], { clearProps: 'all' }); };
   });
 
   /* ---------- Bouton : attraction douce + lueur qui suit le curseur (souris précise, hors reduced-motion) ---------- */

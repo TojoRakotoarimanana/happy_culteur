@@ -371,7 +371,7 @@ html.lenis { scroll-behavior: auto !important; } /* Lenis gère seul la douceur 
 .story.is-stepped .chap { min-height: 100svh; display: grid; align-content: center; } /* un chapitre = un écran : centré, on ne voit pas ses voisins */
 .chap__in { position: relative; display: grid; gap: 1.5rem; padding-block: 2.5rem; isolation: isolate; }
 /* numéro géant au trait, derrière la photo (vrai élément : animé en transform, sans recalculer le chapitre) */
-.chap__num { position: absolute; z-index: -1; top: 0; right: -.04em; font: 600 clamp(9rem, 34vw, 26rem)/.8 var(--f-display); letter-spacing: -.05em; color: transparent; -webkit-text-stroke: 1.5px var(--c-line); pointer-events: none; }
+.chap__num { position: absolute; z-index: -1; top: 0; right: -.04em; font: 600 clamp(13rem, 52vw, 42rem)/.8 var(--f-display); letter-spacing: -.05em; color: transparent; -webkit-text-stroke: 2px var(--c-line); pointer-events: none; will-change: transform; }
 .chap p.chap__when { margin: 0; font: 600 clamp(2.8rem, 5.5vw, 5rem)/1 var(--f-display); letter-spacing: -.02em; color: var(--c-accent); }
 .chap__pic { position: relative; aspect-ratio: 4 / 3; margin: 0 .6rem .6rem 0; overflow: hidden; border-radius: 0 4rem 0 4rem; }
 .chap__pic img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
@@ -387,8 +387,8 @@ html.lenis { scroll-behavior: auto !important; } /* Lenis gère seul la douceur 
 /* ordinateur : photo et texte côte à côte, ils s'échangent les côtés d'un chapitre à l'autre */
 @media (min-width: 62rem) {
   .chap__in { grid-template-columns: minmax(0, 6fr) minmax(0, 5fr); grid-template-rows: auto auto; column-gap: clamp(3rem, 6vw, 6rem); row-gap: 1.2rem; align-content: center; }
-  .chap__num { top: 50%; right: -3vw; margin-top: -.4em; } /* côté photo, à moitié derrière elle : ne passe jamais sur le texte */
-  .chap:nth-child(even) .chap__num { right: auto; left: -3vw; }
+  .chap__num { top: 50%; right: -6vw; margin-top: -.4em; } /* côté photo, à moitié derrière elle : ne passe jamais sur le texte */
+  .chap:nth-child(even) .chap__num { right: auto; left: -6vw; }
   .chap__when { grid-area: 1 / 1; }
   .chap__txt { grid-area: 2 / 1; }
   .chap__pic { grid-area: 1 / 2 / 3 / 3; align-self: center; margin: 0; max-height: 70svh; border-radius: 0 var(--leaf) 0 var(--leaf); box-shadow: calc(.9rem * var(--s, 1)) calc(.9rem * var(--s, 1)) 0 var(--c-accent); }
@@ -761,6 +761,39 @@ html.lenis { scroll-behavior: auto !important; } /* Lenis gère seul la douceur 
 .form__status:empty { display: none; }
 .form__status.is-ok { background: var(--c-tint); color: var(--c-ink); }
 .form__status.is-error { color: var(--c-error); }
+/* Bulle au-dessus de la tête de l'abeille : c'est elle qui annonce l'erreur ou l'envoi (main.js, .form__say, voyage avec elle) ;
+   le message reste dans .form__status pour les lecteurs d'écran, masqué à l'œil tant que l'abeille est là (.has-bee) */
+.form__say { position: absolute; bottom: calc(100% + .45rem); right: -.4rem; width: max-content; max-width: min(17rem, 75vw); padding: .6rem .85rem;
+  border: 1.5px solid var(--c-ink); border-radius: 1rem 1rem .25rem 1rem; background: var(--c-bg); box-shadow: .3rem .3rem 0 var(--c-accent);
+  font: 600 .9rem/1.35 var(--f-body); color: var(--c-ink); text-align: left;
+  opacity: 0; transform: translateY(.4rem) scale(.6); transform-origin: 90% 100%; transition: opacity .2s, transform .3s cubic-bezier(.3, 1.6, .5, 1); }
+.form__say::after { content: ""; position: absolute; top: 100%; right: .9rem; border: .45rem solid transparent; border-top-color: var(--c-ink); border-bottom: 0; } /* pointe vers la tête */
+.form__say.is-left { right: auto; left: -.4rem; border-radius: 1rem 1rem 1rem .25rem; transform-origin: 10% 100%; }
+.form__say.is-left::after { right: auto; left: .9rem; }
+.form__say.is-on { opacity: 1; transform: none; }
+.form__say.is-error { border-color: var(--c-error); }
+.form__say.is-error::after { border-top-color: var(--c-error); }
+.form.has-bee .form__status { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+/* Popup du résultat de l'envoi (dialog natif) : carte blanche en feuille sur son ombre jaune, l'abeille posée sur le bord haut ;
+   envoyé = elle sautille, erreur = elle secoue la tête */
+.buzz { width: min(100% - 2rem, 26rem); padding: 0; border: 0; background: none; overflow: visible; color: var(--c-ink); }
+.buzz::backdrop { background: color-mix(in srgb, var(--c-ink) 45%, transparent); backdrop-filter: blur(3px); }
+.buzz__box { position: relative; padding: 3rem 1.75rem 1.75rem; border-radius: 0 2.5rem 0 2.5rem; background: var(--c-bg); box-shadow: .6rem .6rem 0 var(--c-accent); text-align: center; }
+.buzz__bee { position: absolute; top: 0; left: 50%; width: 4.5rem; margin: -2.4rem 0 0 -2.25rem; }
+.buzz__bee svg { display: block; width: 100%; overflow: visible; }
+.buzz__title { margin: 0; font: 600 1.6rem/1.15 var(--f-display); }
+.buzz.is-error .buzz__title { color: var(--c-error); }
+.buzz__text { margin: .7rem 0 1.5rem; color: var(--c-ink-soft); line-height: 1.55; }
+.buzz__ok { width: 100%; justify-content: center; }
+@media (prefers-reduced-motion: no-preference) {
+  .buzz[open] .buzz__box { animation: buzz-in .45s cubic-bezier(.3, 1.5, .5, 1); }
+  .buzz.is-ok .buzz__bee svg { animation: buzz-yes 1.1s ease-in-out .3s infinite; }
+  .buzz.is-error .buzz__bee svg { animation: buzz-no .7s ease-in-out .3s 2; }
+}
+@media (prefers-reduced-motion: reduce) { .buzz .bee__wing { animation: none; } }
+@keyframes buzz-in { from { opacity: 0; transform: translateY(1.5rem) scale(.92); } }
+@keyframes buzz-yes { 50% { transform: translateY(-.5rem) rotate(-6deg); } }
+@keyframes buzz-no { 20%, 60% { transform: rotate(-12deg); } 40%, 80% { transform: rotate(12deg); } }
 .form__note { display: flex; align-items: center; justify-content: center; gap: .5rem; margin-top: .9rem; font-size: .8rem; line-height: 1.4; color: var(--c-ink-soft); text-align: center; }
 .form__note svg { flex: none; width: 1rem; height: 1rem; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; }
 
